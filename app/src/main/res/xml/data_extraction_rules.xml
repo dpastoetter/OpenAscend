@@ -3,7 +3,7 @@
     <cloud-backup>
         <include domain="sharedpref" path="." />
         <include domain="database" path="." />
-        <exclude domain="no_backup" path="openascend_reminders.xml" />
+        <exclude domain="sharedpref" path="openascend_reminders.xml" />
     </cloud-backup>
     <device-transfer>
         <include domain="sharedpref" path="." />
