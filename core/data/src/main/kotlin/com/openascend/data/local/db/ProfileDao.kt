@@ -16,4 +16,7 @@ interface ProfileDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(profile: ProfileEntity)
+
+    @Query("DELETE FROM profile")
+    suspend fun deleteAll()
 }

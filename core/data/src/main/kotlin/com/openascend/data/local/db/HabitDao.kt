@@ -27,4 +27,10 @@ interface HabitDao {
 
     @Query("SELECT * FROM habits WHERE id = :id")
     suspend fun getById(id: Long): HabitEntity?
+
+    @Query("DELETE FROM habits")
+    suspend fun deleteAll()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(entities: List<HabitEntity>)
 }

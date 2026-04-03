@@ -22,11 +22,18 @@ object DatabaseModule {
         }
     }
 
+    private val migration3To4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE profile ADD COLUMN archetypeSuffix TEXT")
+            db.execSQL("ALTER TABLE habits ADD COLUMN isRestDay INTEGER NOT NULL DEFAULT 0")
+        }
+    }
+
     @Provides
     @Singleton
     fun database(@ApplicationContext context: Context): OpenAscendDatabase =
         Room.databaseBuilder(context, OpenAscendDatabase::class.java, "openascend.db")
-            .addMigrations(migration2To3)
+            .addMigrations(migration2To3, migration3To4)
             .fallbackToDestructiveMigration()
             .build()
 

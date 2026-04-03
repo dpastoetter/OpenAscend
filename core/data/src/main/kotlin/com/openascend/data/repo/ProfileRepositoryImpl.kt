@@ -39,5 +39,6 @@ class ProfileRepositoryImpl @Inject constructor(
         streakDays = 0,
         lastLoggedEpochDay = null,
         avatarRelativePath = null,
+        archetypeSuffix = null,
     )
 }

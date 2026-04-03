@@ -1,0 +1,24 @@
+{
+  "id": "cozy",
+  "actTitles": [
+    "The Hearth",
+    "The Soft Lantern",
+    "The Quiet Nook",
+    "The Garden Path",
+    "The Open Window",
+    "The Tea Kettle",
+    "The Sunbeam",
+    "The Wool Blanket",
+    "The Gentle Rain",
+    "The Evening Glow",
+    "The Frosted Pane",
+    "The Seedling Pot"
+  ],
+  "questActPrefix": "",
+  "bossTellTemplates": [
+    "{boss} tiptoes closer when {stat} feels thin—time for a small kindness.",
+    "A cozy omen: soften the day; {boss} fusses over your {stat}.",
+    "Warm socks energy: {boss} notices {stat} needs a gentler week."
+  ],
+  "questTitleFlavorSuffixes": [" · soft vow", " — tiny rite", ""]
+}

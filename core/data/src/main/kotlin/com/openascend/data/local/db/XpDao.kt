@@ -2,6 +2,7 @@ package com.openascend.data.local.db
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
@@ -18,4 +19,10 @@ interface XpDao {
 
     @Query("SELECT COALESCE(SUM(amount), 0) FROM xp_events")
     suspend fun totalXp(): Int
+
+    @Query("DELETE FROM xp_events")
+    suspend fun deleteAll()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(entity: XpEventEntity): Long
 }

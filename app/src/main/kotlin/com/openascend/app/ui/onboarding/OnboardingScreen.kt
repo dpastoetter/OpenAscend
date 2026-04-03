@@ -17,8 +17,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.openascend.app.R
 
 /**
  * Onboarding form without Hilt — use in previews and JVM UI tests (Robolectric + Compose).
@@ -38,9 +40,9 @@ fun OnboardingContent(
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Forge your legend", style = MaterialTheme.typography.headlineMedium)
+        Text(stringResource(R.string.onboarding_forge_legend), style = MaterialTheme.typography.headlineMedium)
         Text(
-            "OpenAscend turns habits and life signals into RPG stats. Nothing here is medical or financial advice — just a playful mirror.",
+            stringResource(R.string.onboarding_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -48,21 +50,21 @@ fun OnboardingContent(
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text("Hero name") },
+            label = { Text(stringResource(R.string.onboarding_hero_name)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
         OutlinedTextField(
             value = goalA,
             onValueChange = { goalA = it },
-            label = { Text("Quest goal #1") },
+            label = { Text(stringResource(R.string.onboarding_goal_1)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
         OutlinedTextField(
             value = goalB,
             onValueChange = { goalB = it },
-            label = { Text("Quest goal #2 (optional)") },
+            label = { Text(stringResource(R.string.onboarding_goal_2)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -73,7 +75,7 @@ fun OnboardingContent(
             },
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Enter the realm")
+            Text(stringResource(R.string.onboarding_enter_realm))
         }
     }
 }

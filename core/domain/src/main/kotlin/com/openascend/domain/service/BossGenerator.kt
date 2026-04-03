@@ -3,9 +3,17 @@ package com.openascend.domain.service
 import com.openascend.domain.model.CoreStat
 import com.openascend.domain.model.StatBlock
 import com.openascend.domain.model.WeeklyBoss
+import com.openascend.domain.narrative.NarrativeContext
+import com.openascend.domain.narrative.NarrativePack
 
 class BossGenerator {
-    fun weeklyBoss(weekStartEpochDay: Long, stats: StatBlock): WeeklyBoss {
+    fun weeklyBoss(
+        weekStartEpochDay: Long,
+        stats: StatBlock,
+        narrative: NarrativeContext? = null,
+        bossDeferredForThisWeek: Boolean = false,
+    ): WeeklyBoss {
+        val pack = narrative?.pack ?: NarrativePack.fallback()
         val target = stats.weakestStat()
         val (name, flavor, tips) = when (target) {
             CoreStat.RECOVERY -> Triple(
@@ -49,12 +57,49 @@ class BossGenerator {
                 ),
             )
         }
+        val deferredFlavor = if (bossDeferredForThisWeek) {
+            "You asked for a gentler week—the tale thins your streak-armor, but the realm grants reprieve."
+        } else {
+            flavor
+        }
+        val tell = if (bossDeferredForThisWeek) {
+            "${name} lingers at the edge of the map; your oath was to rest this week."
+        } else {
+            formatTell(
+                templates = pack.bossTellTemplates,
+                seed = weekStartEpochDay + target.ordinal * 31L,
+                bossName = name,
+                stat = target,
+            )
+        }
         return WeeklyBoss(
             weekEpochDayStart = weekStartEpochDay,
             name = name,
-            flavor = flavor,
+            flavor = deferredFlavor,
+            tell = tell,
             targetStat = target,
             suggestedActions = tips,
         )
     }
+
+    private fun formatTell(
+        templates: List<String>,
+        seed: Long,
+        bossName: String,
+        stat: CoreStat,
+    ): String {
+        val list = templates.ifEmpty { listOf("{boss} stirs when {stat} runs thin.") }
+        val template = list[(kotlin.math.abs(seed) % list.size).toInt()]
+        return template
+            .replace("{boss}", bossName)
+            .replace("{stat}", stat.narrativeLabel())
+    }
+}
+
+private fun CoreStat.narrativeLabel(): String = when (this) {
+    CoreStat.RECOVERY -> "recovery"
+    CoreStat.STAMINA -> "stamina"
+    CoreStat.STABILITY -> "stability"
+    CoreStat.DISCIPLINE -> "discipline"
+    CoreStat.VITALITY -> "vitality"
 }

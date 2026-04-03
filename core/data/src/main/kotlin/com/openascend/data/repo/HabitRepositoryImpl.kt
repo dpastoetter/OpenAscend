@@ -35,6 +35,7 @@ class HabitRepositoryImpl @Inject constructor(
             frequencyPerWeek = draft.frequencyPerWeek,
             difficulty = draft.difficulty,
             linkedStat = draft.linkedStat,
+            isRestDay = draft.isRestDay,
         ).toEntity()
         return habitDao.insert(entity)
     }

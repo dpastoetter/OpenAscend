@@ -9,6 +9,7 @@ data class Habit(
     val frequencyPerWeek: Int,
     val difficulty: Int,
     val linkedStat: CoreStat,
+    val isRestDay: Boolean = false,
 )
 
 data class HabitDraft(
@@ -16,4 +17,5 @@ data class HabitDraft(
     val frequencyPerWeek: Int,
     val difficulty: Int,
     val linkedStat: CoreStat,
+    val isRestDay: Boolean = false,
 )

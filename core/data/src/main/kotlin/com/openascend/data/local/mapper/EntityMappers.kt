@@ -23,6 +23,7 @@ fun ProfileEntity.toDomain(): UserProfile = UserProfile(
     streakDays = streakDays,
     lastLoggedEpochDay = lastLoggedEpochDay,
     avatarRelativePath = avatarRelativePath,
+    archetypeSuffix = archetypeSuffix,
 )
 
 fun UserProfile.toEntity(): ProfileEntity = ProfileEntity(
@@ -32,6 +33,7 @@ fun UserProfile.toEntity(): ProfileEntity = ProfileEntity(
     streakDays = streakDays,
     lastLoggedEpochDay = lastLoggedEpochDay,
     avatarRelativePath = avatarRelativePath,
+    archetypeSuffix = archetypeSuffix,
 )
 
 fun HabitEntity.toDomain(): Habit = Habit(
@@ -40,6 +42,7 @@ fun HabitEntity.toDomain(): Habit = Habit(
     frequencyPerWeek = frequencyPerWeek,
     difficulty = difficulty,
     linkedStat = runCatching { CoreStat.valueOf(linkedStat) }.getOrDefault(CoreStat.DISCIPLINE),
+    isRestDay = isRestDay,
 )
 
 fun Habit.toEntity(): HabitEntity = HabitEntity(
@@ -48,6 +51,7 @@ fun Habit.toEntity(): HabitEntity = HabitEntity(
     frequencyPerWeek = frequencyPerWeek,
     difficulty = difficulty,
     linkedStat = linkedStat.name,
+    isRestDay = isRestDay,
 )
 
 fun DailyMetricEntity.toDomain(): DailyMetric = DailyMetric(
@@ -69,6 +73,13 @@ fun DailyMetric.toEntity(): DailyMetricEntity = DailyMetricEntity(
 )
 
 fun XpEventEntity.toDomain(): XpEvent = XpEvent(
+    id = id,
+    timestampMillis = timestampMillis,
+    amount = amount,
+    reason = reason,
+)
+
+fun XpEvent.toEntity(): XpEventEntity = XpEventEntity(
     id = id,
     timestampMillis = timestampMillis,
     amount = amount,

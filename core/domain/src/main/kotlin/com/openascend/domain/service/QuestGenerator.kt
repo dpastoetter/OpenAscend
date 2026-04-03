@@ -3,6 +3,8 @@ package com.openascend.domain.service
 import com.openascend.domain.model.CoreStat
 import com.openascend.domain.model.GameQuest
 import com.openascend.domain.model.StatBlock
+import com.openascend.domain.narrative.NarrativeContext
+import com.openascend.domain.narrative.NarrativePack
 
 class QuestGenerator {
     fun dailyQuests(
@@ -10,15 +12,26 @@ class QuestGenerator {
         goals: List<String>,
         todayEpochDay: Long,
         completions: Set<String>,
+        narrative: NarrativeContext? = null,
+        recoveryChainActive: Boolean = false,
     ): List<GameQuest> {
+        val pack = narrative?.pack ?: NarrativePack.fallback()
         val weak = stats.asMap().entries.sortedBy { it.value }.take(2).map { it.key }
         val fromWeak = weak.mapIndexed { idx, stat ->
-            templateFor(stat, idx, todayEpochDay, completions)
+            templateFor(
+                stat = stat,
+                idx = idx,
+                todayEpochDay = todayEpochDay,
+                completions = completions,
+                pack = pack,
+                recoveryChainActive = recoveryChainActive && stat == CoreStat.RECOVERY,
+            )
         }
         val goalQuest = goals.take(1).mapIndexed { idx, g ->
+            val rawTitle = "Quest: ${g.take(32)}"
             GameQuest(
                 id = "goal_${todayEpochDay}_$idx",
-                title = "Quest: ${g.take(32)}",
+                title = flavorTitle(rawTitle, pack, todayEpochDay, idx + 10),
                 description = "One honest rep toward: $g",
                 linkedStat = CoreStat.DISCIPLINE,
                 xpReward = 25,
@@ -31,14 +44,20 @@ class QuestGenerator {
     private fun templateFor(
         stat: CoreStat,
         idx: Int,
-        day: Long,
+        todayEpochDay: Long,
         completions: Set<String>,
+        pack: NarrativePack,
+        recoveryChainActive: Boolean,
     ): GameQuest {
-        val id = "dq_${day}_${stat.name}_$idx"
-        val (title, desc, xp) = when (stat) {
+        val id = "dq_${todayEpochDay}_${stat.name}_$idx"
+        val (baseTitle, baseDesc, xp) = when (stat) {
             CoreStat.RECOVERY -> Triple(
-                "Sanctuary Hour",
-                "Wind down 30 minutes earlier than usual tonight.",
+                if (recoveryChainActive) "Rite of three dawns" else "Sanctuary Hour",
+                if (recoveryChainActive) {
+                    "Third dawn in your recovery chain—the same kind rite: wind down 30 minutes earlier tonight."
+                } else {
+                    "Wind down 30 minutes earlier than usual tonight."
+                },
                 20,
             )
             CoreStat.STAMINA -> Triple(
@@ -62,13 +81,27 @@ class QuestGenerator {
                 20,
             )
         }
+        val title = flavorTitle(baseTitle, pack, todayEpochDay, idx)
+        val prefix = pack.questActPrefix.trim()
+        val titled = if (prefix.isNotEmpty()) "$prefix $title" else title
         return GameQuest(
             id = id,
-            title = title,
-            description = desc,
+            title = titled,
+            description = baseDesc,
             linkedStat = stat,
             xpReward = xp,
             completed = completions.contains(id),
         )
+    }
+
+    private fun flavorTitle(
+        base: String,
+        pack: NarrativePack,
+        day: Long,
+        salt: Int,
+    ): String {
+        val suffixes = pack.questTitleFlavorSuffixes.ifEmpty { listOf("") }
+        val suffix = suffixes[((day + salt) % suffixes.size).toInt()].trim()
+        return if (suffix.isEmpty()) base else "$base$suffix"
     }
 }

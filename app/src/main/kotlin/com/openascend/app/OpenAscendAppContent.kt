@@ -6,14 +6,21 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.openascend.app.navigation.DeepLinkMapper
 import com.openascend.app.ui.OpenAscendRoot
 import com.openascend.app.ui.theme.OpenAscendTheme
 import com.openascend.domain.model.ThemePreference
 
 @Composable
 fun OpenAscendAppContent() {
+    val context = LocalContext.current
+    val deepRoute = remember(context) {
+        (context as? android.app.Activity)?.intent?.data?.host?.let(DeepLinkMapper::routeFromHost)
+    }
     val vm: MainActivityViewModel = hiltViewModel()
     val themePref by vm.themePreference.collectAsState()
     val darkTheme = when (themePref) {
@@ -24,7 +31,7 @@ fun OpenAscendAppContent() {
     val dynamicColor = themePref == ThemePreference.SYSTEM
     OpenAscendTheme(darkTheme = darkTheme, dynamicColor = dynamicColor) {
         Surface(modifier = Modifier.fillMaxSize()) {
-            OpenAscendRoot()
+            OpenAscendRoot(initialDeepLinkRoute = deepRoute)
         }
     }
 }

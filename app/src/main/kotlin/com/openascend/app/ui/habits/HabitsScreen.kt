@@ -14,6 +14,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.openascend.domain.model.CoreStat
+import com.openascend.domain.model.QuestTier
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,10 +76,15 @@ fun HabitsScreen(
                 Text("Linked stats power your Discipline roll when you complete them today.")
             }
             items(ui.habits, key = { it.id }) { habit ->
+                val tier = QuestTier.fromDifficulty(habit.difficulty)
+                val stars = "★".repeat(tier.stars)
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(habit.name)
-                        Text("${habit.frequencyPerWeek}x / week · diff ${habit.difficulty} · ${habit.linkedStat.name}")
+                        Text(
+                            "${habit.frequencyPerWeek}x / week · ${tier.label} $stars · ${habit.linkedStat.name}" +
+                                if (habit.isRestDay) " · sacred rest" else "",
+                        )
                         TextButton(onClick = { onEditHabit(habit.id) }) { Text("Refine") }
                         TextButton(onClick = { viewModel.deleteHabit(habit.id) }) { Text("Retire quest") }
                     }
@@ -91,12 +98,13 @@ fun HabitsScreen(
         var perWeek by remember { mutableIntStateOf(5) }
         var difficulty by remember { mutableIntStateOf(2) }
         var stat by remember { mutableStateOf(CoreStat.DISCIPLINE) }
+        var restDay by remember { mutableStateOf(false) }
         AlertDialog(
             onDismissRequest = { showDialog = false },
             confirmButton = {
                 Button(
                     onClick = {
-                        viewModel.addHabit(name, perWeek, difficulty, stat)
+                        viewModel.addHabit(name, perWeek, difficulty, stat, restDay)
                         showDialog = false
                     },
                     enabled = name.isNotBlank(),
@@ -113,6 +121,11 @@ fun HabitsScreen(
                     CoreStat.entries.forEach { s ->
                         TextButton(onClick = { stat = s }) { Text(s.name) }
                     }
+                    FilterChip(
+                        selected = restDay,
+                        onClick = { restDay = !restDay },
+                        label = { Text("Sacred rest (kind copy if skipped)") },
+                    )
                 }
             },
         )

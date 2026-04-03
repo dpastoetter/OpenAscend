@@ -10,6 +10,7 @@ object Routes {
     const val CheckIn = "check_in"
     const val Weekly = "weekly"
     const val Settings = "settings"
+    const val BossRitual = "boss_ritual"
 
     fun habitEdit(habitId: Long): String = "habit_edit/$habitId"
 }

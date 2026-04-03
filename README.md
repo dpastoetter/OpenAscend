@@ -1,6 +1,6 @@
 # OpenAscend
 
-**Current version: v0.01** (`versionName` **0.01** in Gradle)
+**Current version: v0.02** (`versionName` **0.02** in Gradle)
 
 **Repository:** [github.com/dpastoetter/OpenAscend](https://github.com/dpastoetter/OpenAscend)
 
@@ -70,7 +70,7 @@ OpenAscend is an **open-source, Android-first “life RPG”**: habits and simpl
 
 ### Privacy & trust
 
-Offline-first MVP: no telemetry wired to Settings toggles yet; add **`INTERNET`** only when network ships. Revisit **backup** rules if the DB holds sensitive journaling. **Sharing** is user-initiated only.
+Offline-first MVP: no telemetry wired to Settings toggles yet; add **`INTERNET`** only when network ships. **Backup:** Settings can save a plaintext JSON snapshot (including preferences) via the system file picker—store exports carefully. Cloud backup follows `res/xml/backup_rules.xml` / `data_extraction_rules.xml`. **Sharing** is user-initiated only.
 
 ## Player feel
 
@@ -150,7 +150,7 @@ adb exec-out screencap -p > shot.png
 | `:core:domain` | Domain models and use-case style logic (pure Kotlin) |
 | `:core:data` | Persistence (Room), repositories, DataStore preferences |
 
-Versioning: **v0.01** — `versionName` `0.01`, `versionCode` `2` in `app/build.gradle.kts`. Package id: `com.openascend.app`. **minSdk 26**, **targetSdk / compileSdk 35**.
+Versioning: **v0.02** — `versionName` `0.02`, `versionCode` `3` in `app/build.gradle.kts`. Package id: `com.openascend.app`. **minSdk 26**, **targetSdk / compileSdk 35**.
 
 ## Tech stack
 

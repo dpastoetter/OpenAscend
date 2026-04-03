@@ -11,4 +11,6 @@ data class UserProfile(
     val lastLoggedEpochDay: Long? = null,
     /** Path under app `filesDir` (e.g. `avatars/profile.jpg`), or null if unset. */
     val avatarRelativePath: String? = null,
+    /** Cosmetic RPG suffix chosen at level bands, e.g. "of the Quiet Hearth". */
+    val archetypeSuffix: String? = null,
 )

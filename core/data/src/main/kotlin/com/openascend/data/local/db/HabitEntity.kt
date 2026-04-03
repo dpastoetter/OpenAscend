@@ -10,4 +10,5 @@ data class HabitEntity(
     val frequencyPerWeek: Int,
     val difficulty: Int,
     val linkedStat: String,
+    val isRestDay: Boolean = false,
 )

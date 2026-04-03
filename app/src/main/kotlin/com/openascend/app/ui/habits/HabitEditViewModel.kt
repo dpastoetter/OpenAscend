@@ -40,7 +40,7 @@ class HabitEditViewModel @Inject constructor(
         }
     }
 
-    fun save(name: String, frequencyPerWeek: Int, difficulty: Int, linkedStat: CoreStat) {
+    fun save(name: String, frequencyPerWeek: Int, difficulty: Int, linkedStat: CoreStat, isRestDay: Boolean) {
         val current = (_ui.value as? HabitEditUi.Ready)?.habit ?: return
         viewModelScope.launch {
             habitRepository.updateHabit(
@@ -49,6 +49,7 @@ class HabitEditViewModel @Inject constructor(
                     frequencyPerWeek = frequencyPerWeek.coerceIn(1, 7),
                     difficulty = difficulty.coerceIn(1, 5),
                     linkedStat = linkedStat,
+                    isRestDay = isRestDay,
                 ),
             )
             val refreshed = habitRepository.getHabit(habitId)

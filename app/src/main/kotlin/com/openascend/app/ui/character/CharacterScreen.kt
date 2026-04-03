@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -28,6 +31,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -37,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -44,6 +49,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.openascend.app.ui.components.ProfileAvatar
+import com.openascend.domain.model.CoreStat
+import com.openascend.domain.narrative.StatLore
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,6 +88,18 @@ fun CharacterScreen(
         val context = LocalContext.current
         var menuExpanded by remember { mutableStateOf(false) }
         var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
+        var loreStat by remember { mutableStateOf<CoreStat?>(null) }
+        val archTitle = ui.progress.archetype.displayName +
+            ui.profile.archetypeSuffix?.let { " · $it" }.orEmpty()
+
+        loreStat?.let { st ->
+            AlertDialog(
+                onDismissRequest = { loreStat = null },
+                confirmButton = { TextButton(onClick = { loreStat = null }) { Text("OK") } },
+                title = { Text(st.name) },
+                text = { Text(StatLore.line(st)) },
+            )
+        }
 
         val pickImage = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.PickVisualMedia(),
@@ -194,7 +213,7 @@ fun CharacterScreen(
                     }
                 }
             }
-            Text("Archetype: ${ui.progress.archetype.displayName}", fontWeight = FontWeight.SemiBold)
+            Text("Archetype: $archTitle", fontWeight = FontWeight.SemiBold)
             Text(ui.progress.archetype.tagline, style = MaterialTheme.typography.bodyMedium)
             Text("Level ${ui.progress.level}", style = MaterialTheme.typography.titleMedium)
             LinearProgressIndicator(
@@ -205,16 +224,42 @@ fun CharacterScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
             Text("Total XP ${ui.progress.totalXp}")
-            Text("Streak armor: ${ui.progress.streakArmor} (narrative shield from consistency)")
-            Text("Recovery ${ui.stats.recovery}")
-            Text("Stamina ${ui.stats.stamina}")
-            Text("Stability ${ui.stats.stability}")
-            Text("Discipline ${ui.stats.discipline}")
-            Text("Vitality ${ui.stats.vitality}")
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(Icons.Outlined.Shield, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Text("Streak armor: ${ui.progress.streakArmor} (narrative shield from consistency)")
+            }
+            Text(
+                "Long-press a stat for lore.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            CharacterStatRow("Recovery", ui.stats.recovery, CoreStat.RECOVERY) { loreStat = it }
+            CharacterStatRow("Stamina", ui.stats.stamina, CoreStat.STAMINA) { loreStat = it }
+            CharacterStatRow("Stability", ui.stats.stability, CoreStat.STABILITY) { loreStat = it }
+            CharacterStatRow("Discipline", ui.stats.discipline, CoreStat.DISCIPLINE) { loreStat = it }
+            CharacterStatRow("Vitality", ui.stats.vitality, CoreStat.VITALITY) { loreStat = it }
             Text("XP event log", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             ui.xpLog.forEach { ev ->
                 Text("+${ev.amount} · ${ev.reason}", style = MaterialTheme.typography.bodySmall)
             }
         }
     }
+}
+
+@Composable
+private fun CharacterStatRow(
+    label: String,
+    value: Int,
+    stat: CoreStat,
+    onLongPress: (CoreStat) -> Unit,
+) {
+    Text(
+        "$label $value",
+        modifier = Modifier
+            .fillMaxWidth()
+            .pointerInput(stat) {
+                detectTapGestures(onLongPress = { onLongPress(stat) })
+            },
+        style = MaterialTheme.typography.bodyLarge,
+    )
 }

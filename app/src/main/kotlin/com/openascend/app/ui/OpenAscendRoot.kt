@@ -15,8 +15,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.openascend.app.navigation.Routes
 import com.openascend.app.ui.bootstrap.BootstrapViewModel
+import com.openascend.app.ui.boss.BossRitualScreen
 import com.openascend.app.ui.character.CharacterScreen
 import com.openascend.app.ui.checkin.CheckInScreen
 import com.openascend.app.ui.habits.HabitEditScreen
@@ -26,8 +28,12 @@ import com.openascend.app.ui.onboarding.OnboardingScreen
 import com.openascend.app.ui.settings.SettingsScreen
 import com.openascend.app.ui.weekly.WeeklyReviewScreen
 
+private val deepLinkBase = "openascend://"
+
 @Composable
-fun OpenAscendRoot() {
+fun OpenAscendRoot(
+    initialDeepLinkRoute: String? = null,
+) {
     val navController = rememberNavController()
     NavHost(
         navController = navController,
@@ -38,7 +44,12 @@ fun OpenAscendRoot() {
             val target by vm.targetRoute.collectAsState()
             LaunchedEffect(target) {
                 val route = target ?: return@LaunchedEffect
-                navController.navigate(route) {
+                val dest = if (route == Routes.Home && initialDeepLinkRoute != null) {
+                    initialDeepLinkRoute
+                } else {
+                    route
+                }
+                navController.navigate(dest) {
                     popUpTo(Routes.Bootstrap) { inclusive = true }
                 }
             }
@@ -55,19 +66,29 @@ fun OpenAscendRoot() {
                 },
             )
         }
-        composable(Routes.Home) {
+        composable(
+            Routes.Home,
+            deepLinks = listOf(navDeepLink { uriPattern = "${deepLinkBase}home" }),
+        ) {
             HomeScreen(
                 onOpenCharacter = { navController.navigate(Routes.Character) },
                 onOpenHabits = { navController.navigate(Routes.Habits) },
                 onOpenCheckIn = { navController.navigate(Routes.CheckIn) },
                 onOpenWeekly = { navController.navigate(Routes.Weekly) },
                 onOpenSettings = { navController.navigate(Routes.Settings) },
+                onOpenBossRitual = { navController.navigate(Routes.BossRitual) },
             )
         }
-        composable(Routes.Character) {
+        composable(
+            Routes.Character,
+            deepLinks = listOf(navDeepLink { uriPattern = "${deepLinkBase}character" }),
+        ) {
             CharacterScreen(onBack = { navController.popBackStack() })
         }
-        composable(Routes.Habits) {
+        composable(
+            Routes.Habits,
+            deepLinks = listOf(navDeepLink { uriPattern = "${deepLinkBase}habits" }),
+        ) {
             HabitsScreen(
                 onBack = { navController.popBackStack() },
                 onEditHabit = { id -> navController.navigate(Routes.habitEdit(id)) },
@@ -83,19 +104,47 @@ fun OpenAscendRoot() {
                 viewModel = hiltViewModel(backStackEntry),
             )
         }
-        composable(Routes.CheckIn) {
+        composable(
+            Routes.CheckIn,
+            deepLinks = listOf(
+                navDeepLink { uriPattern = "${deepLinkBase}check_in" },
+                navDeepLink { uriPattern = "${deepLinkBase}checkin" },
+            ),
+        ) {
             CheckInScreen(
                 onBack = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() },
             )
         }
-        composable(Routes.Weekly) {
+        composable(
+            Routes.Weekly,
+            deepLinks = listOf(navDeepLink { uriPattern = "${deepLinkBase}weekly" }),
+        ) {
             WeeklyReviewScreen(
                 onBack = { navController.popBackStack() },
+                onOpenBossRitual = { navController.navigate(Routes.BossRitual) },
             )
         }
-        composable(Routes.Settings) {
+        composable(
+            Routes.Settings,
+            deepLinks = listOf(navDeepLink { uriPattern = "${deepLinkBase}settings" }),
+        ) {
             SettingsScreen(onBack = { navController.popBackStack() })
+        }
+        composable(
+            Routes.BossRitual,
+            deepLinks = listOf(navDeepLink { uriPattern = "${deepLinkBase}boss" }),
+        ) {
+            BossRitualScreen(
+                onBack = { navController.popBackStack() },
+                onOpenWeekly = {
+                    navController.navigate(Routes.Weekly) {
+                        popUpTo(Routes.Home) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+            )
         }
     }
 }

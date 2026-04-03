@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,6 +45,7 @@ fun HabitEditScreen(
     var perWeek by remember { mutableIntStateOf(5) }
     var difficulty by remember { mutableIntStateOf(2) }
     var stat by remember { mutableStateOf(CoreStat.DISCIPLINE) }
+    var restDay by remember { mutableStateOf(false) }
 
     LaunchedEffect(ui) {
         val ready = ui as? HabitEditUi.Ready ?: return@LaunchedEffect
@@ -51,6 +53,7 @@ fun HabitEditScreen(
         perWeek = ready.habit.frequencyPerWeek
         difficulty = ready.habit.difficulty
         stat = ready.habit.linkedStat
+        restDay = ready.habit.isRestDay
     }
 
     Scaffold(
@@ -115,9 +118,14 @@ fun HabitEditScreen(
                 CoreStat.entries.forEach { s ->
                     TextButton(onClick = { stat = s }) { Text(s.name) }
                 }
+                FilterChip(
+                    selected = restDay,
+                    onClick = { restDay = !restDay },
+                    label = { Text("Sacred rest day") },
+                )
                 Button(
                     onClick = {
-                        viewModel.save(name, perWeek, difficulty, stat)
+                        viewModel.save(name, perWeek, difficulty, stat, restDay)
                         onSaved()
                     },
                     enabled = name.isNotBlank(),

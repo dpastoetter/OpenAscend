@@ -2,6 +2,7 @@ package com.openascend.app.di
 
 import android.content.Context
 import com.openascend.data.local.prefs.PrivacyPreferences
+import com.openascend.data.local.prefs.WidgetSnapshotStore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,4 +18,9 @@ object DataModule {
     @Singleton
     fun privacyPreferences(@ApplicationContext context: Context): PrivacyPreferences =
         PrivacyPreferences(context)
+
+    @Provides
+    @Singleton
+    fun widgetSnapshotStore(@ApplicationContext context: Context): WidgetSnapshotStore =
+        WidgetSnapshotStore(context)
 }

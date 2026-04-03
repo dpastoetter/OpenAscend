@@ -1,0 +1,24 @@
+{
+  "id": "default",
+  "actTitles": [
+    "The Hollow Month",
+    "The Bright Forge",
+    "The Long Road",
+    "The Quiet Covenant",
+    "The Wild Verge",
+    "The Deep Ledger",
+    "The Sunlit Threshold",
+    "The Ember Archive",
+    "The Mistral Pact",
+    "The Starlit Watch",
+    "The Frost Border",
+    "The Bloom Compact"
+  ],
+  "questActPrefix": "",
+  "bossTellTemplates": [
+    "{boss} stirs when {stat} runs thin.",
+    "Whispers follow you: {boss} senses weak {stat}.",
+    "The realm feels {boss}'s gaze—your {stat} line is the breach."
+  ],
+  "questTitleFlavorSuffixes": ["", " — sworn quest", " · marked rite"]
+}

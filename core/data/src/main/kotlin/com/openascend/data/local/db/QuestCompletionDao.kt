@@ -16,4 +16,10 @@ interface QuestCompletionDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(entity: QuestCompletionEntity)
+
+    @Query("SELECT * FROM quest_completions")
+    suspend fun snapshotAll(): List<QuestCompletionEntity>
+
+    @Query("DELETE FROM quest_completions")
+    suspend fun deleteAll()
 }

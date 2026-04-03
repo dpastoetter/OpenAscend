@@ -48,6 +48,7 @@ import java.io.FileOutputStream
 @Composable
 fun WeeklyReviewScreen(
     onBack: () -> Unit,
+    onOpenBossRitual: () -> Unit = {},
     viewModel: WeeklyReviewViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -88,6 +89,11 @@ fun WeeklyReviewScreen(
         ) {
             Text("7-day roll-up", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             Text(
+                "Act · ${ui.actTitle}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
                 "Bank vibe this check-in: ${ui.bankLabel}",
                 style = MaterialTheme.typography.bodyMedium,
             )
@@ -99,11 +105,32 @@ fun WeeklyReviewScreen(
                 "Discipline ${ui.rolling.discipline} · Vitality ${ui.rolling.vitality}",
                 fontWeight = FontWeight.Medium,
             )
+            if (!ui.bossDeferredThisWeek) {
+                TextButton(
+                    onClick = { viewModel.deferBossToNextWeek() },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Defer boss (gentler tale this week — armor thins in the story)")
+                }
+            } else {
+                Text(
+                    "Boss encounter deferred this week — you chose a softer chapter.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+                TextButton(onClick = { viewModel.clearBossDeferral() }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Clear deferral flag")
+                }
+            }
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Boss encounter", fontWeight = FontWeight.Bold)
+                    Text(ui.boss.tell, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                     Text(ui.boss.name, style = MaterialTheme.typography.titleMedium)
                     Text(ui.boss.flavor, style = MaterialTheme.typography.bodySmall)
+                    TextButton(onClick = onOpenBossRitual, modifier = Modifier.fillMaxWidth()) {
+                        Text("Open boss ritual")
+                    }
                 }
             }
             Card(

@@ -1,12 +1,17 @@
 package com.openascend.app.ui.onboarding
 
 import android.app.Application
+import android.content.Context
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.test.core.app.ApplicationProvider
 import com.openascend.app.ui.theme.OpenAscendTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -24,9 +29,18 @@ class OnboardingComposeRobolectricTest {
     @get:Rule
     val composeRule = createComposeRule()
 
+    private fun withAppContext(content: @Composable () -> Unit) {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        composeRule.setContent {
+            CompositionLocalProvider(LocalContext provides context) {
+                content()
+            }
+        }
+    }
+
     @Test
     fun onboardingContent_showsHeadlineSubtitleAndCta() {
-        composeRule.setContent {
+        withAppContext {
             OpenAscendTheme(dynamicColor = false) {
                 OnboardingContent(onComplete = { _, _ -> })
             }
@@ -42,7 +56,7 @@ class OnboardingComposeRobolectricTest {
         var capturedName: String? = null
         var capturedGoals: List<String>? = null
 
-        composeRule.setContent {
+        withAppContext {
             OpenAscendTheme(dynamicColor = false) {
                 OnboardingContent(
                     onComplete = { name, goals ->
@@ -64,7 +78,7 @@ class OnboardingComposeRobolectricTest {
 
     @Test
     fun onboardingContent_fieldLabelsVisible() {
-        composeRule.setContent {
+        withAppContext {
             OpenAscendTheme(dynamicColor = false) {
                 OnboardingContent(onComplete = { _, _ -> })
             }

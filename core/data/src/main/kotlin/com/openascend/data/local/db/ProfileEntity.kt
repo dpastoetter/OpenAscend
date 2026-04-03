@@ -14,4 +14,5 @@ data class ProfileEntity(
     val lastLoggedEpochDay: Long?,
     /** Path under app files dir; null if no custom photo. */
     val avatarRelativePath: String? = null,
+    val archetypeSuffix: String? = null,
 )

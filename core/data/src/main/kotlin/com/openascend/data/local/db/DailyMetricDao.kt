@@ -25,4 +25,7 @@ interface DailyMetricDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: DailyMetricEntity)
+
+    @Query("DELETE FROM daily_metrics")
+    suspend fun deleteAll()
 }

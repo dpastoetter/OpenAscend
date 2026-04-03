@@ -21,4 +21,10 @@ interface HabitCompletionDao {
 
     @Query("SELECT * FROM habit_completions WHERE epochDay = :epochDay")
     fun observeForDay(epochDay: Long): Flow<List<HabitCompletionEntity>>
+
+    @Query("SELECT * FROM habit_completions")
+    suspend fun snapshotAll(): List<HabitCompletionEntity>
+
+    @Query("DELETE FROM habit_completions")
+    suspend fun deleteAll()
 }

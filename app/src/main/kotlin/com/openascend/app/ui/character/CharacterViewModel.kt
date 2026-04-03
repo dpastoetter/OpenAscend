@@ -18,6 +18,7 @@ import com.openascend.domain.repository.XpRepository
 import com.openascend.domain.service.StatComputationService
 import com.openascend.domain.service.XpEngine
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -41,6 +42,7 @@ private data class CharSnap(
     val metric: DailyMetric?,
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class CharacterViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
