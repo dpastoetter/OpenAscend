@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ShareCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.openascend.app.BuildConfig
 import com.openascend.domain.model.ThemePreference
 import kotlinx.coroutines.launch
 
@@ -63,6 +64,11 @@ fun SettingsScreen(
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            Text(
+                "Version v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Text("Privacy-first", style = MaterialTheme.typography.titleMedium)
             Text(
                 "OpenAscend stays offline in this MVP. Toggle future telemetry preferences now so contributors know the stance.",

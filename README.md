@@ -1,5 +1,7 @@
 # OpenAscend
 
+**Current version: v0.01** (`versionName` **0.01** in Gradle)
+
 OpenAscend is an Android app that frames daily habits and check-ins as a light RPG-style progression loop: onboarding, morning and evening flows, a character sheet with stats and XP, habit tracking, and shareable recap cards. It is built with Kotlin, Jetpack Compose, Room, DataStore, and Hilt.
 
 **Repository:** [github.com/dpastoetter/OpenAscend](https://github.com/dpastoetter/OpenAscend)
@@ -14,7 +16,7 @@ OpenAscend is an Android app that frames daily habits and check-ins as a light R
 - **Appearance** — Light/dark (or system) theme preference persisted locally.
 - **Share** — Generate bitmap recap cards for sharing (via Android share sheet where supported).
 
-Data is stored on the device (Room, DataStore). There is no bundled cloud sync in this MVP.
+Data is stored on the device (Room, DataStore). There is no bundled cloud sync in this early release.
 
 ## Screenshots
 
@@ -38,7 +40,7 @@ adb exec-out screencap -p > shot.png
 | `:core:domain` | Domain models and use-case style logic (pure Kotlin) |
 | `:core:data` | Persistence (Room), repositories, DataStore preferences |
 
-Versioning (debug build): see `versionName` / `versionCode` in `app/build.gradle.kts`. Package id: `com.openascend.app`. **minSdk 26**, **targetSdk / compileSdk 35**.
+Versioning: **v0.01** — `versionName` `0.01`, `versionCode` `2` in `app/build.gradle.kts`. Package id: `com.openascend.app`. **minSdk 26**, **targetSdk / compileSdk 35**.
 
 ## Tech stack
 
