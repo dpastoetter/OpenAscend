@@ -226,6 +226,8 @@ Or run the same set the CI job uses:
 
 The script documents AVD locations (including Flatpak Android Studio on Linux), lock-file cleanup, and GPU options when the default emulator path misbehaves on some distros.
 
+If the app **closes immediately** or **won’t install**: uninstall any older build (`adb uninstall com.openascend.app`), reinstall the fresh debug APK, then capture a crash with `adb logcat -d | grep -E 'AndroidRuntime|OpenAscend'` and open an issue with that snippet.
+
 ## Contributing
 
 Issues and pull requests are welcome. Please keep changes focused and match existing Kotlin/Compose style. Run the unit test tasks above before opening a PR; CI will run the full matrix.

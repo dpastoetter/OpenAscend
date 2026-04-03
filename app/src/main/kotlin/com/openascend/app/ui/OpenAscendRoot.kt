@@ -76,10 +76,11 @@ fun OpenAscendRoot() {
         composable(
             route = Routes.HabitEdit,
             arguments = listOf(navArgument("habitId") { type = NavType.LongType }),
-        ) {
+        ) { backStackEntry ->
             HabitEditScreen(
                 onBack = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() },
+                viewModel = hiltViewModel(backStackEntry),
             )
         }
         composable(Routes.CheckIn) {

@@ -24,13 +24,17 @@ class HabitEditViewModel @Inject constructor(
     private val habitRepository: HabitRepository,
 ) : ViewModel() {
 
-    private val habitId: Long = checkNotNull(savedStateHandle.get<Long>("habitId"))
+    private val habitId: Long = savedStateHandle.get<Long>("habitId") ?: -1L
 
     private val _ui = MutableStateFlow<HabitEditUi>(HabitEditUi.Loading)
     val uiState = _ui.asStateFlow()
 
     init {
         viewModelScope.launch {
+            if (habitId < 0L) {
+                _ui.value = HabitEditUi.NotFound
+                return@launch
+            }
             val h = habitRepository.getHabit(habitId)
             _ui.value = if (h == null) HabitEditUi.NotFound else HabitEditUi.Ready(h)
         }

@@ -8,15 +8,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import com.openascend.app.ui.OpenAscendRoot
 import com.openascend.app.ui.theme.OpenAscendTheme
 import com.openascend.domain.model.ThemePreference
 
 @Composable
 fun OpenAscendAppContent() {
-    val owner = checkNotNull(LocalViewModelStoreOwner.current)
-    val vm: MainActivityViewModel = hiltViewModel(owner)
+    val vm: MainActivityViewModel = hiltViewModel()
     val themePref by vm.themePreference.collectAsState()
     val darkTheme = when (themePref) {
         ThemePreference.LIGHT -> false
