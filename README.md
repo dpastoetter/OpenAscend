@@ -20,13 +20,13 @@ Data is stored on the device (Room, DataStore). There is no bundled cloud sync i
 
 ## Screenshots
 
-Representative UI (documentation mockups):
+Captured from a debug build (light theme):
 
-| Onboarding | Home overview | Character sheet |
-|------------|---------------|------------------|
-| ![Onboarding](docs/screenshots/onboarding.png) | ![Home](docs/screenshots/home.png) | ![Character](docs/screenshots/character.png) |
+| Home & character | Daily quests & weekly boss | Weekly review |
+|------------------|----------------------------|---------------|
+| ![Home and character sheet tab](docs/screenshots/home.png) | ![Daily quests and weekly boss](docs/screenshots/character.png) | ![Weekly review and share card](docs/screenshots/weekly-review.png) |
 
-For pixel-accurate captures from a running build, use an emulator or device and:
+More captures from a running build:
 
 ```bash
 adb exec-out screencap -p > shot.png
