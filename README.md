@@ -180,9 +180,18 @@ Install on a connected device or emulator:
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
+**`INSTALL_FAILED_UPDATE_INCOMPATIBLE` (signatures do not match):** the device already has `com.openascend.app` signed with a **different** key—common when you mix a **GitHub Release / CI APK** with a **local** `./gradlew installDebug` build. Android will not upgrade over that. Remove the old install, then install again:
+
+```bash
+./gradlew :app:uninstallDebug
+./gradlew :app:installDebug
+```
+
+Or: `adb uninstall com.openascend.app` then `installDebug` / `adb install -r …` as above.
+
 ## Prebuilt APK (GitHub Releases)
 
-Each [GitHub Release](https://github.com/dpastoetter/OpenAscend/releases) publishes a **debug** APK built in CI (`OpenAscend-<tag>-debug.apk`), signed with the default debug keystore (install for local testing only).
+Each [GitHub Release](https://github.com/dpastoetter/OpenAscend/releases) publishes a **debug** APK built in CI (`OpenAscend-<tag>-debug.apk`), signed with CI’s debug keystore (install for local testing only). That signature **differs** from your machine’s local debug keystore—switching between them requires **`uninstallDebug`** / `adb uninstall com.openascend.app` first (see above).
 
 **Create a new release build:**
 
