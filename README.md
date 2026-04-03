@@ -2,9 +2,75 @@
 
 **Current version: v0.01** (`versionName` **0.01** in Gradle)
 
-OpenAscend is an Android app that frames daily habits and check-ins as a light RPG-style progression loop: onboarding, morning and evening flows, a character sheet with stats and XP, habit tracking, and shareable recap cards. It is built with Kotlin, Jetpack Compose, Room, DataStore, and Hilt.
-
 **Repository:** [github.com/dpastoetter/OpenAscend](https://github.com/dpastoetter/OpenAscend)
+
+## Vision
+
+OpenAscend is an **open-source, Android-first “life RPG”**: habits and simple life signals feed **stats, XP, levels, archetypes, quests, weekly bosses**, and **shareable recap cards**—**local-first** today, with room to add integrations later.
+
+### Positioning
+
+- **Tagline:** “Your life, scored like a game.”
+- **Not** a generic habit grid—the fantasy is **character sheet + quests + boss week**, not accounting software.
+- **Tone:** playful mirror; **not** medical, therapeutic, or financial advice. Copy stays light and disclaimer-friendly.
+
+### Product loop
+
+**Inputs:** habits, sleep, activity/steps, optional “bank vibe” / saving behavior, optional longevity-style proxies.  
+**Outputs:** five core stats, daily XP and leveling, archetype/class line, daily quests, a **weekly boss** tied to the weakest stat, stability/bank-health flavor, and **PNG + text share** for reviews.
+
+**Core stats**
+
+| Stat | Primary signal (intent) |
+|------|-------------------------|
+| **Recovery** | Sleep |
+| **Stamina** | Steps / activity |
+| **Stability** | Bank-health / spending-saving behavior (manual journal in early builds) |
+| **Discipline** | Habits |
+| **Vitality** | Optional longevity proxies |
+
+### Platform & architecture
+
+| Area | Choice |
+|------|--------|
+| Platform | Android, Kotlin |
+| UI | Jetpack Compose, Material 3 |
+| Structure | Modular (`:app`, `:core:domain`, `:core:data`) |
+| DI | Hilt |
+| Async | Coroutines, Flow / StateFlow in ViewModels |
+| Persistence | Room + DataStore |
+| Navigation | Navigation Compose |
+| Images | Coil (local profile files) |
+
+**Clean architecture:** UI → ViewModels → domain services → repository interfaces → Room/DataStore. **Ports/adapters** in domain/data allow future **Health Connect**, banking, etc., with **manual entry** as the default path today. The MVP ships **without** `INTERNET` in the manifest—true **offline-first** until network features are added deliberately.
+
+### Shipped vs roadmap
+
+**In early releases (e.g. v0.01):** bootstrap → onboarding (local profile), home (morning overview, evening check-in, weekly review entry points), character sheet, habits list + edit, daily check-in (consolidated manual signals), weekly review + share, settings (theme + privacy flags; analytics/crash toggles are **placeholders** until real SDKs exist), dark/light/system theme.
+
+**Roadmap (prioritize as needed):** Health Connect for steps/sleep; local notifications (morning, evening, boss); optional split screens for sleep / finance / longevity; a dedicated boss ritual screen; splash polish; cloud accounts only if the product leaves strict offline-first; billing only with a monetization story, `INTERNET`, Play Billing, and policy work.
+
+### Screen map (intent)
+
+| Flow | Early build | Later |
+|------|-------------|--------|
+| Entry / bootstrap | Yes | Branded splash |
+| Auth | No (local profile) | Optional accounts |
+| Onboarding, home, character, habits, check-in, weekly, settings | Yes | — |
+| Sleep / finance / longevity | Inside check-in | Dedicated screens if UX needs |
+| Boss | Inline / weekly | Full-screen ritual optional |
+| Billing | No | When strategy exists |
+
+### UX rules
+
+- Feels like an **RPG character builder**, not a spreadsheet.
+- **Game language:** stats, quests, bosses, streak armor, level-up.
+- **Fast daily loop:** morning overview → evening check-in → weekly review.
+- **Share cards:** one-glance social sharing (image + short text).
+
+### Privacy & trust
+
+Offline-first MVP: no telemetry wired to Settings toggles yet; add **`INTERNET`** only when network ships. Revisit **backup** rules if the DB holds sensitive journaling. **Sharing** is user-initiated only.
 
 ## Features
 
@@ -106,7 +172,7 @@ Or run the same set the CI job uses:
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on pushes to `main`/`master` and on pull requests:
 
 - **build** — Domain, data, and app unit tests (including Compose/Robolectric where configured) plus `assembleDebug`; uploads the debug APK as a workflow artifact.
-- **instrumented** — `connectedDebugAndroidTest` on an API 29 x86_64 emulator (smoke / integration coverage).
+- **instrumented** — `connectedDebugAndroidTest` on an API 34 `google_apis` x86_64 emulator (smoke / integration coverage).
 
 ## Emulator (optional)
 
