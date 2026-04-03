@@ -70,6 +70,23 @@ Install on a connected device or emulator:
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
+## Prebuilt APK (GitHub Releases)
+
+Each [GitHub Release](https://github.com/dpastoetter/OpenAscend/releases) publishes a **debug** APK built in CI (`OpenAscend-<tag>-debug.apk`), signed with the default debug keystore (install for local testing only).
+
+**Create a new release build:**
+
+1. Tag the commit you want to ship, then push the tag (workflow [`.github/workflows/release-apk.yml`](.github/workflows/release-apk.yml) builds and attaches the APK):
+
+   ```bash
+   git tag -a v0.01 -m "OpenAscend v0.01"
+   git push origin v0.01
+   ```
+
+2. Or open **Actions → Release APK → Run workflow**, set the tag (e.g. `v0.01`), and run it from `main` (the release and tag are created for that commit).
+
+Every push to `main` also uploads a debug APK as a workflow artifact from [CI](.github/workflows/ci.yml) (no Release).
+
 ## Tests
 
 ```bash
