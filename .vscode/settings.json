@@ -1,0 +1,7 @@
+{
+  "emulator.emulatorPathLinux": "~/Android/Sdk/emulator",
+  "emulator.androidColdBoot": true,
+  "emulator.hasEditorTitleIcon": true,
+  "emulator.emulatorPathMac": "~/Library/Android/sdk/emulator",
+  "emulator.simulatorPath": ""
+}

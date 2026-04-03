@@ -1,0 +1,7 @@
+# Copy to local.properties (gitignored) for local Android builds.
+# sdk.dir=/home/you/Android/Sdk
+#
+# If Gradle fails on Hilt/Java with "does not provide JAVA_COMPILER", your default
+# Java is probably a JRE. Either:
+#   export JAVA_HOME=$HOME/.jdks/jdk-17.0.18+8
+# or run: ./scripts/android-build-env.sh ./gradlew :app:assembleDebug
