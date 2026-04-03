@@ -22,8 +22,8 @@ Data is stored on the device (Room, DataStore). There is no bundled cloud sync i
 
 Captured from a debug build (light theme):
 
-| Home & character | Daily quests & weekly boss | Weekly review |
-|------------------|----------------------------|---------------|
+| Home & character | Weekly review |
+|------------------|----------------------------|
 | ![Home and character sheet tab](docs/screenshots/home.png) |![Weekly review and share card](docs/screenshots/weekly-review.png) |
 
 More captures from a running build:
