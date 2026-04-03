@@ -72,6 +72,50 @@ OpenAscend is an **open-source, Android-first “life RPG”**: habits and simpl
 
 Offline-first MVP: no telemetry wired to Settings toggles yet; add **`INTERNET`** only when network ships. Revisit **backup** rules if the DB holds sensitive journaling. **Sharing** is user-initiated only.
 
+## Player feel
+
+Design priorities for the RPG fantasy—apply these **in order** when shaping copy, layout, and motion.
+
+### 1. Language is the cheapest legendary drop
+
+- **Name everything in-world** where it fits: not only generic “Settings”—lean into chronicle / realm language when it stays clear (e.g. *Chronicle settings*).
+- **Verbs over labels:** buttons like *Seal the day*, *Claim XP*, *Face the boss* beat *Save* / *Submit* when they’re still understandable.
+- **Second-person, heroic:** *Your streak armor held* reads better than *Streak: 3*.
+- **One disclaimer line per context** (health/finance), then commit to the fantasy without hedging every sentence.
+
+### 2. Feedback = “the game noticed you”
+
+- After check-in or habit completion: **short, specific** payoff—e.g. *+12 Discipline · Warden path*, not only a generic toast.
+- **Level / XP bar motion** on real changes (even 200–300 ms) sells “progress” more than static numbers.
+- **Micro-celebration** on rare beats (level-up, boss week rollover): banner, optional haptic, one line of flavor.
+
+### 3. Structure the day like a quest log
+
+- **Morning:** one headline plus **1–3 today’s objectives** (habits/quests) visible above the fold.
+- **Evening:** *Close the chronicle*—what moved today (stats/XP), not a second full dashboard.
+- **Weekly:** the **boss** is the emotional peak—name, one scary-fun line, **weak link** stat, then share.
+
+### 4. Boss = character, not a card
+
+- Give recurring bosses a **stable voice** (short clauses, one metaphor family—e.g. sleep/shadows) so the game feels consistent week to week.
+- **Weak link** should read as **tactics** (*Recovery is the breach*) not judgment.
+
+### 5. Character sheet = fantasy of self
+
+- **Archetype + level** above the fold; stats should feel like a **loadout**, not a form.
+- A **flavor line** under level that can evolve with streak or level band so repeat visits feel alive.
+
+### 6. Pacing: fewer choices, stronger default
+
+- **One primary action** per screen where possible; secondary actions visually quieter.
+- **Empty states** are story beats: e.g. *No quests inscribed yet—forge your first rite* plus a single clear button.
+
+### 7. Sound & haptics (later, optional)
+
+- One **soft** success sound and a **light** haptic on “quest sealed” can double perceived quality—add after core copy and motion feel right.
+
+**Suggested build order:** (1) copy on **home**, **check-in**, and **weekly**; (2) post-action feedback plus XP motion; (3) boss block on weekly as the dramatic set piece.
+
 ## Features
 
 - **Onboarding** — Set a hero name and initial quest goals to start your run.
