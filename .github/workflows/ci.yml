@@ -5,12 +5,15 @@ on:
     branches: [main, master]
   pull_request:
 
+# Opt into Node 24 for JS-based actions (GitHub runner migration).
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8"
     steps:
       - uses: actions/checkout@v5
 
@@ -20,7 +23,7 @@ jobs:
           java-version: 17
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - name: Gradle wrapper
         run: chmod +x gradlew
@@ -29,7 +32,7 @@ jobs:
         run: ./gradlew :core:domain:test :core:data:testDebugUnitTest :app:testDebugUnitTest :app:assembleDebug --stacktrace
 
       - name: Upload debug APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: app-debug
           path: app/build/outputs/apk/debug/*.apk
@@ -48,7 +51,7 @@ jobs:
           java-version: 17
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - run: chmod +x gradlew
 
@@ -59,4 +62,5 @@ jobs:
           arch: x86_64
           target: google_apis
           disable-animations: true
+          emulator-boot-timeout: 900
           script: ./gradlew connectedDebugAndroidTest --stacktrace
