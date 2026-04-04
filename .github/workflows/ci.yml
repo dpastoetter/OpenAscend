@@ -25,6 +25,9 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
 
+      - name: Gradle build cache
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Gradle wrapper
         run: chmod +x gradlew
 
@@ -39,7 +42,8 @@ jobs:
 
   instrumented:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Cold Gradle + emulator + dex is often 25–35+ minutes on ubuntu-latest; 30m was timing out.
+    timeout-minutes: 60
     env:
       GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8"
     steps:
@@ -52,6 +56,9 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
+
+      - name: Gradle build cache
+        uses: gradle/actions/setup-gradle@v4
 
       - run: chmod +x gradlew
 

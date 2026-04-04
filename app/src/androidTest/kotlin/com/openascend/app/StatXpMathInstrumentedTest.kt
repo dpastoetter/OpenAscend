@@ -14,8 +14,7 @@ import org.junit.runner.RunWith
  * Instrumented smoke tests that exercise the same stat/XP domain math loaded on device.
  * Full coverage lives in `:core:domain` JVM unit tests (`./gradlew :core:domain:test`).
  *
- * No Hilt wiring here: these are pure domain checks; [HiltTestRunner] still works as the
- * default instrumentation runner for the module.
+ * Pure domain checks only (default runner: AndroidJUnitRunner).
  */
 @RunWith(AndroidJUnit4::class)
 class StatXpMathInstrumentedTest {

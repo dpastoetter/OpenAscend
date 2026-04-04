@@ -20,7 +20,7 @@ android {
         targetSdk = 35
         versionCode = 5
         versionName = "0.04"
-        testInstrumentationRunner = "dagger.hilt.android.testing.HiltTestRunner"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -113,8 +113,6 @@ dependencies {
 
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.hilt.android.testing)
-    kspAndroidTest(libs.hilt.compiler)
 }
 
 tasks.withType<Test>().configureEach {
