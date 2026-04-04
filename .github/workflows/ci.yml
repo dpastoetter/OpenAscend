@@ -56,11 +56,13 @@ jobs:
       - run: chmod +x gradlew
 
       - name: Instrumented tests (stat/XP smoke on device)
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@v2.37.0
         with:
           api-level: 34
           arch: x86_64
           target: google_apis
           disable-animations: true
           emulator-boot-timeout: 900
+          # Avoid snapshot save on exit (reduces "stop: Not implemented" / netsim noise on teardown).
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -no-snapshot-save -noaudio -no-boot-anim
           script: ./gradlew connectedDebugAndroidTest --stacktrace
