@@ -51,6 +51,7 @@ class SettingsViewModel @Inject constructor(
                     soundEnabled = true,
                     familiarEnabled = false,
                     familiarSpecies = FamiliarSpecies.WOLF,
+                    treatTossEasyMode = false,
                     healthConnectSyncEnabled = false,
                     remindersEnabled = false,
                     reminderMorningEnabled = true,

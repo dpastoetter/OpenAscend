@@ -23,7 +23,6 @@ import com.openascend.domain.narrative.EveningMoodCopy
 import com.openascend.domain.narrative.LevelUpFlair
 import com.openascend.domain.narrative.NarrativeContext
 import com.openascend.domain.narrative.NarrativeRepository
-import com.openascend.domain.narrative.OmenPhrases
 import com.openascend.domain.narrative.QuestSealFlair
 import com.openascend.domain.narrative.StarterPaths
 import com.openascend.domain.narrative.WidgetStoryLines
@@ -69,10 +68,6 @@ data class HomeUiState(
     val boss: WeeklyBoss,
     val bossSealedThisWeek: Boolean,
     val starterPathLabel: String?,
-    /** Shown when new calendar day or pinned */
-    val omenLine: String?,
-    val showOmenCard: Boolean,
-    val omenPinned: Boolean,
     val levelUpSheet: LevelUpSheetData?,
     val suffixPicker: SuffixPickerData?,
     val soundEnabled: Boolean,
@@ -177,13 +172,6 @@ class HomeViewModel @Inject constructor(
                     )
                     val displayStats = todayStats.withSealedQuestSpotlight(quests)
                     val progress = xpEngine.progressForStats(todayStats, bundle.inner.profile.streakDays)
-                    val habitSeed = bundle.inner.habits.fold(0L) { acc, h -> acc xor h.id * 31 }
-                    val focusHabit = bundle.inner.habits.firstOrNull {
-                        !(bundle.inner.todayComp[it.id] ?: false)
-                    } ?: bundle.inner.habits.firstOrNull()
-                    val omenText = OmenPhrases.pick(bundle.day + habitSeed, focusHabit?.name.orEmpty())
-                    val dismissedForToday = bundle.homeSnap.omenEpochDay == bundle.day
-                    val showOmen = !dismissedForToday || bundle.homeSnap.omenPinned
                     val moodHeadline = if (bundle.homeSnap.eveningMoodEpochDay == bundle.day - 1) {
                         EveningMoodCopy.headlineForYesterday(bundle.homeSnap.eveningMoodIds)
                     } else {
@@ -255,9 +243,6 @@ class HomeViewModel @Inject constructor(
                         boss = boss,
                         bossSealedThisWeek = bossSealedThisWeek,
                         starterPathLabel = StarterPaths.labelForStoredId(bundle.inner.profile.starterPath),
-                        omenLine = omenText,
-                        showOmenCard = showOmen,
-                        omenPinned = bundle.homeSnap.omenPinned,
                         levelUpSheet = levelUpSheet,
                         suffixPicker = suffixPicker,
                         soundEnabled = bundle.homeSnap.settings.soundEnabled,
@@ -273,18 +258,6 @@ class HomeViewModel @Inject constructor(
 
     fun refreshToday() {
         dayFlow.value = todayEpochDay()
-    }
-
-    fun dismissOmenForToday() {
-        viewModelScope.launch {
-            privacyPreferences.setOmenDismissed(dayFlow.value)
-        }
-    }
-
-    fun setOmenPinned(pinned: Boolean) {
-        viewModelScope.launch {
-            privacyPreferences.setOmenPinned(pinned)
-        }
     }
 
     fun dismissLevelUp() {

@@ -198,6 +198,18 @@ fun SettingsScreen(
                     )
                 }
             }
+            ToggleRow(
+                title = stringResource(R.string.settings_treat_toss_easy),
+                checked = ui.privacy.treatTossEasyMode,
+                onCheckedChange = {
+                    viewModel.setPrivacy(ui.privacy.copy(treatTossEasyMode = it))
+                },
+            )
+            Text(
+                stringResource(R.string.settings_treat_toss_easy_blurb),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
 
             Text(stringResource(R.string.settings_health_connect), style = MaterialTheme.typography.titleMedium)
             Text(

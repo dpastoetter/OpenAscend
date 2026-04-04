@@ -16,6 +16,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import com.openascend.app.ui.theme.OpenAscendTheme
+import com.openascend.domain.model.FamiliarSpecies
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -45,7 +46,7 @@ class OnboardingComposeRobolectricTest {
     fun onboardingContent_showsHeadlineSubtitleAndCta() {
         withAppContext {
             OpenAscendTheme(dynamicColor = false) {
-                OnboardingContent(onComplete = { _, _, _ -> }, modifier = Modifier.fillMaxSize())
+                OnboardingContent(onComplete = { _, _, _, _ -> }, modifier = Modifier.fillMaxSize())
             }
         }
 
@@ -58,13 +59,15 @@ class OnboardingComposeRobolectricTest {
     fun onboardingContent_submitPassesEnteredNameAndGoals() {
         var capturedName: String? = null
         var capturedGoals: List<String>? = null
+        var capturedSpecies: FamiliarSpecies? = null
 
         withAppContext {
             OpenAscendTheme(dynamicColor = false) {
                 OnboardingContent(
-                    onComplete = { name, goals, _ ->
+                    onComplete = { name, goals, _, species ->
                         capturedName = name
                         capturedGoals = goals
+                        capturedSpecies = species
                     },
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -78,18 +81,20 @@ class OnboardingComposeRobolectricTest {
 
         assertEquals("River", capturedName)
         assertEquals(listOf("Walk daily", ""), capturedGoals)
+        assertEquals(FamiliarSpecies.WOLF, capturedSpecies)
     }
 
     @Test
     fun onboardingContent_fieldLabelsVisible() {
         withAppContext {
             OpenAscendTheme(dynamicColor = false) {
-                OnboardingContent(onComplete = { _, _, _ -> }, modifier = Modifier.fillMaxSize())
+                OnboardingContent(onComplete = { _, _, _, _ -> }, modifier = Modifier.fillMaxSize())
             }
         }
 
         composeRule.onNodeWithText("Hero name").assertExists()
         composeRule.onNodeWithText("Quest goal #1").assertExists()
         composeRule.onNodeWithText("Quest goal #2 (optional)").assertExists()
+        composeRule.onNodeWithText("Your companion").assertExists()
     }
 }

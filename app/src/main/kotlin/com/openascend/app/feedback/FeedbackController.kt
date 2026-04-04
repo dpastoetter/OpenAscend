@@ -54,6 +54,28 @@ class FeedbackController @Inject constructor(
         playSealSound(soundEnabled, volume = 0.33f, rate = 1.02f)
     }
 
+    /** Wrong rune during sigil trace—short, soft negative pulse. */
+    fun playSigilWrongStep(soundEnabled: Boolean, hapticsEnabled: Boolean) {
+        if (hapticsEnabled) oneShot(context, durationMs = 22, amplitude = 70)
+        playSealSound(soundEnabled, volume = 0.18f, rate = 0.82f)
+    }
+
+    /** Companion treat toss — tiered feedback (distinct from quest/habit seal). */
+    fun playTreatTossGreat(soundEnabled: Boolean, hapticsEnabled: Boolean) {
+        if (hapticsEnabled) doublePulse(context)
+        playSealSound(soundEnabled, volume = 0.48f, rate = 1.18f)
+    }
+
+    fun playTreatTossOk(soundEnabled: Boolean, hapticsEnabled: Boolean) {
+        if (hapticsEnabled) oneShot(context, durationMs = 36, amplitude = 100)
+        playSealSound(soundEnabled, volume = 0.32f, rate = 1.04f)
+    }
+
+    fun playTreatTossMiss(soundEnabled: Boolean, hapticsEnabled: Boolean) {
+        if (hapticsEnabled) oneShot(context, durationMs = 18, amplitude = 55)
+        playSealSound(soundEnabled, volume = 0.15f, rate = 0.88f)
+    }
+
     private fun playSealSound(soundEnabled: Boolean, volume: Float, rate: Float) {
         if (soundEnabled && sealSoundId > 0) {
             soundPool.play(sealSoundId, volume, volume, 1, 0, rate)

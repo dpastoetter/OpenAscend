@@ -51,6 +51,10 @@ class SealSigilViewModel @Inject constructor(
         } else {
             _expectedStep.value = 0
             _showWrongOrder.value = true
+            viewModelScope.launch {
+                val settings = privacyPreferences.getSettingsSnapshot()
+                feedbackController.playSigilWrongStep(settings.soundEnabled, settings.hapticsEnabled)
+            }
         }
     }
 

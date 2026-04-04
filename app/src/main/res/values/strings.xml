@@ -16,7 +16,6 @@
     <string name="cd_weekly_boss">Weekly boss</string>
     <string name="cd_streak_armor">Streak armor</string>
     <string name="cd_quest_icon">Quest</string>
-    <string name="cd_omen_card">Today\'s omen</string>
 
     <string name="action_continue">Continue</string>
     <string name="action_nice">Nice</string>
@@ -44,6 +43,8 @@
     <string name="settings_companion">Companion</string>
     <string name="settings_companion_blurb">Optional familiar on Home. Off by default.</string>
     <string name="settings_companion_toggle">Show companion on Home</string>
+    <string name="settings_treat_toss_easy">Relaxed treat toss</string>
+    <string name="settings_treat_toss_easy_blurb">Slower needle and wider catch bands for the companion timing game.</string>
     <string name="settings_feedback">Feedback</string>
     <string name="settings_haptics">Haptics (seal, level-up)</string>
     <string name="settings_sound">Sound (seal chime)</string>
@@ -71,10 +72,6 @@
     <string name="home_act_label">Act · %1$s</string>
     <string name="home_welcome_back">Welcome back, %1$s</string>
     <string name="home_tagline">Your life, scored like a game.</string>
-    <string name="home_omen_title">Today\'s omen</string>
-    <string name="home_omen_dismiss">Dismiss for today</string>
-    <string name="home_omen_pin">Pin</string>
-    <string name="home_omen_pinned">Pinned</string>
     <string name="home_evening_checkin">Evening check-in</string>
     <string name="home_weekly_review">Weekly review</string>
     <string name="home_character_sheet">Character sheet</string>
@@ -103,6 +100,53 @@
 
     <string name="familiar_title">Your %1$s · %2$s</string>
     <string name="familiar_pixel_content_description">%1$s companion, %2$s mood</string>
+    <string name="familiar_play_together">Play together</string>
+    <string name="companion_play_title">Treat toss</string>
+    <string name="companion_play_unavailable">Turn on the Home companion in settings (and finish onboarding) to play.</string>
+    <string name="companion_play_theater_note">Short playful moment for your chronicle—not therapy, medical, or financial advice.</string>
+    <string name="companion_play_intro">Toss a tiny treat to your %1$s when the needle kisses the bright band—three tosses, then the tale wraps.</string>
+    <string name="companion_play_rules">Great tosses score highest; near-misses still count a little. You can earn a small chronicle XP bonus once per calendar day when you finish all three tosses.</string>
+    <string name="companion_play_start">Start</string>
+    <string name="companion_play_round">Toss %1$d of %2$d</string>
+    <string name="companion_play_toss_hint">Watch the meter—tap anywhere below when you think %1$s can catch it.</string>
+    <string name="companion_play_tap_toss">Tap to toss</string>
+    <string name="companion_play_score_running">Running score: %1$d</string>
+    <string name="companion_play_next_toss">Next toss</string>
+    <string name="companion_play_see_summary">See summary</string>
+    <string name="companion_play_summary_title">Session complete</string>
+    <string name="companion_play_summary_score">Treat score: %1$d</string>
+    <string name="companion_play_xp_granted">Chronicle XP +%1$d (once today).</string>
+    <string name="companion_play_xp_already_today">Daily chronicle XP for this game was already claimed—thanks for playing again.</string>
+    <string name="companion_play_disclaimer">Theater for your chronicle only.</string>
+    <string name="companion_play_done">Done</string>
+    <string name="companion_treat_quality_great">Great toss!</string>
+    <string name="companion_treat_quality_ok">Solid catch.</string>
+    <string name="companion_treat_quality_miss">Missed—your familiar still grins.</string>
+    <string name="companion_treat_catch_bear_great">The bear chomps it out of the air—zero crumbs.</string>
+    <string name="companion_treat_catch_bear_ok">The bear nabs it on the second bounce—good enough.</string>
+    <string name="companion_treat_catch_bear_miss">The treat bonks its nose; it pretends that was the plan.</string>
+    <string name="companion_treat_catch_wolf_great">The wolf snaps the arc clean—ears high, tail blur.</string>
+    <string name="companion_treat_catch_wolf_ok">The wolf gloves it with a paw—controlled chaos.</string>
+    <string name="companion_treat_catch_wolf_miss">The wolf overshoots, spins, and laughs in pixels.</string>
+    <string name="companion_treat_catch_dragon_great">The dragon puffs a tiny gust—treat hovers, then vanishes.</string>
+    <string name="companion_treat_catch_dragon_ok">The dragon flicks its tail; the treat lands safe.</string>
+    <string name="companion_treat_catch_dragon_miss">Sparks scatter; the treat rolls away like a rune.</string>
+    <string name="companion_treat_summary_sparkling">%1$s practically hums—three tosses fed the sparkle.</string>
+    <string name="companion_treat_summary_cozy">%1$s curls up, pleased with the snack theater.</string>
+    <string name="companion_treat_summary_watching">%1$s files the tosses away—tonight\'s seal still waits.</string>
+    <string name="companion_treat_summary_fading">%1$s brightens a notch; small rituals help.</string>
+    <string name="companion_treat_summary_curious">%1$s studies your timing like a new spell.</string>
+    <string name="companion_treat_summary_dormant">Even quiet jars enjoy a pretend crumb.</string>
+    <string name="companion_play_ready_catch">Ready to catch</string>
+    <string name="companion_play_tap_sub">Time it when the needle sits in the bright band.</string>
+    <string name="companion_play_meter_miss">Wide</string>
+    <string name="companion_play_meter_sweet">Sweet spot</string>
+    <string name="mood_label_sparkling">Sparkling</string>
+    <string name="mood_label_cozy">Cozy</string>
+    <string name="mood_label_watching">Watching</string>
+    <string name="mood_label_fading">Fading</string>
+    <string name="mood_label_curious">Curious</string>
+    <string name="mood_label_dormant">Dormant</string>
 
     <string name="checkin_title">Evening check-in</string>
     <string name="checkin_blurb">Manual inputs only in this MVP. Numbers are a vibe check, not advice.</string>
@@ -180,6 +224,8 @@
     <string name="onboarding_class_surprise">Surprise me</string>
     <string name="onboarding_goal_1">Quest goal #1</string>
     <string name="onboarding_goal_2">Quest goal #2 (optional)</string>
+    <string name="onboarding_companion_title">Your companion</string>
+    <string name="onboarding_companion_blurb">Pick a familiar for Home—they ride along with your chronicle. You can change this anytime in settings.</string>
     <string name="onboarding_enter_realm">Enter the realm</string>
 
     <string name="boss_ritual_title">Boss ritual</string>

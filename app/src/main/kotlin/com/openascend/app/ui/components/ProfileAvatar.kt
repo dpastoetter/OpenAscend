@@ -1,6 +1,7 @@
 package com.openascend.app.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -26,15 +27,24 @@ fun ProfileAvatar(
     modifier: Modifier = Modifier,
     size: Dp,
     contentDescription: String = "Profile picture",
+    onClick: (() -> Unit)? = null,
+    /** Used for accessibility when [onClick] is set (e.g. “Character sheet”). */
+    onClickLabel: String? = null,
 ) {
     val context = LocalContext.current
     val file = remember(avatarRelativePath) {
         avatarRelativePath?.let { File(context.filesDir, it).takeIf { f -> f.exists() } }
     }
+    val shapeAndSize = modifier
+        .size(size)
+        .clip(CircleShape)
+    val interactive = if (onClick != null) {
+        shapeAndSize.clickable(onClick = onClick, onClickLabel = onClickLabel)
+    } else {
+        shapeAndSize
+    }
     Box(
-        modifier
-            .size(size)
-            .clip(CircleShape)
+        interactive
             .background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center,
     ) {

@@ -26,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.openascend.app.R
+import com.openascend.domain.model.FamiliarSpecies
 import com.openascend.domain.narrative.StarterPaths
 
 /**
@@ -33,17 +34,17 @@ import com.openascend.domain.narrative.StarterPaths
  */
 @Composable
 fun OnboardingContent(
-    onComplete: (displayName: String, goals: List<String>, starterPathId: String?) -> Unit,
+    onComplete: (displayName: String, goals: List<String>, starterPathId: String?, familiarSpecies: FamiliarSpecies) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var name by remember { mutableStateOf("") }
     var goalA by remember { mutableStateOf("") }
     var goalB by remember { mutableStateOf("") }
     var starterPathId by remember { mutableStateOf<String?>(null) }
+    var familiarSpecies by remember { mutableStateOf(FamiliarSpecies.WOLF) }
 
     Column(
         modifier
-            .then(modifier)
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
@@ -91,6 +92,29 @@ fun OnboardingContent(
                 )
             }
         }
+        Text(
+            stringResource(R.string.onboarding_companion_title),
+            style = MaterialTheme.typography.titleSmall,
+        )
+        Text(
+            stringResource(R.string.onboarding_companion_blurb),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FamiliarSpecies.entries.forEach { species ->
+                FilterChip(
+                    selected = familiarSpecies == species,
+                    onClick = { familiarSpecies = species },
+                    label = { Text("${species.emoji} ${species.displayName}") },
+                )
+            }
+        }
         OutlinedTextField(
             value = goalA,
             onValueChange = { goalA = it },
@@ -109,7 +133,7 @@ fun OnboardingContent(
         Button(
             onClick = {
                 val path = starterPathId
-                onComplete(name, listOf(goalA, goalB), path)
+                onComplete(name, listOf(goalA, goalB), path, familiarSpecies)
             },
             modifier = Modifier.fillMaxWidth(),
         ) {
@@ -124,8 +148,8 @@ fun OnboardingScreen(
     viewModel: OnboardingViewModel = hiltViewModel(),
 ) {
     OnboardingContent(
-        onComplete = { name, goals, path ->
-            viewModel.complete(name, goals, path, onFinished)
+        onComplete = { name, goals, path, species ->
+            viewModel.complete(name, goals, path, species, onFinished)
         },
         modifier = Modifier.fillMaxSize(),
     )

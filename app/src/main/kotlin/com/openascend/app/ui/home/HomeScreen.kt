@@ -27,7 +27,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedAssistChip
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -67,6 +66,7 @@ fun HomeScreen(
     onOpenWeekly: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenBossRitual: () -> Unit,
+    onOpenCompanionPlay: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -178,6 +178,8 @@ fun HomeScreen(
             ProfileAvatar(
                 avatarRelativePath = ui.profile.avatarRelativePath,
                 size = 56.dp,
+                onClick = onOpenCharacter,
+                onClickLabel = stringResource(R.string.home_character_sheet),
             )
             Column(Modifier.weight(1f)) {
                 Text(
@@ -204,24 +206,8 @@ fun HomeScreen(
             FamiliarStrip(
                 companion = ui.companion,
                 species = ui.familiarSpecies,
+                onPlayTogether = onOpenCompanionPlay,
             )
-        }
-
-        if (ui.showOmenCard && ui.omenLine != null) {
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Today's omen", fontWeight = FontWeight.SemiBold)
-                    Text(ui.omenLine, style = MaterialTheme.typography.bodyMedium)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TextButton(onClick = { viewModel.dismissOmenForToday() }) { Text("Dismiss for today") }
-                        FilterChip(
-                            selected = ui.omenPinned,
-                            onClick = { viewModel.setOmenPinned(!ui.omenPinned) },
-                            label = { Text(if (ui.omenPinned) "Pinned" else "Pin") },
-                        )
-                    }
-                }
-            }
         }
 
         Row(

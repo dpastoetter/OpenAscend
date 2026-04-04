@@ -21,8 +21,6 @@ private val Context.privacyDataStore: DataStore<Preferences> by preferencesDataS
 data class HomePreferenceSnapshot(
     val settings: PrivacySettings,
     val deferredBossWeekStart: Long?,
-    val omenEpochDay: Long?,
-    val omenPinned: Boolean,
     val eveningMoodIds: String?,
     val eveningMoodEpochDay: Long?,
     val lastKnownLevel: Int?,
@@ -30,6 +28,8 @@ data class HomePreferenceSnapshot(
     val lastSigilRitualEpochDay: Long?,
     /** Monday epoch day of the week the user sealed the weekly boss ritual (XP awarded once). */
     val bossRitualSealedWeekStart: Long?,
+    /** Epoch day when companion treat minigame last granted chronicle XP (once per day). */
+    val companionTreatXpEpochDay: Long?,
 )
 
 class PrivacyPreferences(
@@ -44,14 +44,13 @@ class PrivacyPreferences(
         val flavorPack = stringPreferencesKey("flavor_pack_id")
         val haptics = booleanPreferencesKey("haptics_enabled")
         val sound = booleanPreferencesKey("sound_enabled")
-        val omenEpochDay = longPreferencesKey("omen_epoch_day")
-        val omenPinned = booleanPreferencesKey("omen_pinned")
         val eveningMood = stringPreferencesKey("evening_mood_ids")
         val eveningMoodDay = longPreferencesKey("evening_mood_epoch_day")
         val deferredBossWeek = longPreferencesKey("deferred_boss_week_start")
         val lastKnownLevel = intPreferencesKey("last_known_level")
         val familiarEnabled = booleanPreferencesKey("familiar_enabled")
         val familiarSpecies = stringPreferencesKey("familiar_species")
+        val treatTossEasyMode = booleanPreferencesKey("treat_toss_easy_mode")
         val healthConnectSync = booleanPreferencesKey("health_connect_sync_enabled")
         val remindersEnabled = booleanPreferencesKey("reminders_enabled")
         val reminderMorning = booleanPreferencesKey("reminder_morning_enabled")
@@ -59,6 +58,7 @@ class PrivacyPreferences(
         val reminderBoss = booleanPreferencesKey("reminder_boss_enabled")
         val lastSigilRitualEpochDay = longPreferencesKey("last_sigil_ritual_epoch_day")
         val bossRitualSealedWeek = longPreferencesKey("boss_ritual_sealed_week_start")
+        val companionTreatXpEpochDay = longPreferencesKey("companion_treat_xp_epoch_day")
     }
 
     private fun readPrivacySettings(p: Preferences): PrivacySettings {
@@ -74,6 +74,7 @@ class PrivacyPreferences(
             soundEnabled = p[Keys.sound] ?: true,
             familiarEnabled = p[Keys.familiarEnabled] ?: false,
             familiarSpecies = FamiliarSpecies.fromId(p[Keys.familiarSpecies]),
+            treatTossEasyMode = p[Keys.treatTossEasyMode] ?: false,
             healthConnectSyncEnabled = p[Keys.healthConnectSync] ?: false,
             remindersEnabled = p[Keys.remindersEnabled] ?: false,
             reminderMorningEnabled = p[Keys.reminderMorning] ?: true,
@@ -86,8 +87,6 @@ class PrivacyPreferences(
 
     suspend fun getSettingsSnapshot(): PrivacySettings = store.data.first().let(::readPrivacySettings)
 
-    val omenEpochDay: Flow<Long?> = store.data.map { p -> p[Keys.omenEpochDay] }
-    val omenPinned: Flow<Boolean> = store.data.map { p -> p[Keys.omenPinned] ?: false }
     val eveningMoodIds: Flow<String?> = store.data.map { p -> p[Keys.eveningMood] }
     val eveningMoodEpochDay: Flow<Long?> = store.data.map { p -> p[Keys.eveningMoodDay] }
     val deferredBossWeekStart: Flow<Long?> = store.data.map { p -> p[Keys.deferredBossWeek]?.takeIf { it >= 0 } }
@@ -97,22 +96,13 @@ class PrivacyPreferences(
         HomePreferenceSnapshot(
             settings = readPrivacySettings(p),
             deferredBossWeekStart = p[Keys.deferredBossWeek]?.takeIf { it >= 0 },
-            omenEpochDay = p[Keys.omenEpochDay],
-            omenPinned = p[Keys.omenPinned] ?: false,
             eveningMoodIds = p[Keys.eveningMood],
             eveningMoodEpochDay = p[Keys.eveningMoodDay],
             lastKnownLevel = p[Keys.lastKnownLevel],
             lastSigilRitualEpochDay = p[Keys.lastSigilRitualEpochDay]?.takeIf { it >= 0 },
             bossRitualSealedWeekStart = p[Keys.bossRitualSealedWeek]?.takeIf { it >= 0 },
+            companionTreatXpEpochDay = p[Keys.companionTreatXpEpochDay]?.takeIf { it >= 0 },
         )
-    }
-
-    suspend fun setOmenDismissed(epochDay: Long) {
-        store.edit { it[Keys.omenEpochDay] = epochDay }
-    }
-
-    suspend fun setOmenPinned(pinned: Boolean) {
-        store.edit { it[Keys.omenPinned] = pinned }
     }
 
     suspend fun setEveningMood(moodIdsCsv: String, epochDay: Long) {
@@ -155,6 +145,21 @@ class PrivacyPreferences(
         return newlySealed
     }
 
+    /**
+     * Marks [epochDay] as the day companion treat XP was granted if not already set to that day.
+     * @return true if the caller should award +XP (first grant today).
+     */
+    suspend fun markCompanionTreatXpDayIfNew(epochDay: Long): Boolean {
+        var fresh = false
+        store.edit { pref ->
+            val cur = pref[Keys.companionTreatXpEpochDay]?.takeIf { it >= 0 }
+            if (cur == epochDay) return@edit
+            pref[Keys.companionTreatXpEpochDay] = epochDay
+            fresh = true
+        }
+        return fresh
+    }
+
     suspend fun save(settings: PrivacySettings) {
         store.edit { p ->
             p[Keys.analytics] = settings.analyticsOptIn
@@ -165,6 +170,7 @@ class PrivacyPreferences(
             p[Keys.sound] = settings.soundEnabled
             p[Keys.familiarEnabled] = settings.familiarEnabled
             p[Keys.familiarSpecies] = settings.familiarSpecies.id
+            p[Keys.treatTossEasyMode] = settings.treatTossEasyMode
             p[Keys.healthConnectSync] = settings.healthConnectSyncEnabled
             p[Keys.remindersEnabled] = settings.remindersEnabled
             p[Keys.reminderMorning] = settings.reminderMorningEnabled

@@ -20,6 +20,7 @@ import com.openascend.app.navigation.Routes
 import com.openascend.app.ui.bootstrap.BootstrapViewModel
 import com.openascend.app.ui.boss.BossRitualScreen
 import com.openascend.app.ui.character.CharacterScreen
+import com.openascend.app.ui.companion.CompanionPlayScreen
 import com.openascend.app.ui.checkin.CheckInScreen
 import com.openascend.app.ui.habits.HabitEditScreen
 import com.openascend.app.ui.habits.HabitsScreen
@@ -78,7 +79,17 @@ fun OpenAscendRoot(
                 onOpenWeekly = { navController.navigate(Routes.Weekly) },
                 onOpenSettings = { navController.navigate(Routes.Settings) },
                 onOpenBossRitual = { navController.navigate(Routes.BossRitual) },
+                onOpenCompanionPlay = { navController.navigate(Routes.CompanionPlay) },
             )
+        }
+        composable(
+            Routes.CompanionPlay,
+            deepLinks = listOf(
+                navDeepLink { uriPattern = "${deepLinkBase}companion" },
+                navDeepLink { uriPattern = "${deepLinkBase}companion_play" },
+            ),
+        ) {
+            CompanionPlayScreen(onBack = { navController.popBackStack() })
         }
         composable(
             Routes.Character,

@@ -16,6 +16,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +46,7 @@ fun FamiliarStrip(
     companion: CompanionSnapshot,
     species: FamiliarSpecies,
     modifier: Modifier = Modifier,
+    onPlayTogether: (() -> Unit)? = null,
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     val styled = remember(companion, species) { FamiliarCopy.stylize(companion, species) }
@@ -52,12 +54,7 @@ fun FamiliarStrip(
     val expandCd = stringResource(R.string.cd_expand_companion)
     val collapseCd = stringResource(R.string.cd_collapse_companion)
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .semantics {
-                stateDescription = if (expanded) collapseCd else expandCd
-            }
-            .clickable { expanded = !expanded },
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
     ) {
@@ -68,7 +65,12 @@ fun FamiliarStrip(
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics {
+                        stateDescription = if (expanded) collapseCd else expandCd
+                    }
+                    .clickable { expanded = !expanded },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
@@ -105,6 +107,14 @@ fun FamiliarStrip(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                if (onPlayTogether != null) {
+                    TextButton(
+                        onClick = onPlayTogether,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(stringResource(R.string.familiar_play_together))
+                    }
+                }
             }
         }
     }

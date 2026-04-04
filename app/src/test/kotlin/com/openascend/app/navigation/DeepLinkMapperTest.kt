@@ -14,6 +14,10 @@ class DeepLinkMapperTest {
         assertEquals(Routes.Weekly, DeepLinkMapper.routeFromHost("weekly"))
         assertEquals(Routes.BossRitual, DeepLinkMapper.routeFromHost("boss"))
         assertEquals(Routes.Settings, DeepLinkMapper.routeFromHost("settings"))
+        assertEquals(Routes.CompanionPlay, DeepLinkMapper.routeFromHost("companion"))
+        assertEquals(Routes.CompanionPlay, DeepLinkMapper.routeFromHost("companion_play"))
+        assertEquals(Routes.CompanionPlay, DeepLinkMapper.routeFromHost("companion_hide"))
+        assertEquals(Routes.CompanionPlay, DeepLinkMapper.routeFromHost("companion_hide_peek"))
     }
 
     @Test
