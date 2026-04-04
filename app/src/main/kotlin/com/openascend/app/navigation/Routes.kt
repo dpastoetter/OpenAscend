@@ -11,6 +11,7 @@ object Routes {
     const val Weekly = "weekly"
     const val Settings = "settings"
     const val BossRitual = "boss_ritual"
+    const val SealSigil = "seal_sigil"
 
     fun habitEdit(habitId: Long): String = "habit_edit/$habitId"
 }

@@ -29,13 +29,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 private val moodOptions = listOf(
     "steady" to "Steady",
@@ -49,11 +48,11 @@ private val moodOptions = listOf(
 fun CheckInScreen(
     onBack: () -> Unit,
     onSaved: () -> Unit,
+    onNavigateToSigil: () -> Unit,
     viewModel: CheckInViewModel = hiltViewModel(),
 ) {
     val ui by viewModel.uiState.collectAsState()
     val snack = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
     var sleep by remember { mutableStateOf("") }
     var steps by remember { mutableStateOf("") }
     var bank by remember { mutableStateOf("") }
@@ -62,8 +61,14 @@ fun CheckInScreen(
     var selectedMoods by remember { mutableStateOf(setOf<String>()) }
 
     LaunchedEffect(Unit) {
-        viewModel.streakLore.collect { msg ->
-            msg?.let { snack.showSnackbar(it) }
+        viewModel.saveEffects.collect { effect ->
+            snack.showSnackbar(effect.snackbarMessage)
+            if (effect.offerSigilRitual) {
+                delay(750)
+                onNavigateToSigil()
+            } else {
+                onSaved()
+            }
         }
     }
 
@@ -159,10 +164,6 @@ fun CheckInScreen(
             TextButton(
                 onClick = {
                     viewModel.save(sleep, steps, bank, note, vitality, selectedMoods.toList())
-                    scope.launch {
-                        snack.showSnackbar("Check-in sealed.")
-                    }
-                    onSaved()
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {

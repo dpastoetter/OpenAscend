@@ -32,7 +32,6 @@
     <string name="settings_analytics_body">Not connected in this build. No analytics SDK is linked; nothing is collected or sent.</string>
     <string name="settings_crash_title">Crash reports</string>
     <string name="settings_crash_body">Not connected in this build. No crash reporter is linked; toggles are not shown until a SDK exists.</string>
-    <string name="settings_finance_hints">Show gentle finance hints</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_appearance_blurb">System follows your device; Android 12+ can use dynamic colors from wallpaper. Light and dark use OpenAscend\'s fixed palette.</string>
     <string name="settings_theme_system">System</string>
@@ -103,6 +102,7 @@
     <string name="home_epithet_blurb">A cosmetic title for level %1$d.</string>
 
     <string name="familiar_title">Your %1$s · %2$s</string>
+    <string name="familiar_pixel_content_description">%1$s companion, %2$s mood</string>
 
     <string name="checkin_title">Evening check-in</string>
     <string name="checkin_blurb">Manual inputs only in this MVP. Numbers are a vibe check, not advice.</string>
@@ -181,13 +181,20 @@
     <string name="onboarding_goal_1">Quest goal #1</string>
     <string name="onboarding_goal_2">Quest goal #2 (optional)</string>
     <string name="onboarding_enter_realm">Enter the realm</string>
-    <string name="home_share_daily_sigil">Share today\'s sigil</string>
-    <string name="home_share_chooser_title">Share your daily sigil</string>
 
     <string name="boss_ritual_title">Boss ritual</string>
     <string name="boss_ritual_weak_link">Weak link: %1$s</string>
     <string name="boss_ritual_suggestions_title">Suggested moves</string>
     <string name="boss_ritual_open_weekly">Weekly review and share</string>
+    <string name="boss_ritual_done">Done</string>
+    <string name="boss_ritual_theater_note">Seal when you have read the encounter—this records the ritual for the week and grants chronicle XP once.</string>
+    <string name="boss_ritual_seal">Seal this week\'s boss</string>
+    <string name="boss_ritual_sealed_title">Boss sealed for this week</string>
+    <string name="boss_ritual_sealed_body">You can still read the card above. A new boss arrives next Monday.</string>
+    <string name="boss_ritual_xp_once">+%1$d XP once when you seal (this week only).</string>
+    <string name="home_boss_sealed">Sealed this week</string>
+    <string name="home_review_boss_ritual">Review boss ritual</string>
+    <string name="weekly_boss_sealed">Weekly boss ritual sealed—nice.</string>
 
     <string name="backup_import_success">Backup restored.</string>
     <string name="backup_import_error">Could not restore backup.</string>

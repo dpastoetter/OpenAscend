@@ -6,7 +6,6 @@ import kotlinx.serialization.Serializable
 data class PrivacySettings(
     val analyticsOptIn: Boolean,
     val crashReportsOptIn: Boolean,
-    val showFinanceHints: Boolean,
     val themePreference: ThemePreference = ThemePreference.SYSTEM,
     /** Asset pack under `narrative/{id}.json`. */
     val flavorPackId: String = "default",

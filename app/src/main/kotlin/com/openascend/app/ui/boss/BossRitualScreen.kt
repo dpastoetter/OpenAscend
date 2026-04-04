@@ -11,7 +11,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -130,6 +132,43 @@ fun BossRitualScreen(
             }
             TextButton(onClick = onOpenWeekly, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.boss_ritual_open_weekly))
+            }
+            if (ui.bossSealedThisWeek) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            stringResource(R.string.boss_ritual_sealed_title),
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            stringResource(R.string.boss_ritual_sealed_body),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
+            } else {
+                Text(
+                    stringResource(R.string.boss_ritual_theater_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    stringResource(R.string.boss_ritual_xp_once, BossRitualViewModel.BOSS_SEAL_XP),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                FilledTonalButton(
+                    onClick = { viewModel.sealBossRitual() },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.boss_ritual_seal))
+                }
+            }
+            Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.boss_ritual_done))
             }
         }
     }

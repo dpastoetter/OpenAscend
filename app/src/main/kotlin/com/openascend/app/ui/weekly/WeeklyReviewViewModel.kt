@@ -35,6 +35,7 @@ data class WeeklyUiState(
     val shareSummary: String,
     val actTitle: String,
     val bossDeferredThisWeek: Boolean,
+    val bossSealedThisWeek: Boolean,
 )
 
 @HiltViewModel
@@ -73,6 +74,7 @@ class WeeklyReviewViewModel @Inject constructor(
                     val pack = narrativeRepository.loadPack(homeSnap.settings.flavorPackId)
                     val narrative = NarrativeContext(LocalDate.ofEpochDay(day), pack)
                     val deferred = homeSnap.deferredBossWeekStart == weekStart
+                    val sealed = homeSnap.bossRitualSealedWeekStart == weekStart
                     val boss = bossGenerator.weeklyBoss(
                         weekStartEpochDay = weekStart,
                         stats = rolling,
@@ -90,6 +92,7 @@ class WeeklyReviewViewModel @Inject constructor(
                         shareSummary = summary,
                         actTitle = narrative.actTitle,
                         bossDeferredThisWeek = deferred,
+                        bossSealedThisWeek = sealed,
                     )
                 }
             }

@@ -26,6 +26,7 @@ import com.openascend.app.ui.habits.HabitsScreen
 import com.openascend.app.ui.home.HomeScreen
 import com.openascend.app.ui.onboarding.OnboardingScreen
 import com.openascend.app.ui.settings.SettingsScreen
+import com.openascend.app.ui.sigil.SealSigilScreen
 import com.openascend.app.ui.weekly.WeeklyReviewScreen
 
 private val deepLinkBase = "openascend://"
@@ -114,6 +115,18 @@ fun OpenAscendRoot(
             CheckInScreen(
                 onBack = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() },
+                onNavigateToSigil = {
+                    navController.navigate(Routes.SealSigil) {
+                        popUpTo(Routes.CheckIn) { inclusive = true }
+                    }
+                },
+            )
+        }
+        composable(Routes.SealSigil) {
+            SealSigilScreen(
+                onFinished = {
+                    navController.popBackStack(Routes.Home, inclusive = false)
+                },
             )
         }
         composable(

@@ -46,7 +46,7 @@ OpenAscend is an **open-source, Android-first “life RPG”**: habits and simpl
 
 ### Shipped vs roadmap
 
-**Shipped in recent builds (e.g. v0.02+):** bootstrap → onboarding (hero name, optional **starter path** / class fantasy, goals), home (**act countdown**, boss-week banner, streak-armor chip when relevant, familiar strip, **daily sigil** text share, quest seal flair + snackbar), character sheet (**streak armor lore**), habits (**boss-prep** tag on habits), check-in (differentiated **haptics/sound** for habits vs evening seal), weekly review + recap share, boss ritual entry, settings (theme, narrative packs, familiar, reminders), **local reminders** (morning / evening / Monday boss nudge) with Android 13+ notification permission handling, **home widget** (level, quest, boss, rotating story line), dark/light/system theme.
+**Shipped in recent builds (e.g. v0.03+):** bootstrap → onboarding (hero name, optional **starter path** / class fantasy, goals), home (welcome-first hero strip, familiar strip with **cute chibi pixel sprites** when expanded—mood-matched; **daily quests** grant XP and a small **spotlight** bump on the linked stat on Home; quest seal flair + snackbar), character sheet (**streak armor lore**), habits (**boss-prep** tag), check-in (differentiated **haptics/sound**; optional **Seal the sigil** micro-ritual after first evening seal), weekly review + **bitmap** recap share, **boss ritual** with **weekly seal** (persisted, **+40 XP once per week**, haptics), settings (theme, narrative packs, familiar, reminders), **local reminders**, **home widget**, dark/light/system theme. **Daily plain-text “sigil” share** from Home was removed in favor of weekly share.
 
 **Roadmap (prioritize as needed):** Health Connect for steps/sleep; optional split screens for sleep / finance / longevity; splash polish; cloud accounts only if the product leaves strict offline-first; billing only with a monetization story, `INTERNET`, Play Billing, and policy work.
 
@@ -119,12 +119,13 @@ Design priorities for the RPG fantasy—apply these **in order** when shaping co
 ## Features
 
 - **Onboarding** — Hero name, optional **path** (Warden / Skirmisher / Keeper, or “Surprise me”), and quest goals; stored on the profile.
-- **Daily flows** — Morning overview with **act title + days left in the month act**, optional **boss-week** story banner, **yesterday-aware** familiar copy when enabled, **wildcard** daily quests on Tue/Fri, and **quest seal** one-liners (snackbar).
+- **Daily flows** — Home centers on **welcome + familiar** (optional); **wildcard** daily quests on Tue/Fri; **quest seal** one-liners (snackbar), XP toward level, and a **+5 spotlight** on the quest’s linked stat on Home for the day. After the first evening seal of the day, optional **Seal the sigil** micro-ritual (tap-in-order; flavor + haptics only, no extra XP).
 - **Character & progression** — Level, XP, archetype; **streak armor** explained on the character sheet (plain-language disclaimer-friendly copy).
 - **Habits** — Create/edit habits; optional **boss prep** tag (ties copy and feedback to the weekly boss arc).
 - **Profile** — Optional profile image (camera/gallery) stored on device.
 - **Appearance** — Light/dark (or system) theme preference persisted locally.
-- **Share** — Weekly **bitmap** recap cards plus a **daily sigil** (plain-text recap) from Home, user-initiated via the system share sheet.
+- **Share** — Weekly **bitmap** recap cards (user-initiated via the system share sheet).
+- **Boss week** — **Seal the boss** in the ritual screen records completion for the current ISO week (Monday boundary), awards **40 XP** once that week, and shows **sealed** state on Home / weekly review.
 - **Widget** — Glance widget: level, top quest, boss name, and a **rotating flavor line** synced from Home.
 - **Reminders** — Optional local notifications (chronicle-voice copy); respects notification permission on Android 13+.
 
@@ -168,6 +169,16 @@ Versioning: **v0.03** — `versionName` `0.03`, `versionCode` `4` in `app/build.
 - **JDK 17** (Gradle uses the toolchain declared in the build scripts)
 - **Android SDK** with API 35 for builds; **platform tools** (`adb`) for installing APKs on hardware or emulators
 
+## Companion pixel art (optional)
+
+Sprites live in `app/src/main/res/drawable-nodpi/` (`familiar_{species}_{mood}.png`). Regenerate from the generator script (Python 3 + Pillow):
+
+```bash
+cd app && python3 scripts/generate_familiar_sprites.py
+```
+
+Drawable IDs are mapped in `FamiliarPixelDrawable.kt`.
+
 ## Build
 
 ```bash
@@ -210,19 +221,33 @@ Every push to `main` also uploads a debug APK as a workflow artifact from [CI](.
 
 ## Tests
 
+**All JVM unit tests** (domain, data debug+release, app debug+release):
+
 ```bash
-./gradlew :core:domain:test
-./gradlew :core:data:testDebugUnitTest
-./gradlew :app:testDebugUnitTest
+./gradlew test
 ```
 
-**Full verification** (unit tests + Android Lint on debug variants), matching a strict local gate before push:
+**Per-module** (if you prefer):
+
+```bash
+./gradlew :core:domain:test
+./gradlew :core:data:test
+./gradlew :app:test
+```
+
+**Full verification** (unit tests + Android Lint on debug variants):
 
 ```bash
 ./gradlew check test
 ```
 
-CI-style build without Lint:
+**Instrumented tests** (requires a running emulator or USB device):
+
+```bash
+./gradlew connectedDebugAndroidTest
+```
+
+CI-style quick gate:
 
 ```bash
 ./gradlew :core:domain:test :core:data:testDebugUnitTest :app:testDebugUnitTest :app:assembleDebug
@@ -247,7 +272,7 @@ If the app **closes immediately** or **won’t install**: uninstall any older bu
 
 ## Contributing
 
-Issues and pull requests are welcome. Please keep changes focused and match existing Kotlin/Compose style. Run the unit test tasks above before opening a PR; CI will run the full matrix.
+Issues and pull requests are welcome. Please keep changes focused and match existing Kotlin/Compose style. Run `./gradlew test` (and `check` if you touch resources or manifest) before opening a PR; CI will run the full matrix.
 
 ## License
 

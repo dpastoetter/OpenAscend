@@ -26,6 +26,10 @@ data class HomePreferenceSnapshot(
     val eveningMoodIds: String?,
     val eveningMoodEpochDay: Long?,
     val lastKnownLevel: Int?,
+    /** Last calendar day the optional sigil ritual was completed (epoch day). */
+    val lastSigilRitualEpochDay: Long?,
+    /** Monday epoch day of the week the user sealed the weekly boss ritual (XP awarded once). */
+    val bossRitualSealedWeekStart: Long?,
 )
 
 class PrivacyPreferences(
@@ -36,7 +40,6 @@ class PrivacyPreferences(
     private object Keys {
         val analytics = booleanPreferencesKey("analytics_opt_in")
         val crash = booleanPreferencesKey("crash_reports_opt_in")
-        val financeHints = booleanPreferencesKey("show_finance_hints")
         val theme = stringPreferencesKey("theme_preference")
         val flavorPack = stringPreferencesKey("flavor_pack_id")
         val haptics = booleanPreferencesKey("haptics_enabled")
@@ -54,6 +57,8 @@ class PrivacyPreferences(
         val reminderMorning = booleanPreferencesKey("reminder_morning_enabled")
         val reminderEvening = booleanPreferencesKey("reminder_evening_enabled")
         val reminderBoss = booleanPreferencesKey("reminder_boss_enabled")
+        val lastSigilRitualEpochDay = longPreferencesKey("last_sigil_ritual_epoch_day")
+        val bossRitualSealedWeek = longPreferencesKey("boss_ritual_sealed_week_start")
     }
 
     private fun readPrivacySettings(p: Preferences): PrivacySettings {
@@ -63,7 +68,6 @@ class PrivacyPreferences(
         return PrivacySettings(
             analyticsOptIn = p[Keys.analytics] ?: false,
             crashReportsOptIn = p[Keys.crash] ?: false,
-            showFinanceHints = p[Keys.financeHints] ?: true,
             themePreference = theme,
             flavorPackId = p[Keys.flavorPack] ?: "default",
             hapticsEnabled = p[Keys.haptics] ?: true,
@@ -98,6 +102,8 @@ class PrivacyPreferences(
             eveningMoodIds = p[Keys.eveningMood],
             eveningMoodEpochDay = p[Keys.eveningMoodDay],
             lastKnownLevel = p[Keys.lastKnownLevel],
+            lastSigilRitualEpochDay = p[Keys.lastSigilRitualEpochDay]?.takeIf { it >= 0 },
+            bossRitualSealedWeekStart = p[Keys.bossRitualSealedWeek]?.takeIf { it >= 0 },
         )
     }
 
@@ -130,11 +136,29 @@ class PrivacyPreferences(
         store.edit { it[Keys.lastKnownLevel] = level }
     }
 
+    suspend fun setLastSigilRitualEpochDay(epochDay: Long) {
+        store.edit { it[Keys.lastSigilRitualEpochDay] = epochDay }
+    }
+
+    /**
+     * Records boss ritual sealed for [weekStartEpochDay] if not already recorded for that week.
+     * @return true if this call newly set the seal (caller should award XP once).
+     */
+    suspend fun markBossRitualSealedIfNew(weekStartEpochDay: Long): Boolean {
+        var newlySealed = false
+        store.edit { pref ->
+            val cur = pref[Keys.bossRitualSealedWeek]?.takeIf { it >= 0 }
+            if (cur == weekStartEpochDay) return@edit
+            pref[Keys.bossRitualSealedWeek] = weekStartEpochDay
+            newlySealed = true
+        }
+        return newlySealed
+    }
+
     suspend fun save(settings: PrivacySettings) {
         store.edit { p ->
             p[Keys.analytics] = settings.analyticsOptIn
             p[Keys.crash] = settings.crashReportsOptIn
-            p[Keys.financeHints] = settings.showFinanceHints
             p[Keys.theme] = settings.themePreference.name
             p[Keys.flavorPack] = settings.flavorPackId
             p[Keys.haptics] = settings.hapticsEnabled

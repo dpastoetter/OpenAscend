@@ -45,19 +45,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ShareCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.openascend.app.R
 import com.openascend.app.ui.companion.FamiliarStrip
 import com.openascend.app.ui.components.ProfileAvatar
 import com.openascend.domain.model.CoreStat
 import com.openascend.domain.model.GameQuest
+import com.openascend.domain.model.QuestDisplayBonus
 import com.openascend.domain.narrative.StatLore
 
 @Composable
@@ -88,7 +87,6 @@ fun HomeScreen(
     val ui = state!!
     val snack = remember { SnackbarHostState() }
     val sealFlair by viewModel.questSealFlair.collectAsState()
-    val context = LocalContext.current
     LaunchedEffect(sealFlair) {
         val msg = sealFlair ?: return@LaunchedEffect
         snack.showSnackbar(msg)
@@ -172,53 +170,6 @@ fun HomeScreen(
                 .padding(top = 8.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-        Text(
-            "Morning overview",
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        Text(
-            "Act · ${ui.actTitle}",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            "${ui.actDaysRemaining} days left in this act",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        ui.moodHeadline?.let { line ->
-            Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
-        }
-        ui.bossWeekBanner?.let { banner ->
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
-            ) {
-                Text(
-                    banner,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(12.dp),
-                )
-            }
-        }
-        ui.streakArmorChip?.let { chipLine ->
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-            ) {
-                Row(
-                    Modifier.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Icon(
-                        Icons.Outlined.Shield,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                    Text(chipLine, style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -287,19 +238,6 @@ fun HomeScreen(
             TextButton(onClick = onOpenSettings) { Text("Settings") }
         }
 
-        TextButton(
-            onClick = {
-                ShareCompat.IntentBuilder(context)
-                    .setType("text/plain")
-                    .setText(viewModel.buildDailySigilText())
-                    .setChooserTitle(context.getString(R.string.home_share_chooser_title))
-                    .startChooser()
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(R.string.home_share_daily_sigil))
-        }
-
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Level ${ui.progress.level} · $archLine", fontWeight = FontWeight.SemiBold)
@@ -354,8 +292,21 @@ fun HomeScreen(
                 ui.boss.suggestedActions.forEach { tip ->
                     Text("• $tip", style = MaterialTheme.typography.bodySmall)
                 }
+                if (ui.bossSealedThisWeek) {
+                    Text(
+                        stringResource(R.string.home_boss_sealed),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
                 OutlinedButton(onClick = onOpenBossRitual, modifier = Modifier.fillMaxWidth()) {
-                    Text("Face the boss")
+                    Text(
+                        if (ui.bossSealedThisWeek) {
+                            stringResource(R.string.home_review_boss_ritual)
+                        } else {
+                            stringResource(R.string.home_face_boss)
+                        },
+                    )
                 }
             }
         }
@@ -413,7 +364,14 @@ private fun QuestCard(quest: GameQuest, onComplete: () -> Unit) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(quest.title, fontWeight = FontWeight.SemiBold)
             Text(quest.description, style = MaterialTheme.typography.bodySmall)
-            Text("+${quest.xpReward} XP · ${quest.linkedStat.name}", style = MaterialTheme.typography.labelSmall)
+            Text(
+                if (quest.completed) {
+                    "+${quest.xpReward} XP · +${QuestDisplayBonus.PER_SEALED_QUEST} ${quest.linkedStat.name} spotlight applied"
+                } else {
+                    "+${quest.xpReward} XP · +${QuestDisplayBonus.PER_SEALED_QUEST} ${quest.linkedStat.name} when sealed"
+                },
+                style = MaterialTheme.typography.labelSmall,
+            )
             OutlinedButton(
                 onClick = onComplete,
                 enabled = !quest.completed,

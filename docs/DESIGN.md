@@ -24,6 +24,7 @@
 - **Daily sigil** — Plain-text share blurb: chronicle tone + one-line disclaimer; not a medical/finance claim.
 - **Widget** — Short **rotating story lines** (`WidgetStoryLines`) keyed by epoch day + flavor pack id; should read as in-world nudges, not chores.
 - **Notifications** — Same voice as the chronicle (see `strings.xml` `notify_*`); copy changes should stay aligned with this doc.
+- **Seal the sigil** (optional, after first evening seal of the day) — Short tap-in-order ritual; copy must stay **theater-only** (no therapy/medical/finance claims). See `SigilRitualCopy` and `SealSigilScreen`.
 
 ## README pointer
 

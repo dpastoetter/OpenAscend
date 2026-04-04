@@ -3,6 +3,7 @@ package com.openascend.app.ui.companion
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,6 +37,8 @@ import com.openascend.domain.model.FamiliarSpecies
 
 /**
  * Compact companion strip: species glyph, mood label, expandable species-aware copy.
+ * Expanded: 32×32 pixel sprite (nearest-neighbor scaled) reflects companion mood; see
+ * [FamiliarPixelDrawable] and `app/scripts/generate_familiar_sprites.py` for asset naming.
  */
 @Composable
 fun FamiliarStrip(
@@ -84,6 +87,18 @@ fun FamiliarStrip(
                 )
             }
             if (expanded) {
+                val spriteDesc = stringResource(
+                    R.string.familiar_pixel_content_description,
+                    species.displayName,
+                    companion.moodLabel,
+                )
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    PixelFamiliar(
+                        species = species,
+                        mood = companion.mood,
+                        contentDescription = spriteDesc,
+                    )
+                }
                 Text(styled.line, style = MaterialTheme.typography.bodyMedium)
                 Text(
                     styled.whisper,

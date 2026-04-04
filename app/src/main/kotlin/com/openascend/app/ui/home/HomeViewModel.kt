@@ -18,10 +18,7 @@ import com.openascend.domain.model.WeeklyBoss
 import com.openascend.domain.companion.CompanionResolver
 import com.openascend.domain.companion.CompanionSnapshot
 import com.openascend.domain.model.DailyMetric
-import com.openascend.domain.narrative.ActResolver
 import com.openascend.domain.narrative.ArchetypeSuffixCatalog
-import com.openascend.domain.narrative.BossWeekArc
-import com.openascend.domain.narrative.DailySigilRecap
 import com.openascend.domain.narrative.EveningMoodCopy
 import com.openascend.domain.narrative.LevelUpFlair
 import com.openascend.domain.narrative.NarrativeContext
@@ -29,12 +26,12 @@ import com.openascend.domain.narrative.NarrativeRepository
 import com.openascend.domain.narrative.OmenPhrases
 import com.openascend.domain.narrative.QuestSealFlair
 import com.openascend.domain.narrative.StarterPaths
-import com.openascend.domain.narrative.StreakArmorLore
 import com.openascend.domain.narrative.WidgetStoryLines
 import com.openascend.domain.repository.HabitRepository
 import com.openascend.domain.repository.MetricsRepository
 import com.openascend.domain.repository.ProfileRepository
 import com.openascend.domain.repository.QuestCompletionRepository
+import com.openascend.domain.repository.XpRepository
 import com.openascend.domain.service.BossGenerator
 import com.openascend.domain.service.QuestChainDetector
 import com.openascend.domain.service.QuestGenerator
@@ -70,17 +67,12 @@ data class HomeUiState(
     val progress: CharacterProgress,
     val quests: List<GameQuest>,
     val boss: WeeklyBoss,
-    val todayEpochDay: Long,
-    val actTitle: String,
-    val actDaysRemaining: Int,
-    val bossWeekBanner: String?,
-    val streakArmorChip: String?,
+    val bossSealedThisWeek: Boolean,
     val starterPathLabel: String?,
     /** Shown when new calendar day or pinned */
     val omenLine: String?,
     val showOmenCard: Boolean,
     val omenPinned: Boolean,
-    val moodHeadline: String?,
     val levelUpSheet: LevelUpSheetData?,
     val suffixPicker: SuffixPickerData?,
     val soundEnabled: Boolean,
@@ -97,6 +89,7 @@ class HomeViewModel @Inject constructor(
     private val habitRepository: HabitRepository,
     private val metricsRepository: MetricsRepository,
     private val questCompletionRepository: QuestCompletionRepository,
+    private val xpRepository: XpRepository,
     private val statComputation: StatComputationService,
     private val questGenerator: QuestGenerator,
     private val bossGenerator: BossGenerator,
@@ -134,7 +127,8 @@ class HomeViewModel @Inject constructor(
                     questCompletionRepository.observeCompletedIds(day),
                     questCompletionRepository.observeCompletedIds(day - 1),
                     privacyPreferences.homeSnapshot,
-                ) { inner, questToday, questYesterday, homeSnap ->
+                    xpRepository.observeEvents(50),
+                ) { inner, questToday, questYesterday, homeSnap, _ ->
                     HomeBundle(day, inner, questToday, questYesterday, homeSnap)
                 }
             }
@@ -159,6 +153,7 @@ class HomeViewModel @Inject constructor(
                     val narrative = NarrativeContext(localDate, pack)
                     val weekStart = weekStartMondayEpochDay(localDate)
                     val bossDeferred = bundle.homeSnap.deferredBossWeekStart == weekStart
+                    val bossSealedThisWeek = bundle.homeSnap.bossRitualSealedWeekStart == weekStart
                     val boss = bossGenerator.weeklyBoss(
                         weekStartEpochDay = weekStart,
                         stats = rolling,
@@ -180,6 +175,7 @@ class HomeViewModel @Inject constructor(
                         narrative = narrative,
                         recoveryChainActive = chain,
                     )
+                    val displayStats = todayStats.withSealedQuestSpotlight(quests)
                     val progress = xpEngine.progressForStats(todayStats, bundle.inner.profile.streakDays)
                     val habitSeed = bundle.inner.habits.fold(0L) { acc, h -> acc xor h.id * 31 }
                     val focusHabit = bundle.inner.habits.firstOrNull {
@@ -250,34 +246,18 @@ class HomeViewModel @Inject constructor(
                         bossName = boss.name,
                         flavorLine = widgetFlavor,
                     )
-                    val actDaysRemaining = ActResolver.daysRemainingInAct(localDate)
-                    val bossWeekBanner = BossWeekArc.homeBannerLine(
-                        today = localDate,
-                        bossTargetStat = boss.targetStat,
-                        bossDeferredThisWeek = bossDeferred,
-                    )
-                    val streakArmorChip = if (progress.streakArmor >= 3) {
-                        StreakArmorLore.chipLine(progress.streakArmor)
-                    } else {
-                        null
-                    }
                     _ui.value = HomeUiState(
                         profile = bundle.inner.profile,
-                        stats = todayStats,
+                        stats = displayStats,
                         rollingStats = rolling,
                         progress = progress,
                         quests = quests,
                         boss = boss,
-                        todayEpochDay = bundle.day,
-                        actTitle = narrative.actTitle,
-                        actDaysRemaining = actDaysRemaining,
-                        bossWeekBanner = bossWeekBanner,
-                        streakArmorChip = streakArmorChip,
+                        bossSealedThisWeek = bossSealedThisWeek,
                         starterPathLabel = StarterPaths.labelForStoredId(bundle.inner.profile.starterPath),
                         omenLine = omenText,
                         showOmenCard = showOmen,
                         omenPinned = bundle.homeSnap.omenPinned,
-                        moodHeadline = moodHeadline,
                         levelUpSheet = levelUpSheet,
                         suffixPicker = suffixPicker,
                         soundEnabled = bundle.homeSnap.settings.soundEnabled,
@@ -350,23 +330,6 @@ class HomeViewModel @Inject constructor(
     fun playLevelUpFeedback() {
         val ui = _ui.value ?: return
         feedbackController.playLevelUp(ui.soundEnabled, ui.hapticsEnabled)
-    }
-
-    fun buildDailySigilText(): String {
-        val u = _ui.value ?: return ""
-        val arch = u.progress.archetype.displayName +
-            u.profile.archetypeSuffix?.let { " · $it" }.orEmpty()
-        val sealed = u.quests.count { it.completed }
-        val total = u.quests.size
-        return DailySigilRecap.build(
-            displayName = u.profile.displayName,
-            level = u.progress.level,
-            actTitle = u.actTitle,
-            questsSealed = sealed,
-            questsTotal = total,
-            moodHeadlineYesterday = u.moodHeadline,
-            archetypeLine = arch,
-        )
     }
 
     private suspend fun loadCompletionMap(habits: List<Habit>, today: Long): Map<Pair<Long, Long>, Boolean> {

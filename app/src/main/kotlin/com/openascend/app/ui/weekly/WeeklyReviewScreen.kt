@@ -31,11 +31,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.FileProvider
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ShareCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.openascend.app.R
 import com.openascend.app.share.WeeklyShareCardUi
 import com.openascend.app.share.captureWeeklyShareCardBitmap
 import kotlinx.coroutines.Dispatchers
@@ -128,6 +130,13 @@ fun WeeklyReviewScreen(
                     Text(ui.boss.tell, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                     Text(ui.boss.name, style = MaterialTheme.typography.titleMedium)
                     Text(ui.boss.flavor, style = MaterialTheme.typography.bodySmall)
+                    if (ui.bossSealedThisWeek) {
+                        Text(
+                            stringResource(R.string.weekly_boss_sealed),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                     TextButton(onClick = onOpenBossRitual, modifier = Modifier.fillMaxWidth()) {
                         Text("Open boss ritual")
                     }

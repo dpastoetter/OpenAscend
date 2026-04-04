@@ -124,13 +124,6 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            ToggleRow(
-                title = stringResource(R.string.settings_finance_hints),
-                checked = ui.privacy.showFinanceHints,
-                onCheckedChange = {
-                    viewModel.setPrivacy(ui.privacy.copy(showFinanceHints = it))
-                },
-            )
 
             Text(stringResource(R.string.settings_appearance), style = MaterialTheme.typography.titleMedium)
             Text(

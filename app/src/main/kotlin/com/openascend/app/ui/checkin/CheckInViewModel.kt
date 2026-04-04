@@ -22,6 +22,12 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+data class CheckInSaveEffect(
+    val snackbarMessage: String,
+    /** First seal of the day: offer optional sigil micro-ritual. */
+    val offerSigilRitual: Boolean,
+)
+
 data class CheckInUiState(
     val epochDay: Long,
     val sleepHours: String,
@@ -45,8 +51,8 @@ class CheckInViewModel @Inject constructor(
 
     private val day = todayEpochDay()
 
-    private val _streakLore = MutableSharedFlow<String?>(extraBufferCapacity = 1)
-    val streakLore = _streakLore.asSharedFlow()
+    private val _saveEffects = MutableSharedFlow<CheckInSaveEffect>(extraBufferCapacity = 1)
+    val saveEffects = _saveEffects.asSharedFlow()
 
     private val _bossPrepLore = MutableSharedFlow<String?>(extraBufferCapacity = 1)
     val bossPrepLore = _bossPrepLore.asSharedFlow()
@@ -128,7 +134,13 @@ class CheckInViewModel @Inject constructor(
                     "The path had a gap; your streak reset kindly—fresh ink, no shame."
                 else -> null
             }
-            _streakLore.emit(lore)
+            val snackbarMessage = lore ?: "Check-in sealed."
+            _saveEffects.emit(
+                CheckInSaveEffect(
+                    snackbarMessage = snackbarMessage,
+                    offerSigilRitual = firstLogOfDay,
+                ),
+            )
         }
     }
 }

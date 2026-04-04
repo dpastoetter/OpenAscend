@@ -48,6 +48,12 @@ class FeedbackController @Inject constructor(
         playSealSound(soundEnabled, volume = 0.52f, rate = 1.14f)
     }
 
+    /** Optional post-check-in sigil ritual—distinct from the main check-in seal. */
+    fun playSigilRitualComplete(soundEnabled: Boolean, hapticsEnabled: Boolean) {
+        if (hapticsEnabled) sigilPulse(context)
+        playSealSound(soundEnabled, volume = 0.33f, rate = 1.02f)
+    }
+
     private fun playSealSound(soundEnabled: Boolean, volume: Float, rate: Float) {
         if (soundEnabled && sealSoundId > 0) {
             soundPool.play(sealSoundId, volume, volume, 1, 0, rate)
@@ -102,6 +108,22 @@ class FeedbackController @Inject constructor(
         } else {
             @Suppress("DEPRECATION")
             v.vibrate(longArrayOf(0, 28, 40, 28, 40, 34), -1)
+        }
+    }
+
+    private fun sigilPulse(context: Context) {
+        val v = vibrator(context)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            v.vibrate(
+                VibrationEffect.createWaveform(
+                    longArrayOf(0, 22, 36, 22, 36, 26),
+                    intArrayOf(0, 120, 0, 120, 0, 150),
+                    -1,
+                ),
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            v.vibrate(longArrayOf(0, 22, 36, 22, 36, 26), -1)
         }
     }
 }

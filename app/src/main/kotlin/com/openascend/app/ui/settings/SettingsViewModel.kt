@@ -45,7 +45,6 @@ class SettingsViewModel @Inject constructor(
                 privacy = PrivacySettings(
                     analyticsOptIn = false,
                     crashReportsOptIn = false,
-                    showFinanceHints = true,
                     themePreference = ThemePreference.SYSTEM,
                     flavorPackId = "default",
                     hapticsEnabled = true,

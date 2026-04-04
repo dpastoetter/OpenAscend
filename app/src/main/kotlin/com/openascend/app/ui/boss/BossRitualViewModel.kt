@@ -14,9 +14,11 @@ import com.openascend.domain.narrative.NarrativeRepository
 import com.openascend.domain.repository.HabitRepository
 import com.openascend.domain.repository.ProfileRepository
 import com.openascend.domain.repository.MetricsRepository
+import com.openascend.app.feedback.FeedbackController
 import com.openascend.domain.service.BankHealthScorer
 import com.openascend.domain.service.BossGenerator
 import com.openascend.domain.service.StatComputationService
+import com.openascend.domain.service.XpEngine
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,6 +36,9 @@ data class BossRitualUiState(
     val bankLabel: String,
     val actTitle: String,
     val bossDeferredThisWeek: Boolean,
+    val bossSealedThisWeek: Boolean,
+    val soundEnabled: Boolean,
+    val hapticsEnabled: Boolean,
 )
 
 @HiltViewModel
@@ -45,7 +50,14 @@ class BossRitualViewModel @Inject constructor(
     private val bossGenerator: BossGenerator,
     private val narrativeRepository: NarrativeRepository,
     private val privacyPreferences: PrivacyPreferences,
+    private val xpEngine: XpEngine,
+    private val feedbackController: FeedbackController,
 ) : ViewModel() {
+
+    companion object {
+        /** One-time chronicle XP when sealing the weekly boss (same week cannot double-award). */
+        const val BOSS_SEAL_XP = 40
+    }
 
     private val day = todayEpochDay()
 
@@ -72,6 +84,7 @@ class BossRitualViewModel @Inject constructor(
                     val pack = narrativeRepository.loadPack(homeSnap.settings.flavorPackId)
                     val narrative = NarrativeContext(LocalDate.ofEpochDay(day), pack)
                     val deferred = homeSnap.deferredBossWeekStart == weekStart
+                    val sealed = homeSnap.bossRitualSealedWeekStart == weekStart
                     val boss = bossGenerator.weeklyBoss(
                         weekStartEpochDay = weekStart,
                         stats = rolling,
@@ -87,6 +100,9 @@ class BossRitualViewModel @Inject constructor(
                         bankLabel = BankHealthScorer.label(bankScore),
                         actTitle = narrative.actTitle,
                         bossDeferredThisWeek = deferred,
+                        bossSealedThisWeek = sealed,
+                        soundEnabled = homeSnap.settings.soundEnabled,
+                        hapticsEnabled = homeSnap.settings.hapticsEnabled,
                     )
                 }
             }
@@ -103,6 +119,20 @@ class BossRitualViewModel @Inject constructor(
     fun clearBossDeferral() {
         viewModelScope.launch {
             privacyPreferences.setDeferredBossWeekStart(null)
+        }
+    }
+
+    fun sealBossRitual() {
+        viewModelScope.launch {
+            val weekStart = weekStartMondayEpochDay(LocalDate.ofEpochDay(day))
+            if (!privacyPreferences.markBossRitualSealedIfNew(weekStart)) return@launch
+            val ui = _ui.value
+            val label = ui?.boss?.name ?: "Weekly boss"
+            xpEngine.award(BOSS_SEAL_XP, "Weekly boss sealed: $label")
+            feedbackController.playQuestSeal(
+                ui?.soundEnabled ?: true,
+                ui?.hapticsEnabled ?: true,
+            )
         }
     }
 

@@ -8,3 +8,8 @@ data class GameQuest(
     val xpReward: Int,
     val completed: Boolean,
 )
+
+/** Shown stat bump on Home when a daily quest is sealed (theater on top of signal-based stats). */
+object QuestDisplayBonus {
+    const val PER_SEALED_QUEST = 5
+}
