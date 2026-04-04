@@ -1,6 +1,6 @@
 # OpenAscend
 
-**Current version: v0.03** (`versionName` **0.03** in Gradle)
+**Current version: v0.04** (`versionName` **0.04** in Gradle)
 
 **Repository:** [github.com/dpastoetter/OpenAscend](https://github.com/dpastoetter/OpenAscend)
 
@@ -46,7 +46,7 @@ OpenAscend is an **open-source, Android-first “life RPG”**: habits and simpl
 
 ### Shipped vs roadmap
 
-**Shipped in recent builds (e.g. v0.03+):** bootstrap → onboarding (hero name, optional **starter path** / class fantasy, goals), home (welcome-first hero strip, familiar strip with **cute chibi pixel sprites** when expanded—mood-matched; **daily quests** grant XP and a small **spotlight** bump on the linked stat on Home; quest seal flair + snackbar), character sheet (**streak armor lore**), habits (**boss-prep** tag), check-in (differentiated **haptics/sound**; optional **Seal the sigil** micro-ritual after first evening seal), weekly review + **bitmap** recap share, **boss ritual** with **weekly seal** (persisted, **+40 XP once per week**, haptics), settings (theme, narrative packs, familiar, reminders), **local reminders**, **home widget**, dark/light/system theme. **Daily plain-text “sigil” share** from Home was removed in favor of weekly share.
+**Shipped in recent builds (e.g. v0.04+):** bootstrap → onboarding (hero name, optional **starter path** / class fantasy, goals), home (welcome-first hero strip, familiar strip with **cute chibi pixel sprites** when expanded—mood-matched; **daily quests** grant XP and a small **spotlight** bump on the linked stat on Home; quest seal flair + snackbar), character sheet (**streak armor lore**), habits (**boss-prep** tag), check-in (differentiated **haptics/sound**; optional **Seal the sigil** micro-ritual after first evening seal), weekly review + **bitmap** recap share, **boss ritual** with **weekly seal** (persisted, **+40 XP once per week**, haptics), settings (theme, narrative packs, familiar, reminders), **local reminders**, **home widget**, dark/light/system theme. **Daily plain-text “sigil” share** from Home was removed in favor of weekly share.
 
 **Roadmap (prioritize as needed):** Health Connect for steps/sleep; optional split screens for sleep / finance / longevity; splash polish; cloud accounts only if the product leaves strict offline-first; billing only with a monetization story, `INTERNET`, Play Billing, and policy work.
 
@@ -153,7 +153,7 @@ adb exec-out screencap -p > shot.png
 | `:core:domain` | Domain models and use-case style logic (pure Kotlin) |
 | `:core:data` | Persistence (Room), repositories, DataStore preferences |
 
-Versioning: **v0.03** — `versionName` `0.03`, `versionCode` `4` in `app/build.gradle.kts`. Package id: `com.openascend.app`. **minSdk 26**, **targetSdk / compileSdk 35**.
+Versioning: **v0.04** — `versionName` `0.04`, `versionCode` `5` in `app/build.gradle.kts`. Package id: `com.openascend.app`. **minSdk 26**, **targetSdk / compileSdk 35**.
 
 ## Tech stack
 
