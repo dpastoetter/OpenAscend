@@ -17,12 +17,20 @@ import com.openascend.domain.model.FamiliarSpecies
 import com.openascend.domain.model.WeeklyBoss
 import com.openascend.domain.companion.CompanionResolver
 import com.openascend.domain.companion.CompanionSnapshot
+import com.openascend.domain.model.DailyMetric
+import com.openascend.domain.narrative.ActResolver
 import com.openascend.domain.narrative.ArchetypeSuffixCatalog
+import com.openascend.domain.narrative.BossWeekArc
+import com.openascend.domain.narrative.DailySigilRecap
 import com.openascend.domain.narrative.EveningMoodCopy
 import com.openascend.domain.narrative.LevelUpFlair
 import com.openascend.domain.narrative.NarrativeContext
 import com.openascend.domain.narrative.NarrativeRepository
 import com.openascend.domain.narrative.OmenPhrases
+import com.openascend.domain.narrative.QuestSealFlair
+import com.openascend.domain.narrative.StarterPaths
+import com.openascend.domain.narrative.StreakArmorLore
+import com.openascend.domain.narrative.WidgetStoryLines
 import com.openascend.domain.repository.HabitRepository
 import com.openascend.domain.repository.MetricsRepository
 import com.openascend.domain.repository.ProfileRepository
@@ -64,6 +72,10 @@ data class HomeUiState(
     val boss: WeeklyBoss,
     val todayEpochDay: Long,
     val actTitle: String,
+    val actDaysRemaining: Int,
+    val bossWeekBanner: String?,
+    val streakArmorChip: String?,
+    val starterPathLabel: String?,
     /** Shown when new calendar day or pinned */
     val omenLine: String?,
     val showOmenCard: Boolean,
@@ -101,45 +113,52 @@ class HomeViewModel @Inject constructor(
     private val _ui = MutableStateFlow<HomeUiState?>(null)
     val uiState = _ui.asStateFlow()
 
+    private val _questSealFlair = MutableStateFlow<String?>(null)
+    val questSealFlair = _questSealFlair.asStateFlow()
+
     private val _pickedSuffixThisSession = MutableStateFlow(false)
 
     init {
         dayFlow
             .flatMapLatest { day ->
-                val core = combine(
-                    profileRepository.observeProfile(),
-                    habitRepository.observeHabits(),
-                    habitRepository.observeCompletionsForDay(day),
-                    metricsRepository.observeDay(day),
+                combine(
+                    combine(
+                        profileRepository.observeProfile(),
+                        habitRepository.observeHabits(),
+                        habitRepository.observeCompletionsForDay(day),
+                        habitRepository.observeCompletionsForDay(day - 1),
+                        metricsRepository.observeDay(day),
+                    ) { profile, habits, todayComp, yesterdayComp, metric ->
+                        HomeInnerSnap(profile, habits, todayComp, yesterdayComp, metric)
+                    },
                     questCompletionRepository.observeCompletedIds(day),
-                ) { profile, habits, completions, metric, questDone ->
-                    Quintuple(profile, habits, completions, metric, questDone)
-                }
-                combine(core, privacyPreferences.homeSnapshot) { q, homeSnap ->
-                    Snapshot(q.a, q.b, day, q.c, q.d, q.e, homeSnap)
+                    questCompletionRepository.observeCompletedIds(day - 1),
+                    privacyPreferences.homeSnapshot,
+                ) { inner, questToday, questYesterday, homeSnap ->
+                    HomeBundle(day, inner, questToday, questYesterday, homeSnap)
                 }
             }
-            .onEach { snap ->
+            .onEach { bundle ->
                 viewModelScope.launch {
-                    healthConnectMetricsSync.syncIfEnabled(snap.homeSnap.settings)
-                    val rollingMetrics = metricsRepository.metricsBetween(snap.day - 6, snap.day)
-                    val completionMap = loadCompletionMap(snap.habits, snap.day)
+                    healthConnectMetricsSync.syncIfEnabled(bundle.homeSnap.settings)
+                    val rollingMetrics = metricsRepository.metricsBetween(bundle.day - 6, bundle.day)
+                    val completionMap = loadCompletionMap(bundle.inner.habits, bundle.day)
                     val rolling = statComputation.computeRollingSevenDay(
                         lastSevenDays = rollingMetrics,
-                        habits = snap.habits,
+                        habits = bundle.inner.habits,
                         isHabitCompleted = { hid, epoch -> completionMap[Pair(hid, epoch)] == true },
-                        todayEpochDay = snap.day,
+                        todayEpochDay = bundle.day,
                     )
                     val todayStats = statComputation.computeToday(
-                        snap.metric,
-                        snap.habits,
-                        snap.completions,
+                        bundle.inner.metric,
+                        bundle.inner.habits,
+                        bundle.inner.todayComp,
                     )
-                    val pack = narrativeRepository.loadPack(snap.homeSnap.settings.flavorPackId)
-                    val localDate = LocalDate.ofEpochDay(snap.day)
+                    val pack = narrativeRepository.loadPack(bundle.homeSnap.settings.flavorPackId)
+                    val localDate = LocalDate.ofEpochDay(bundle.day)
                     val narrative = NarrativeContext(localDate, pack)
                     val weekStart = weekStartMondayEpochDay(localDate)
-                    val bossDeferred = snap.homeSnap.deferredBossWeekStart == weekStart
+                    val bossDeferred = bundle.homeSnap.deferredBossWeekStart == weekStart
                     val boss = bossGenerator.weeklyBoss(
                         weekStartEpochDay = weekStart,
                         stats = rolling,
@@ -147,42 +166,43 @@ class HomeViewModel @Inject constructor(
                         bossDeferredForThisWeek = bossDeferred,
                     )
                     val questDoneByDay = (1L..3L).associate { off ->
-                        val d = snap.day - off
+                        val d = bundle.day - off
                         d to questCompletionRepository.completedIds(d)
                     }
-                    val chain = QuestChainDetector.recoveryChainActive(snap.day) { d ->
+                    val chain = QuestChainDetector.recoveryChainActive(bundle.day) { d ->
                         questDoneByDay[d].orEmpty()
                     }
                     val quests = questGenerator.dailyQuests(
                         stats = todayStats,
-                        goals = snap.profile.goals,
-                        todayEpochDay = snap.day,
-                        completions = snap.questDone,
+                        goals = bundle.inner.profile.goals,
+                        todayEpochDay = bundle.day,
+                        completions = bundle.questToday,
                         narrative = narrative,
                         recoveryChainActive = chain,
                     )
-                    val progress = xpEngine.progressForStats(todayStats, snap.profile.streakDays)
-                    val habitSeed = snap.habits.fold(0L) { acc, h -> acc xor h.id * 31 }
-                    val focusHabit = snap.habits.firstOrNull { !(snap.completions[it.id] ?: false) }
-                        ?: snap.habits.firstOrNull()
-                    val omenText = OmenPhrases.pick(snap.day + habitSeed, focusHabit?.name.orEmpty())
-                    val dismissedForToday = snap.homeSnap.omenEpochDay == snap.day
-                    val showOmen = !dismissedForToday || snap.homeSnap.omenPinned
-                    val moodHeadline = if (snap.homeSnap.eveningMoodEpochDay == snap.day - 1) {
-                        EveningMoodCopy.headlineForYesterday(snap.homeSnap.eveningMoodIds)
+                    val progress = xpEngine.progressForStats(todayStats, bundle.inner.profile.streakDays)
+                    val habitSeed = bundle.inner.habits.fold(0L) { acc, h -> acc xor h.id * 31 }
+                    val focusHabit = bundle.inner.habits.firstOrNull {
+                        !(bundle.inner.todayComp[it.id] ?: false)
+                    } ?: bundle.inner.habits.firstOrNull()
+                    val omenText = OmenPhrases.pick(bundle.day + habitSeed, focusHabit?.name.orEmpty())
+                    val dismissedForToday = bundle.homeSnap.omenEpochDay == bundle.day
+                    val showOmen = !dismissedForToday || bundle.homeSnap.omenPinned
+                    val moodHeadline = if (bundle.homeSnap.eveningMoodEpochDay == bundle.day - 1) {
+                        EveningMoodCopy.headlineForYesterday(bundle.homeSnap.eveningMoodIds)
                     } else {
                         null
                     }
-                    val storedLevel = snap.homeSnap.lastKnownLevel
+                    val storedLevel = bundle.homeSnap.lastKnownLevel
                     if (storedLevel == null) {
                         privacyPreferences.setLastKnownLevel(progress.level)
                     }
                     val levelUpSheet = if (storedLevel != null && progress.level > storedLevel) {
                         val arch = progress.archetype.displayName +
-                            snap.profile.archetypeSuffix?.let { " · $it" }.orEmpty()
+                            bundle.inner.profile.archetypeSuffix?.let { " · $it" }.orEmpty()
                         LevelUpSheetData(
                             newLevel = progress.level,
-                            compliment = LevelUpFlair.compliment(progress.level, snap.profile.displayName),
+                            compliment = LevelUpFlair.compliment(progress.level, bundle.inner.profile.displayName),
                             archetypeDisplay = arch,
                         )
                     } else {
@@ -191,52 +211,79 @@ class HomeViewModel @Inject constructor(
                     val band = ArchetypeSuffixCatalog.bandForLevel(progress.level)
                     val suffixPicker = if (
                         band != null &&
-                        snap.profile.archetypeSuffix == null &&
+                        bundle.inner.profile.archetypeSuffix == null &&
                         !_pickedSuffixThisSession.value
                     ) {
                         SuffixPickerData(band, ArchetypeSuffixCatalog.choicesForBand(band))
                     } else {
                         null
                     }
-                    val habitsDone = snap.habits.count { snap.completions[it.id] == true }
-                    val habitsTotal = snap.habits.size
+                    val habitsDone = bundle.inner.habits.count { bundle.inner.todayComp[it.id] == true }
+                    val habitsTotal = bundle.inner.habits.size
                     val questsDone = quests.count { it.completed }
                     val questsTotal = quests.size
+                    val habitsDoneYesterday = bundle.inner.habits.count {
+                        bundle.inner.yesterdayComp[it.id] == true
+                    }
+                    val questsDoneYesterday = bundle.questYesterday.size
                     val companion = CompanionResolver.resolve(
-                        todayEpochDay = snap.day,
-                        lastLoggedEpochDay = snap.profile.lastLoggedEpochDay,
-                        streakDays = snap.profile.streakDays,
+                        todayEpochDay = bundle.day,
+                        lastLoggedEpochDay = bundle.inner.profile.lastLoggedEpochDay,
+                        streakDays = bundle.inner.profile.streakDays,
                         habitsDoneToday = habitsDone,
                         habitsTotalToday = habitsTotal,
                         questsDoneToday = questsDone,
                         questsTotalToday = questsTotal,
-                        onboardingComplete = snap.profile.onboardingComplete,
+                        onboardingComplete = bundle.inner.profile.onboardingComplete,
+                        habitsDoneYesterday = habitsDoneYesterday,
+                        questsDoneYesterday = questsDoneYesterday,
+                        yesterdayMoodHeadline = moodHeadline,
                     )
                     val firstQuestTitle = quests.firstOrNull()?.title ?: "—"
+                    val widgetFlavor = WidgetStoryLines.pick(
+                        bundle.day,
+                        bundle.homeSnap.settings.flavorPackId,
+                    )
                     widgetSnapshotStore.write(
                         level = progress.level,
                         questTitle = firstQuestTitle,
                         bossName = boss.name,
+                        flavorLine = widgetFlavor,
                     )
+                    val actDaysRemaining = ActResolver.daysRemainingInAct(localDate)
+                    val bossWeekBanner = BossWeekArc.homeBannerLine(
+                        today = localDate,
+                        bossTargetStat = boss.targetStat,
+                        bossDeferredThisWeek = bossDeferred,
+                    )
+                    val streakArmorChip = if (progress.streakArmor >= 3) {
+                        StreakArmorLore.chipLine(progress.streakArmor)
+                    } else {
+                        null
+                    }
                     _ui.value = HomeUiState(
-                        profile = snap.profile,
+                        profile = bundle.inner.profile,
                         stats = todayStats,
                         rollingStats = rolling,
                         progress = progress,
                         quests = quests,
                         boss = boss,
-                        todayEpochDay = snap.day,
+                        todayEpochDay = bundle.day,
                         actTitle = narrative.actTitle,
+                        actDaysRemaining = actDaysRemaining,
+                        bossWeekBanner = bossWeekBanner,
+                        streakArmorChip = streakArmorChip,
+                        starterPathLabel = StarterPaths.labelForStoredId(bundle.inner.profile.starterPath),
                         omenLine = omenText,
                         showOmenCard = showOmen,
-                        omenPinned = snap.homeSnap.omenPinned,
+                        omenPinned = bundle.homeSnap.omenPinned,
                         moodHeadline = moodHeadline,
                         levelUpSheet = levelUpSheet,
                         suffixPicker = suffixPicker,
-                        soundEnabled = snap.homeSnap.settings.soundEnabled,
-                        hapticsEnabled = snap.homeSnap.settings.hapticsEnabled,
-                        familiarEnabled = snap.homeSnap.settings.familiarEnabled,
-                        familiarSpecies = snap.homeSnap.settings.familiarSpecies,
+                        soundEnabled = bundle.homeSnap.settings.soundEnabled,
+                        hapticsEnabled = bundle.homeSnap.settings.hapticsEnabled,
+                        familiarEnabled = bundle.homeSnap.settings.familiarEnabled,
+                        familiarSpecies = bundle.homeSnap.settings.familiarSpecies,
                         companion = companion,
                     )
                 }
@@ -290,9 +337,36 @@ class HomeViewModel @Inject constructor(
             xpEngine.award(quest.xpReward, "Quest: ${quest.title}")
             val ui = _ui.value
             if (ui != null) {
-                feedbackController.playSeal(ui.soundEnabled, ui.hapticsEnabled)
+                feedbackController.playQuestSeal(ui.soundEnabled, ui.hapticsEnabled)
+                _questSealFlair.value = QuestSealFlair.line(quest.linkedStat)
             }
         }
+    }
+
+    fun consumeQuestSealFlair() {
+        _questSealFlair.value = null
+    }
+
+    fun playLevelUpFeedback() {
+        val ui = _ui.value ?: return
+        feedbackController.playLevelUp(ui.soundEnabled, ui.hapticsEnabled)
+    }
+
+    fun buildDailySigilText(): String {
+        val u = _ui.value ?: return ""
+        val arch = u.progress.archetype.displayName +
+            u.profile.archetypeSuffix?.let { " · $it" }.orEmpty()
+        val sealed = u.quests.count { it.completed }
+        val total = u.quests.size
+        return DailySigilRecap.build(
+            displayName = u.profile.displayName,
+            level = u.progress.level,
+            actTitle = u.actTitle,
+            questsSealed = sealed,
+            questsTotal = total,
+            moodHeadlineYesterday = u.moodHeadline,
+            archetypeLine = arch,
+        )
     }
 
     private suspend fun loadCompletionMap(habits: List<Habit>, today: Long): Map<Pair<Long, Long>, Boolean> {
@@ -307,20 +381,18 @@ class HomeViewModel @Inject constructor(
     }
 }
 
-private data class Quintuple<A, B, C, D, E>(
-    val a: A,
-    val b: B,
-    val c: C,
-    val d: D,
-    val e: E,
-)
-
-private data class Snapshot(
+private data class HomeInnerSnap(
     val profile: UserProfile,
     val habits: List<Habit>,
+    val todayComp: Map<Long, Boolean>,
+    val yesterdayComp: Map<Long, Boolean>,
+    val metric: DailyMetric?,
+)
+
+private data class HomeBundle(
     val day: Long,
-    val completions: Map<Long, Boolean>,
-    val metric: com.openascend.domain.model.DailyMetric?,
-    val questDone: Set<String>,
+    val inner: HomeInnerSnap,
+    val questToday: Set<String>,
+    val questYesterday: Set<String>,
     val homeSnap: com.openascend.data.local.prefs.HomePreferenceSnapshot,
 )

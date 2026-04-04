@@ -83,7 +83,8 @@ fun HabitsScreen(
                         Text(habit.name)
                         Text(
                             "${habit.frequencyPerWeek}x / week · ${tier.label} $stars · ${habit.linkedStat.name}" +
-                                if (habit.isRestDay) " · sacred rest" else "",
+                                (if (habit.isRestDay) " · sacred rest" else "") +
+                                (if (habit.bossPrep) " · boss prep" else ""),
                         )
                         TextButton(onClick = { onEditHabit(habit.id) }) { Text("Refine") }
                         TextButton(onClick = { viewModel.deleteHabit(habit.id) }) { Text("Retire quest") }
@@ -99,12 +100,13 @@ fun HabitsScreen(
         var difficulty by remember { mutableIntStateOf(2) }
         var stat by remember { mutableStateOf(CoreStat.DISCIPLINE) }
         var restDay by remember { mutableStateOf(false) }
+        var bossPrep by remember { mutableStateOf(false) }
         AlertDialog(
             onDismissRequest = { showDialog = false },
             confirmButton = {
                 Button(
                     onClick = {
-                        viewModel.addHabit(name, perWeek, difficulty, stat, restDay)
+                        viewModel.addHabit(name, perWeek, difficulty, stat, restDay, bossPrep)
                         showDialog = false
                     },
                     enabled = name.isNotBlank(),
@@ -125,6 +127,11 @@ fun HabitsScreen(
                         selected = restDay,
                         onClick = { restDay = !restDay },
                         label = { Text("Sacred rest (kind copy if skipped)") },
+                    )
+                    FilterChip(
+                        selected = bossPrep,
+                        onClick = { bossPrep = !bossPrep },
+                        label = { Text("Boss prep (ties habit to weekly boss arc)") },
                     )
                 }
             },

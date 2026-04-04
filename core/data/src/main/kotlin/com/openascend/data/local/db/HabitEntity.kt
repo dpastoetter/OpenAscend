@@ -11,4 +11,5 @@ data class HabitEntity(
     val difficulty: Int,
     val linkedStat: String,
     val isRestDay: Boolean = false,
+    val bossPrep: Boolean = false,
 )

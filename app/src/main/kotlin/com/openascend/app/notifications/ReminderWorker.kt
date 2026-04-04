@@ -1,10 +1,14 @@
 package com.openascend.app.notifications
 
+import android.Manifest
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
@@ -92,7 +96,20 @@ class ReminderWorker(
             .setContentIntent(pi)
             .setAutoCancel(true)
             .build()
-        NotificationManagerCompat.from(applicationContext).notify(channelId.hashCode(), notif)
+        if (!canPostNotifications(applicationContext)) return
+        try {
+            NotificationManagerCompat.from(applicationContext).notify(channelId.hashCode(), notif)
+        } catch (_: SecurityException) {
+            // POST_NOTIFICATIONS denied or revoked on API 33+
+        }
+    }
+
+    private fun canPostNotifications(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
+        return ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS,
+        ) == PackageManager.PERMISSION_GRANTED
     }
 
     companion object {

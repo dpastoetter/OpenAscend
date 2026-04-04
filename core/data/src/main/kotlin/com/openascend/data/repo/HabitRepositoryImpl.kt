@@ -36,6 +36,7 @@ class HabitRepositoryImpl @Inject constructor(
             difficulty = draft.difficulty,
             linkedStat = draft.linkedStat,
             isRestDay = draft.isRestDay,
+            bossPrep = draft.bossPrep,
         ).toEntity()
         return habitDao.insert(entity)
     }

@@ -40,5 +40,6 @@ class ProfileRepositoryImpl @Inject constructor(
         lastLoggedEpochDay = null,
         avatarRelativePath = null,
         archetypeSuffix = null,
+        starterPath = null,
     )
 }

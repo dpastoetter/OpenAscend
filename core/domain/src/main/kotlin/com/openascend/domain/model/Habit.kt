@@ -10,6 +10,8 @@ data class Habit(
     val difficulty: Int,
     val linkedStat: CoreStat,
     val isRestDay: Boolean = false,
+    /** When true, copy nudges tying this habit to the weekly boss prep arc. */
+    val bossPrep: Boolean = false,
 )
 
 data class HabitDraft(
@@ -18,4 +20,5 @@ data class HabitDraft(
     val difficulty: Int,
     val linkedStat: CoreStat,
     val isRestDay: Boolean = false,
+    val bossPrep: Boolean = false,
 )

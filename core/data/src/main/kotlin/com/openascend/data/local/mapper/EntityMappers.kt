@@ -24,6 +24,7 @@ fun ProfileEntity.toDomain(): UserProfile = UserProfile(
     lastLoggedEpochDay = lastLoggedEpochDay,
     avatarRelativePath = avatarRelativePath,
     archetypeSuffix = archetypeSuffix,
+    starterPath = starterPath,
 )
 
 fun UserProfile.toEntity(): ProfileEntity = ProfileEntity(
@@ -43,6 +44,7 @@ fun HabitEntity.toDomain(): Habit = Habit(
     difficulty = difficulty,
     linkedStat = runCatching { CoreStat.valueOf(linkedStat) }.getOrDefault(CoreStat.DISCIPLINE),
     isRestDay = isRestDay,
+    bossPrep = bossPrep,
 )
 
 fun Habit.toEntity(): HabitEntity = HabitEntity(
@@ -52,6 +54,7 @@ fun Habit.toEntity(): HabitEntity = HabitEntity(
     difficulty = difficulty,
     linkedStat = linkedStat.name,
     isRestDay = isRestDay,
+    bossPrep = bossPrep,
 )
 
 fun DailyMetricEntity.toDomain(): DailyMetric = DailyMetric(

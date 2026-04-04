@@ -48,6 +48,9 @@ class CheckInViewModel @Inject constructor(
     private val _streakLore = MutableSharedFlow<String?>(extraBufferCapacity = 1)
     val streakLore = _streakLore.asSharedFlow()
 
+    private val _bossPrepLore = MutableSharedFlow<String?>(extraBufferCapacity = 1)
+    val bossPrepLore = _bossPrepLore.asSharedFlow()
+
     val uiState: StateFlow<CheckInUiState> = combine(
         metricsRepository.observeDay(day),
         habitRepository.observeHabits(),
@@ -72,6 +75,13 @@ class CheckInViewModel @Inject constructor(
     fun toggleHabit(habitId: Long, done: Boolean) {
         viewModelScope.launch {
             habitRepository.setCompleted(habitId, day, done)
+            if (!done) return@launch
+            val habit = habitRepository.getHabit(habitId)
+            val settings = privacyPreferences.settings.first()
+            feedbackController.playHabitSeal(settings.soundEnabled, settings.hapticsEnabled)
+            if (habit?.bossPrep == true) {
+                _bossPrepLore.emit("Boss-prep habit sealed—the weekly encounter takes notice.")
+            }
         }
     }
 
@@ -108,7 +118,7 @@ class CheckInViewModel @Inject constructor(
             if (firstLogOfDay) {
                 xpEngine.award(12, "Evening check-in sealed")
                 val settings = privacyPreferences.settings.first()
-                feedbackController.playSeal(settings.soundEnabled, settings.hapticsEnabled)
+                feedbackController.playCheckInSeal(settings.soundEnabled, settings.hapticsEnabled)
             }
             val lore = when {
                 updated.streakDays > prevStreak ->

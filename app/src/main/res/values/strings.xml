@@ -175,9 +175,14 @@
     <string name="onboarding_forge_legend">Forge your legend</string>
     <string name="onboarding_subtitle">OpenAscend turns habits and life signals into RPG stats. Nothing here is medical or financial advice — just a playful mirror.</string>
     <string name="onboarding_hero_name">Hero name</string>
+    <string name="onboarding_class_fantasy_title">Choose your path (optional)</string>
+    <string name="onboarding_class_fantasy_subtitle">Warden, Skirmisher, or Keeper — sets the flavor of your first chapter.</string>
+    <string name="onboarding_class_surprise">Surprise me</string>
     <string name="onboarding_goal_1">Quest goal #1</string>
     <string name="onboarding_goal_2">Quest goal #2 (optional)</string>
     <string name="onboarding_enter_realm">Enter the realm</string>
+    <string name="home_share_daily_sigil">Share today\'s sigil</string>
+    <string name="home_share_chooser_title">Share your daily sigil</string>
 
     <string name="boss_ritual_title">Boss ritual</string>
     <string name="boss_ritual_weak_link">Weak link: %1$s</string>
@@ -190,9 +195,9 @@
     <string name="backup_export_error">Could not save backup.</string>
 
     <string name="notify_morning_title">Morning overview</string>
-    <string name="notify_morning_body">Open your chronicle and see today\'s stats.</string>
+    <string name="notify_morning_body">The chronicle opens—today\'s stats and quests are waiting.</string>
     <string name="notify_evening_title">Evening check-in</string>
-    <string name="notify_evening_body">Seal today\'s run — habits and signals await.</string>
-    <string name="notify_boss_title">Weekly boss</string>
-    <string name="notify_boss_body">Face this week\'s encounter when you are ready.</string>
+    <string name="notify_evening_body">Time to seal the day—habits, mood, and signals want one honest pass.</string>
+    <string name="notify_boss_title">New boss week</string>
+    <string name="notify_boss_body">A fresh encounter is inked—peek when you want the tale to sharpen.</string>
 </resources>

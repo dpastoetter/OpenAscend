@@ -18,8 +18,8 @@ android {
         applicationId = "com.openascend.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.02"
+        versionCode = 4
+        versionName = "0.03"
         testInstrumentationRunner = "dagger.hilt.android.testing.HiltTestRunner"
     }
 

@@ -46,6 +46,7 @@ fun HabitEditScreen(
     var difficulty by remember { mutableIntStateOf(2) }
     var stat by remember { mutableStateOf(CoreStat.DISCIPLINE) }
     var restDay by remember { mutableStateOf(false) }
+    var bossPrep by remember { mutableStateOf(false) }
 
     LaunchedEffect(ui) {
         val ready = ui as? HabitEditUi.Ready ?: return@LaunchedEffect
@@ -54,6 +55,7 @@ fun HabitEditScreen(
         difficulty = ready.habit.difficulty
         stat = ready.habit.linkedStat
         restDay = ready.habit.isRestDay
+        bossPrep = ready.habit.bossPrep
     }
 
     Scaffold(
@@ -123,9 +125,14 @@ fun HabitEditScreen(
                     onClick = { restDay = !restDay },
                     label = { Text("Sacred rest day") },
                 )
+                FilterChip(
+                    selected = bossPrep,
+                    onClick = { bossPrep = !bossPrep },
+                    label = { Text("Boss prep (weekly encounter)") },
+                )
                 Button(
                     onClick = {
-                        viewModel.save(name, perWeek, difficulty, stat, restDay)
+                        viewModel.save(name, perWeek, difficulty, stat, restDay, bossPrep)
                         onSaved()
                     },
                     enabled = name.isNotBlank(),

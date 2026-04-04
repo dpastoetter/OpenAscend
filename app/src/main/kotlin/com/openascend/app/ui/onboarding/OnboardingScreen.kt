@@ -1,13 +1,18 @@
 package com.openascend.app.ui.onboarding
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -21,22 +26,26 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.openascend.app.R
+import com.openascend.domain.narrative.StarterPaths
 
 /**
  * Onboarding form without Hilt — use in previews and JVM UI tests (Robolectric + Compose).
  */
 @Composable
 fun OnboardingContent(
-    onComplete: (displayName: String, goals: List<String>) -> Unit,
+    onComplete: (displayName: String, goals: List<String>, starterPathId: String?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var name by remember { mutableStateOf("") }
     var goalA by remember { mutableStateOf("") }
     var goalB by remember { mutableStateOf("") }
+    var starterPathId by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier
-            .fillMaxSize()
+            .then(modifier)
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -54,6 +63,34 @@ fun OnboardingContent(
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
+        Text(
+            stringResource(R.string.onboarding_class_fantasy_title),
+            style = MaterialTheme.typography.titleSmall,
+        )
+        Text(
+            stringResource(R.string.onboarding_class_fantasy_subtitle),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FilterChip(
+                selected = starterPathId == null,
+                onClick = { starterPathId = null },
+                label = { Text(stringResource(R.string.onboarding_class_surprise)) },
+            )
+            StarterPaths.options.forEach { opt ->
+                FilterChip(
+                    selected = starterPathId == opt.id,
+                    onClick = { starterPathId = opt.id },
+                    label = { Text(opt.title) },
+                )
+            }
+        }
         OutlinedTextField(
             value = goalA,
             onValueChange = { goalA = it },
@@ -68,10 +105,11 @@ fun OnboardingContent(
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(24.dp))
         Button(
             onClick = {
-                onComplete(name, listOf(goalA, goalB))
+                val path = starterPathId
+                onComplete(name, listOf(goalA, goalB), path)
             },
             modifier = Modifier.fillMaxWidth(),
         ) {
@@ -86,8 +124,9 @@ fun OnboardingScreen(
     viewModel: OnboardingViewModel = hiltViewModel(),
 ) {
     OnboardingContent(
-        onComplete = { name, goals ->
-            viewModel.complete(name, goals, onFinished)
+        onComplete = { name, goals, path ->
+            viewModel.complete(name, goals, path, onFinished)
         },
+        modifier = Modifier.fillMaxSize(),
     )
 }

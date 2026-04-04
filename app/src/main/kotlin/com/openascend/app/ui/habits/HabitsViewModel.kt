@@ -31,7 +31,14 @@ class HabitsViewModel @Inject constructor(
             HabitsUiState(emptyList()),
         )
 
-    fun addHabit(name: String, perWeek: Int, difficulty: Int, stat: CoreStat, isRestDay: Boolean = false) {
+    fun addHabit(
+        name: String,
+        perWeek: Int,
+        difficulty: Int,
+        stat: CoreStat,
+        isRestDay: Boolean = false,
+        bossPrep: Boolean = false,
+    ) {
         viewModelScope.launch {
             habitRepository.createHabit(
                 HabitDraft(
@@ -40,6 +47,7 @@ class HabitsViewModel @Inject constructor(
                     difficulty = difficulty.coerceIn(1, 5),
                     linkedStat = stat,
                     isRestDay = isRestDay,
+                    bossPrep = bossPrep,
                 ),
             )
         }

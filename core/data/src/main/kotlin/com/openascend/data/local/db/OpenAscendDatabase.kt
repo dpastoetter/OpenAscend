@@ -12,7 +12,7 @@ import androidx.room.RoomDatabase
         XpEventEntity::class,
         QuestCompletionEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = false,
 )
 abstract class OpenAscendDatabase : RoomDatabase() {

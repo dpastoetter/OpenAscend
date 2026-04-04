@@ -5,6 +5,8 @@ import com.openascend.domain.model.GameQuest
 import com.openascend.domain.model.StatBlock
 import com.openascend.domain.narrative.NarrativeContext
 import com.openascend.domain.narrative.NarrativePack
+import java.time.DayOfWeek
+import java.time.LocalDate
 
 class QuestGenerator {
     fun dailyQuests(
@@ -15,6 +17,7 @@ class QuestGenerator {
         narrative: NarrativeContext? = null,
         recoveryChainActive: Boolean = false,
     ): List<GameQuest> {
+        val localDate = LocalDate.ofEpochDay(todayEpochDay)
         val pack = narrative?.pack ?: NarrativePack.fallback()
         val weak = stats.asMap().entries.sortedBy { it.value }.take(2).map { it.key }
         val fromWeak = weak.mapIndexed { idx, stat ->
@@ -38,7 +41,59 @@ class QuestGenerator {
                 completed = completions.contains("goal_${todayEpochDay}_$idx"),
             )
         }
-        return (fromWeak + goalQuest).take(4)
+        val merged = (fromWeak + goalQuest).toMutableList()
+        if (localDate.dayOfWeek == DayOfWeek.TUESDAY || localDate.dayOfWeek == DayOfWeek.FRIDAY) {
+            val wild = wildCardQuest(todayEpochDay, completions, pack)
+            if (merged.size >= 4) merged[merged.lastIndex] = wild else merged.add(wild)
+        }
+        return merged.take(4)
+    }
+
+    private fun wildCardQuest(
+        todayEpochDay: Long,
+        completions: Set<String>,
+        pack: NarrativePack,
+    ): GameQuest {
+        val variants = listOf(
+            Triple(
+                CoreStat.VITALITY,
+                "Moonlit errand",
+                "Do one small kindness for your body—water, light, or five slow breaths.",
+            ),
+            Triple(
+                CoreStat.STAMINA,
+                "Wanderer's gambit",
+                "Take a ten-minute loop outside or pace while a kettle boils.",
+            ),
+            Triple(
+                CoreStat.STABILITY,
+                "Quiet ledger",
+                "Name one spend you're glad about and one you'd soften next time (mental note is fine).",
+            ),
+            Triple(
+                CoreStat.DISCIPLINE,
+                "Wildcard oath",
+                "Finish a two-minute task you've been side-eyeing.",
+            ),
+            Triple(
+                CoreStat.RECOVERY,
+                "Soft checkpoint",
+                "Dim a screen or swap one scroll for silence before bed.",
+            ),
+        )
+        val pick = variants[todayEpochDay.mod(variants.size.toLong()).toInt()]
+        val id = "wild_${todayEpochDay}_${pick.first.name}"
+        val title = flavorTitle(pick.second, pack, todayEpochDay, 90)
+        val prefix = pack.questActPrefix.trim()
+        val titled = if (prefix.isNotEmpty()) "$prefix $title" else title
+        return GameQuest(
+            id = id,
+            title = titled,
+            description = pick.third,
+            linkedStat = pick.first,
+            xpReward = 22,
+            completed = completions.contains(id),
+        )
     }
 
     private fun templateFor(

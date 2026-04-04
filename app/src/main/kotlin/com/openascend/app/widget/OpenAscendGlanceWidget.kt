@@ -61,5 +61,10 @@ private fun WidgetBody() {
             style = TextStyle(color = muted),
             maxLines = 2,
         )
+        Text(
+            text = store.readFlavorLine(),
+            style = TextStyle(color = muted),
+            maxLines = 3,
+        )
     }
 }

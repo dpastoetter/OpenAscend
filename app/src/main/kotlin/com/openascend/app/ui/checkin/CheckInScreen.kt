@@ -67,6 +67,12 @@ fun CheckInScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.bossPrepLore.collect { msg ->
+            msg?.let { snack.showSnackbar(it) }
+        }
+    }
+
     LaunchedEffect(ui.sleepHours, ui.steps, ui.bankControl, ui.moneyNote, ui.vitality) {
         sleep = ui.sleepHours
         steps = ui.steps

@@ -17,6 +17,14 @@
 - JSON under merged assets: `narrative/{id}.json` (e.g. [`default.json`](../core/data/src/main/assets/narrative/default.json)).
 - **Contributors:** add a new file + optional Settings entry; keep keys stable (`actTitles`, `bossTellTemplates`, placeholders `{boss}`, `{stat}`).
 
+## Home, widget, and reminders (voice)
+
+- **Home** — Act line + **days left in the calendar-month “act”**; optional **boss-week** banner (`BossWeekArc`); **streak armor** chip when armor is high enough to matter; mood headline from yesterday’s check-in when present.
+- **Companion / familiar** — Copy can reference **yesterday’s** sealed check-in, habits/quests, and evening mood—keep lines warm, non-judgmental, second-person.
+- **Daily sigil** — Plain-text share blurb: chronicle tone + one-line disclaimer; not a medical/finance claim.
+- **Widget** — Short **rotating story lines** (`WidgetStoryLines`) keyed by epoch day + flavor pack id; should read as in-world nudges, not chores.
+- **Notifications** — Same voice as the chronicle (see `strings.xml` `notify_*`); copy changes should stay aligned with this doc.
+
 ## README pointer
 
 Product vision and player-feel principles live in the root [README.md](../README.md).

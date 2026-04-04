@@ -13,4 +13,6 @@ data class UserProfile(
     val avatarRelativePath: String? = null,
     /** Cosmetic RPG suffix chosen at level bands, e.g. "of the Quiet Hearth". */
     val archetypeSuffix: String? = null,
+    /** Onboarding "class fantasy" id ([com.openascend.domain.narrative.StarterPaths]). */
+    val starterPath: String? = null,
 )

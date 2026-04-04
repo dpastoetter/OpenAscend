@@ -21,6 +21,8 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -51,6 +53,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.openascend.app.ui.components.ProfileAvatar
 import com.openascend.domain.model.CoreStat
 import com.openascend.domain.narrative.StatLore
+import com.openascend.domain.narrative.StreakArmorLore
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -227,6 +230,15 @@ fun CharacterScreen(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Outlined.Shield, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Text("Streak armor: ${ui.progress.streakArmor} (narrative shield from consistency)")
+            }
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            ) {
+                Text(
+                    StreakArmorLore.shortBlurb,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(12.dp),
+                )
             }
             Text(
                 "Long-press a stat for lore.",

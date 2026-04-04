@@ -28,28 +28,80 @@ class FeedbackController @Inject constructor(
 
     private val sealSoundId: Int = soundPool.load(context, R.raw.seal, 1)
 
-    fun playSeal(soundEnabled: Boolean, hapticsEnabled: Boolean) {
-        if (hapticsEnabled) {
-            pulse(context)
-        }
+    fun playQuestSeal(soundEnabled: Boolean, hapticsEnabled: Boolean) {
+        if (hapticsEnabled) doublePulse(context)
+        playSealSound(soundEnabled, volume = 0.42f, rate = 1.06f)
+    }
+
+    fun playHabitSeal(soundEnabled: Boolean, hapticsEnabled: Boolean) {
+        if (hapticsEnabled) oneShot(context, durationMs = 30, amplitude = 90)
+        playSealSound(soundEnabled, volume = 0.28f, rate = 1f)
+    }
+
+    fun playCheckInSeal(soundEnabled: Boolean, hapticsEnabled: Boolean) {
+        if (hapticsEnabled) oneShot(context, durationMs = 48, amplitude = VibrationEffect.DEFAULT_AMPLITUDE)
+        playSealSound(soundEnabled, volume = 0.35f, rate = 1f)
+    }
+
+    fun playLevelUp(soundEnabled: Boolean, hapticsEnabled: Boolean) {
+        if (hapticsEnabled) triplePulse(context)
+        playSealSound(soundEnabled, volume = 0.52f, rate = 1.14f)
+    }
+
+    private fun playSealSound(soundEnabled: Boolean, volume: Float, rate: Float) {
         if (soundEnabled && sealSoundId > 0) {
-            soundPool.play(sealSoundId, 0.35f, 0.35f, 1, 0, 1f)
+            soundPool.play(sealSoundId, volume, volume, 1, 0, rate)
         }
     }
 
-    private fun pulse(context: Context) {
-        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    private fun vibrator(context: Context): Vibrator =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val vm = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
             vm.defaultVibrator
         } else {
             @Suppress("DEPRECATION")
             context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         }
+
+    private fun oneShot(context: Context, durationMs: Long, amplitude: Int) {
+        val v = vibrator(context)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(VibrationEffect.createOneShot(42, VibrationEffect.DEFAULT_AMPLITUDE))
+            v.vibrate(VibrationEffect.createOneShot(durationMs, amplitude))
         } else {
             @Suppress("DEPRECATION")
-            vibrator.vibrate(42)
+            v.vibrate(durationMs)
+        }
+    }
+
+    private fun doublePulse(context: Context) {
+        val v = vibrator(context)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            v.vibrate(
+                VibrationEffect.createWaveform(
+                    longArrayOf(0, 32, 52, 36),
+                    intArrayOf(0, 140, 0, 160),
+                    -1,
+                ),
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            v.vibrate(longArrayOf(0, 32, 52, 36), -1)
+        }
+    }
+
+    private fun triplePulse(context: Context) {
+        val v = vibrator(context)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            v.vibrate(
+                VibrationEffect.createWaveform(
+                    longArrayOf(0, 28, 40, 28, 40, 34),
+                    intArrayOf(0, 160, 0, 140, 0, 180),
+                    -1,
+                ),
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            v.vibrate(longArrayOf(0, 28, 40, 28, 40, 34), -1)
         }
     }
 }

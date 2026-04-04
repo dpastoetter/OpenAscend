@@ -13,4 +13,8 @@ object ActResolver {
         if (titles.isEmpty()) return ""
         return titles[monthIndex(date) % titles.size]
     }
+
+    /** Inclusive days from [date] through end of calendar month (this narrative "act"). */
+    fun daysRemainingInAct(date: LocalDate): Int =
+        date.lengthOfMonth() - date.dayOfMonth + 1
 }

@@ -2,6 +2,7 @@ package com.openascend.app.ui.home
 
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,9 +32,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,9 +47,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ShareCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.openascend.app.R
 import com.openascend.app.ui.companion.FamiliarStrip
 import com.openascend.app.ui.components.ProfileAvatar
 import com.openascend.domain.model.CoreStat
@@ -78,6 +86,19 @@ fun HomeScreen(
     }
 
     val ui = state!!
+    val snack = remember { SnackbarHostState() }
+    val sealFlair by viewModel.questSealFlair.collectAsState()
+    val context = LocalContext.current
+    LaunchedEffect(sealFlair) {
+        val msg = sealFlair ?: return@LaunchedEffect
+        snack.showSnackbar(msg)
+        viewModel.consumeQuestSealFlair()
+    }
+    LaunchedEffect(ui.levelUpSheet?.newLevel) {
+        if (ui.levelUpSheet != null) {
+            viewModel.playLevelUpFeedback()
+        }
+    }
     var loreStat by remember { mutableStateOf<CoreStat?>(null) }
     val archLine = ui.progress.archetype.displayName +
         ui.profile.archetypeSuffix?.let { " · $it" }.orEmpty()
@@ -138,15 +159,19 @@ fun HomeScreen(
         )
     }
 
-    Column(
+    Box(
         Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .statusBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 20.dp)
-            .padding(top = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+            .statusBarsPadding(),
     ) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 20.dp)
+                .padding(top = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
         Text(
             "Morning overview",
             style = MaterialTheme.typography.labelLarge,
@@ -157,8 +182,42 @@ fun HomeScreen(
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        Text(
+            "${ui.actDaysRemaining} days left in this act",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         ui.moodHeadline?.let { line ->
             Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+        }
+        ui.bossWeekBanner?.let { banner ->
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+            ) {
+                Text(
+                    banner,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(12.dp),
+                )
+            }
+        }
+        ui.streakArmorChip?.let { chipLine ->
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+            ) {
+                Row(
+                    Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(
+                        Icons.Outlined.Shield,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    Text(chipLine, style = MaterialTheme.typography.bodySmall)
+                }
+            }
         }
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -180,6 +239,13 @@ fun HomeScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                ui.starterPathLabel?.let { path ->
+                    Text(
+                        "Path: $path",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
         }
 
@@ -219,6 +285,19 @@ fun HomeScreen(
             TextButton(onClick = onOpenCharacter) { Text("Character sheet") }
             TextButton(onClick = onOpenHabits) { Text("Habits") }
             TextButton(onClick = onOpenSettings) { Text("Settings") }
+        }
+
+        TextButton(
+            onClick = {
+                ShareCompat.IntentBuilder(context)
+                    .setType("text/plain")
+                    .setText(viewModel.buildDailySigilText())
+                    .setChooserTitle(context.getString(R.string.home_share_chooser_title))
+                    .startChooser()
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(stringResource(R.string.home_share_daily_sigil))
         }
 
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
@@ -281,6 +360,13 @@ fun HomeScreen(
             }
         }
         Spacer(Modifier.height(24.dp))
+        }
+        SnackbarHost(
+            hostState = snack,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(16.dp),
+        )
     }
 }
 

@@ -1,6 +1,6 @@
 # OpenAscend
 
-**Current version: v0.02** (`versionName` **0.02** in Gradle)
+**Current version: v0.03** (`versionName` **0.03** in Gradle)
 
 **Repository:** [github.com/dpastoetter/OpenAscend](https://github.com/dpastoetter/OpenAscend)
 
@@ -46,9 +46,9 @@ OpenAscend is an **open-source, Android-first “life RPG”**: habits and simpl
 
 ### Shipped vs roadmap
 
-**In early releases (e.g. v0.01):** bootstrap → onboarding (local profile), home (morning overview, evening check-in, weekly review entry points), character sheet, habits list + edit, daily check-in (consolidated manual signals), weekly review + share, settings (theme + privacy flags; analytics/crash toggles are **placeholders** until real SDKs exist), dark/light/system theme.
+**Shipped in recent builds (e.g. v0.02+):** bootstrap → onboarding (hero name, optional **starter path** / class fantasy, goals), home (**act countdown**, boss-week banner, streak-armor chip when relevant, familiar strip, **daily sigil** text share, quest seal flair + snackbar), character sheet (**streak armor lore**), habits (**boss-prep** tag on habits), check-in (differentiated **haptics/sound** for habits vs evening seal), weekly review + recap share, boss ritual entry, settings (theme, narrative packs, familiar, reminders), **local reminders** (morning / evening / Monday boss nudge) with Android 13+ notification permission handling, **home widget** (level, quest, boss, rotating story line), dark/light/system theme.
 
-**Roadmap (prioritize as needed):** Health Connect for steps/sleep; local notifications (morning, evening, boss); optional split screens for sleep / finance / longevity; a dedicated boss ritual screen; splash polish; cloud accounts only if the product leaves strict offline-first; billing only with a monetization story, `INTERNET`, Play Billing, and policy work.
+**Roadmap (prioritize as needed):** Health Connect for steps/sleep; optional split screens for sleep / finance / longevity; splash polish; cloud accounts only if the product leaves strict offline-first; billing only with a monetization story, `INTERNET`, Play Billing, and policy work.
 
 ### Screen map (intent)
 
@@ -110,23 +110,25 @@ Design priorities for the RPG fantasy—apply these **in order** when shaping co
 - **One primary action** per screen where possible; secondary actions visually quieter.
 - **Empty states** are story beats: e.g. *No quests inscribed yet—forge your first rite* plus a single clear button.
 
-### 7. Sound & haptics (later, optional)
+### 7. Sound & haptics
 
-- One **soft** success sound and a **light** haptic on “quest sealed” can double perceived quality—add after core copy and motion feel right.
+- **Shipped:** distinct light patterns for **quest seal**, **habit seal**, **evening check-in seal**, and **level-up** (same base SFX, varied volume/rate + vibration waveforms)—see `FeedbackController`.
 
 **Suggested build order:** (1) copy on **home**, **check-in**, and **weekly**; (2) post-action feedback plus XP motion; (3) boss block on weekly as the dramatic set piece.
 
 ## Features
 
-- **Onboarding** — Set a hero name and initial quest goals to start your run.
-- **Daily flows** — Morning overview and evening check-in style surfaces to anchor the day.
-- **Character & progression** — Level, XP, and stat-style metrics tied to your activity.
-- **Habits** — Create and manage habits; edit flows are integrated in the app shell.
+- **Onboarding** — Hero name, optional **path** (Warden / Skirmisher / Keeper, or “Surprise me”), and quest goals; stored on the profile.
+- **Daily flows** — Morning overview with **act title + days left in the month act**, optional **boss-week** story banner, **yesterday-aware** familiar copy when enabled, **wildcard** daily quests on Tue/Fri, and **quest seal** one-liners (snackbar).
+- **Character & progression** — Level, XP, archetype; **streak armor** explained on the character sheet (plain-language disclaimer-friendly copy).
+- **Habits** — Create/edit habits; optional **boss prep** tag (ties copy and feedback to the weekly boss arc).
 - **Profile** — Optional profile image (camera/gallery) stored on device.
 - **Appearance** — Light/dark (or system) theme preference persisted locally.
-- **Share** — Generate bitmap recap cards for sharing (via Android share sheet where supported).
+- **Share** — Weekly **bitmap** recap cards plus a **daily sigil** (plain-text recap) from Home, user-initiated via the system share sheet.
+- **Widget** — Glance widget: level, top quest, boss name, and a **rotating flavor line** synced from Home.
+- **Reminders** — Optional local notifications (chronicle-voice copy); respects notification permission on Android 13+.
 
-Data is stored on the device (Room, DataStore). There is no bundled cloud sync in this early release.
+Data is stored on the device (Room, DataStore). **Room** is currently at **version 5** (`starterPath` on profile, `bossPrep` on habits)—see `DatabaseModule` migrations. There is no bundled cloud sync in this early release.
 
 ## Screenshots
 
@@ -150,7 +152,7 @@ adb exec-out screencap -p > shot.png
 | `:core:domain` | Domain models and use-case style logic (pure Kotlin) |
 | `:core:data` | Persistence (Room), repositories, DataStore preferences |
 
-Versioning: **v0.02** — `versionName` `0.02`, `versionCode` `3` in `app/build.gradle.kts`. Package id: `com.openascend.app`. **minSdk 26**, **targetSdk / compileSdk 35**.
+Versioning: **v0.03** — `versionName` `0.03`, `versionCode` `4` in `app/build.gradle.kts`. Package id: `com.openascend.app`. **minSdk 26**, **targetSdk / compileSdk 35**.
 
 ## Tech stack
 
@@ -214,7 +216,13 @@ Every push to `main` also uploads a debug APK as a workflow artifact from [CI](.
 ./gradlew :app:testDebugUnitTest
 ```
 
-Or run the same set the CI job uses:
+**Full verification** (unit tests + Android Lint on debug variants), matching a strict local gate before push:
+
+```bash
+./gradlew check test
+```
+
+CI-style build without Lint:
 
 ```bash
 ./gradlew :core:domain:test :core:data:testDebugUnitTest :app:testDebugUnitTest :app:assembleDebug

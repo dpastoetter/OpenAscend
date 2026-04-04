@@ -2,14 +2,17 @@ package com.openascend.app.ui.onboarding
 
 import android.app.Application
 import android.content.Context
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import com.openascend.app.ui.theme.OpenAscendTheme
@@ -42,13 +45,13 @@ class OnboardingComposeRobolectricTest {
     fun onboardingContent_showsHeadlineSubtitleAndCta() {
         withAppContext {
             OpenAscendTheme(dynamicColor = false) {
-                OnboardingContent(onComplete = { _, _ -> })
+                OnboardingContent(onComplete = { _, _, _ -> }, modifier = Modifier.fillMaxSize())
             }
         }
 
         composeRule.onNodeWithText("Forge your legend").assertIsDisplayed()
         composeRule.onNodeWithText("OpenAscend turns habits", substring = true).assertIsDisplayed()
-        composeRule.onNodeWithText("Enter the realm").assertIsDisplayed()
+        composeRule.onNodeWithText("Enter the realm").performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -59,17 +62,18 @@ class OnboardingComposeRobolectricTest {
         withAppContext {
             OpenAscendTheme(dynamicColor = false) {
                 OnboardingContent(
-                    onComplete = { name, goals ->
+                    onComplete = { name, goals, _ ->
                         capturedName = name
                         capturedGoals = goals
                     },
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
         }
 
-        composeRule.onAllNodes(hasSetTextAction())[0].performTextInput("River")
-        composeRule.onAllNodes(hasSetTextAction())[1].performTextInput("Walk daily")
-        composeRule.onNodeWithText("Enter the realm").performClick()
+        composeRule.onAllNodes(hasSetTextAction())[0].performScrollTo().performTextInput("River")
+        composeRule.onAllNodes(hasSetTextAction())[1].performScrollTo().performTextInput("Walk daily")
+        composeRule.onNodeWithText("Enter the realm").performScrollTo().performClick()
         composeRule.waitForIdle()
 
         assertEquals("River", capturedName)
@@ -80,7 +84,7 @@ class OnboardingComposeRobolectricTest {
     fun onboardingContent_fieldLabelsVisible() {
         withAppContext {
             OpenAscendTheme(dynamicColor = false) {
-                OnboardingContent(onComplete = { _, _ -> })
+                OnboardingContent(onComplete = { _, _, _ -> }, modifier = Modifier.fillMaxSize())
             }
         }
 

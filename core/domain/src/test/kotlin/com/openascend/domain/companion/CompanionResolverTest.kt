@@ -1,6 +1,7 @@
 package com.openascend.domain.companion
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CompanionResolverTest {
@@ -86,5 +87,23 @@ class CompanionResolverTest {
             onboardingComplete = true,
         )
         assertEquals(CompanionMood.CURIOUS, s.mood)
+    }
+
+    @Test
+    fun watching_remembers_yesterday_when_sealed_yesterday_with_habits() {
+        val s = CompanionResolver.resolve(
+            todayEpochDay = day,
+            lastLoggedEpochDay = day - 1,
+            streakDays = 2,
+            habitsDoneToday = 0,
+            habitsTotalToday = 2,
+            questsDoneToday = 0,
+            questsTotalToday = 4,
+            onboardingComplete = true,
+            habitsDoneYesterday = 1,
+            questsDoneYesterday = 0,
+        )
+        assertEquals(CompanionMood.WATCHING, s.mood)
+        assertTrue(s.line.contains("remembers", ignoreCase = true))
     }
 }

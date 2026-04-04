@@ -15,4 +15,5 @@ data class ProfileEntity(
     /** Path under app files dir; null if no custom photo. */
     val avatarRelativePath: String? = null,
     val archetypeSuffix: String? = null,
+    val starterPath: String? = null,
 )
