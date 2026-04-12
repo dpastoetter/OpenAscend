@@ -1,5 +1,13 @@
 # OpenAscend — release minification
 -keepattributes *Annotation*, Signature, InnerClasses, EnclosingMethod
+
+# Strip verbose logging in release (reduces accidental PII / path leakage in logcat).
+-assumenosideeffects class android.util.Log {
+    public static *** v(...);
+    public static *** d(...);
+    public static *** i(...);
+    public static *** w(...);
+}
 -keepnames class kotlinx.serialization.** { *; }
 -keepclassmembers class kotlinx.serialization.json.** { *; }
 -dontwarn kotlinx.serialization.**

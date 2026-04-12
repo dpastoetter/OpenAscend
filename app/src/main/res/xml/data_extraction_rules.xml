@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <data-extraction-rules>
+    <!-- Privacy-first: do not upload Room DB, DataStore, or SharedPreferences to Google cloud backup. -->
     <cloud-backup>
-        <include domain="sharedpref" path="." />
-        <include domain="database" path="." />
-        <exclude domain="sharedpref" path="openascend_reminders.xml" />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="file" path="datastore" />
     </cloud-backup>
+    <!-- Device-to-device transfer may still copy data when the user migrates phones. -->
     <device-transfer>
-        <include domain="sharedpref" path="." />
         <include domain="database" path="." />
+        <include domain="sharedpref" path="." />
+        <include domain="file" path="datastore" />
     </device-transfer>
 </data-extraction-rules>

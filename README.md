@@ -1,6 +1,6 @@
 # OpenAscend
 
-**Current version: v0.04** (`versionName` **0.04** in Gradle)
+**Current version: v0.05** (`versionName` **0.05**, `versionCode` **6** in Gradle)
 
 **Repository:** [github.com/dpastoetter/OpenAscend](https://github.com/dpastoetter/OpenAscend)
 
@@ -42,11 +42,11 @@ OpenAscend is an **open-source, Android-first “life RPG”**: habits and simpl
 | Navigation | Navigation Compose |
 | Images | Coil (local profile files) |
 
-**Clean architecture:** UI → ViewModels → domain services → repository interfaces → Room/DataStore. **Ports/adapters** in domain/data allow future **Health Connect**, banking, etc., with **manual entry** as the default path today. The MVP ships **without** `INTERNET` in the manifest—true **offline-first** until network features are added deliberately.
+**Clean architecture:** UI → ViewModels → domain services → repository interfaces → Room/DataStore. **Ports/adapters** in domain/data allow future **Health Connect**, banking, etc., with **manual entry** as the default path today. The MVP ships **without** `INTERNET` in the manifest—true **offline-first** until network features are added deliberately. A **network security config** disables cleartext HTTP globally as defense in depth.
 
 ### Shipped vs roadmap
 
-**Shipped in recent builds (e.g. v0.04+):** bootstrap → onboarding (hero name, optional **starter path** / class fantasy, goals), home (welcome-first hero strip, familiar strip with **cute chibi pixel sprites** when expanded—mood-matched; **daily quests** grant XP and a small **spotlight** bump on the linked stat on Home; quest seal flair + snackbar), character sheet (**streak armor lore**), habits (**boss-prep** tag), check-in (differentiated **haptics/sound**; optional **Seal the sigil** micro-ritual after first evening seal), weekly review + **bitmap** recap share, **boss ritual** with **weekly seal** (persisted, **+40 XP once per week**, haptics), settings (theme, narrative packs, familiar, reminders), **local reminders**, **home widget**, dark/light/system theme. **Daily plain-text “sigil” share** from Home was removed in favor of weekly share.
+**Shipped in recent builds (e.g. v0.05+):** bootstrap → onboarding (hero name, optional **starter path** / class fantasy, goals, **companion species**—enables the Home familiar when onboarding completes), home (welcome-first hero strip, familiar strip with **cute chibi pixel sprites** when expanded—mood-matched; **Play together** opens a **companion games hub**: **Treat toss** timing game and **Flash sigils** quick-memory rounds; **shared daily chronicle XP**—first finished companion game each calendar day can grant the bonus), **daily quests** grant XP and a small **spotlight** bump on the linked stat on Home; quest seal flair + snackbar), character sheet (**streak armor lore**), habits (**boss-prep** tag), check-in (differentiated **haptics/sound**; optional **Seal the sigil** micro-ritual after first evening seal), weekly review + **bitmap** recap share, **boss ritual** with **weekly seal** (persisted, **+40 XP once per week**, haptics), settings (theme, narrative packs, familiar, relaxed treat-toss / flash timing, reminders), **local reminders**, **home widget**, dark/light/system theme. **Daily plain-text “sigil” share** from Home was removed in favor of weekly share.
 
 **Roadmap (prioritize as needed):** Health Connect for steps/sleep; optional split screens for sleep / finance / longevity; splash polish; cloud accounts only if the product leaves strict offline-first; billing only with a monetization story, `INTERNET`, Play Billing, and policy work.
 
@@ -70,7 +70,7 @@ OpenAscend is an **open-source, Android-first “life RPG”**: habits and simpl
 
 ### Privacy & trust
 
-Offline-first MVP: no telemetry wired to Settings toggles yet; add **`INTERNET`** only when network ships. **Backup:** Settings can save a plaintext JSON snapshot (including preferences) via the system file picker—store exports carefully. Cloud backup follows `res/xml/backup_rules.xml` / `data_extraction_rules.xml`. **Sharing** is user-initiated only.
+Offline-first MVP: no telemetry wired to Settings toggles yet; add **`INTERNET`** only when network ships. **Backup:** Settings can save a plaintext JSON snapshot (including preferences) via the system file picker—store exports carefully. **Google cloud backup** intentionally **excludes** Room, DataStore, and app SharedPreferences (see `res/xml/backup_rules.xml` and `data_extraction_rules.xml`) so chronicle data is not uploaded to Google’s backup servers; **device-to-device transfer** can still copy that data when the user migrates phones. **Sharing** is user-initiated only. **Release builds** strip verbose `Log` calls via R8 (`proguard-rules.pro`) to reduce accidental leakage in logcat.
 
 ## Player feel
 
@@ -118,8 +118,8 @@ Design priorities for the RPG fantasy—apply these **in order** when shaping co
 
 ## Features
 
-- **Onboarding** — Hero name, optional **path** (Warden / Skirmisher / Keeper, or “Surprise me”), and quest goals; stored on the profile.
-- **Daily flows** — Home centers on **welcome + familiar** (optional); **wildcard** daily quests on Tue/Fri; **quest seal** one-liners (snackbar), XP toward level, and a **+5 spotlight** on the quest’s linked stat on Home for the day. After the first evening seal of the day, optional **Seal the sigil** micro-ritual (tap-in-order; flavor + haptics only, no extra XP).
+- **Onboarding** — Hero name, optional **path** (Warden / Skirmisher / Keeper, or “Surprise me”), quest goals, and **companion species** (Bear / Wolf / Dragon); enables the Home familiar in privacy settings when you finish onboarding.
+- **Daily flows** — Home centers on **welcome + familiar** (optional); **companion hub** from the strip: **Treat toss** or **Flash sigils** (three rounds each); **+10 chronicle XP** once per day for the **first** companion game you complete that day (shared pool). **Wildcard** daily quests on Tue/Fri; **quest seal** one-liners (snackbar), XP toward level, and a **+5 spotlight** on the quest’s linked stat on Home for the day. After the first evening seal of the day, optional **Seal the sigil** micro-ritual (tap-in-order; flavor + haptics only, no extra XP).
 - **Character & progression** — Level, XP, archetype; **streak armor** explained on the character sheet (plain-language disclaimer-friendly copy).
 - **Habits** — Create/edit habits; optional **boss prep** tag (ties copy and feedback to the weekly boss arc).
 - **Profile** — Optional profile image (camera/gallery) stored on device.
@@ -153,7 +153,7 @@ adb exec-out screencap -p > shot.png
 | `:core:domain` | Domain models and use-case style logic (pure Kotlin) |
 | `:core:data` | Persistence (Room), repositories, DataStore preferences |
 
-Versioning: **v0.04** — `versionName` `0.04`, `versionCode` `5` in `app/build.gradle.kts`. Package id: `com.openascend.app`. **minSdk 26**, **targetSdk / compileSdk 35**.
+Versioning: **v0.05** — `versionName` `0.05`, `versionCode` `6` in `app/build.gradle.kts`. Package id: `com.openascend.app`. **minSdk 26**, **targetSdk / compileSdk 35**.
 
 ## Tech stack
 
@@ -219,6 +219,18 @@ Each [GitHub Release](https://github.com/dpastoetter/OpenAscend/releases) publis
 
 Every push to `main` also uploads a debug APK as a workflow artifact from [CI](.github/workflows/ci.yml) (no Release).
 
+## Deep links (custom scheme)
+
+`openascend://` hosts are registered on `MainActivity` for in-app navigation (e.g. widgets, shortcuts). Examples:
+
+| Host | Destination |
+|------|-------------|
+| `home` | Home |
+| `companion`, `companion_games` | Companion games hub |
+| `companion_play` | Treat toss |
+| `companion_memory` | Flash sigils |
+| `check_in` / `checkin`, `weekly`, `boss`, `settings`, `character`, `habits` | Respective screens |
+
 ## Tests
 
 **All JVM unit tests** (domain, data debug+release, app debug+release):
@@ -257,8 +269,8 @@ CI-style quick gate:
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on pushes to `main`/`master` and on pull requests:
 
-- **build** — Domain, data, and app unit tests (including Compose/Robolectric where configured) plus `assembleDebug`; uploads the debug APK as a workflow artifact.
-- **instrumented** — `connectedDebugAndroidTest` on an API 34 `google_apis` x86_64 emulator (smoke / integration coverage).
+- **build** — Domain, data, and app unit tests (including Compose/Robolectric where configured) plus `assembleDebug`; Gradle build cache; uploads the debug APK as a workflow artifact.
+- **instrumented** — `connectedDebugAndroidTest` on an API 34 `google_apis` x86_64 emulator (stat/XP smoke); longer timeout and pinned **android-emulator-runner** so cold builds can finish.
 
 ## Emulator (optional)
 
