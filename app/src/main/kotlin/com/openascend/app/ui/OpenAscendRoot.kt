@@ -20,6 +20,8 @@ import com.openascend.app.navigation.Routes
 import com.openascend.app.ui.bootstrap.BootstrapViewModel
 import com.openascend.app.ui.boss.BossRitualScreen
 import com.openascend.app.ui.character.CharacterScreen
+import com.openascend.app.ui.companion.CompanionHubScreen
+import com.openascend.app.ui.companion.CompanionMemoryScreen
 import com.openascend.app.ui.companion.CompanionPlayScreen
 import com.openascend.app.ui.checkin.CheckInScreen
 import com.openascend.app.ui.habits.HabitEditScreen
@@ -79,17 +81,33 @@ fun OpenAscendRoot(
                 onOpenWeekly = { navController.navigate(Routes.Weekly) },
                 onOpenSettings = { navController.navigate(Routes.Settings) },
                 onOpenBossRitual = { navController.navigate(Routes.BossRitual) },
-                onOpenCompanionPlay = { navController.navigate(Routes.CompanionPlay) },
+                onOpenCompanionPlay = { navController.navigate(Routes.CompanionHub) },
+            )
+        }
+        composable(
+            Routes.CompanionHub,
+            deepLinks = listOf(
+                navDeepLink { uriPattern = "${deepLinkBase}companion" },
+                navDeepLink { uriPattern = "${deepLinkBase}companion_games" },
+            ),
+        ) {
+            CompanionHubScreen(
+                onBack = { navController.popBackStack() },
+                onTreatToss = { navController.navigate(Routes.CompanionPlay) },
+                onFlashSigils = { navController.navigate(Routes.CompanionMemory) },
             )
         }
         composable(
             Routes.CompanionPlay,
-            deepLinks = listOf(
-                navDeepLink { uriPattern = "${deepLinkBase}companion" },
-                navDeepLink { uriPattern = "${deepLinkBase}companion_play" },
-            ),
+            deepLinks = listOf(navDeepLink { uriPattern = "${deepLinkBase}companion_play" }),
         ) {
             CompanionPlayScreen(onBack = { navController.popBackStack() })
+        }
+        composable(
+            Routes.CompanionMemory,
+            deepLinks = listOf(navDeepLink { uriPattern = "${deepLinkBase}companion_memory" }),
+        ) {
+            CompanionMemoryScreen(onBack = { navController.popBackStack() })
         }
         composable(
             Routes.Character,

@@ -10,7 +10,9 @@ object DeepLinkMapper {
         "settings" -> Routes.Settings
         "character" -> Routes.Character
         "habits" -> Routes.Habits
-        "companion", "companion_play", "companion_hide", "companion_hide_peek" -> Routes.CompanionPlay
+        "companion", "companion_games" -> Routes.CompanionHub
+        "companion_play", "companion_hide", "companion_hide_peek" -> Routes.CompanionPlay
+        "companion_memory" -> Routes.CompanionMemory
         else -> null
     }
 }

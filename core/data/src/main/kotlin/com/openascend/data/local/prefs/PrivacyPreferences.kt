@@ -28,7 +28,7 @@ data class HomePreferenceSnapshot(
     val lastSigilRitualEpochDay: Long?,
     /** Monday epoch day of the week the user sealed the weekly boss ritual (XP awarded once). */
     val bossRitualSealedWeekStart: Long?,
-    /** Epoch day when companion treat minigame last granted chronicle XP (once per day). */
+        /** Epoch day when a companion minigame last granted shared daily chronicle XP (once per day). */
     val companionTreatXpEpochDay: Long?,
 )
 

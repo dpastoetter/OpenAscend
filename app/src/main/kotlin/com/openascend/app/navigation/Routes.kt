@@ -12,7 +12,9 @@ object Routes {
     const val Settings = "settings"
     const val BossRitual = "boss_ritual"
     const val SealSigil = "seal_sigil"
+    const val CompanionHub = "companion_games"
     const val CompanionPlay = "companion_play"
+    const val CompanionMemory = "companion_memory"
 
     fun habitEdit(habitId: Long): String = "habit_edit/$habitId"
 }
