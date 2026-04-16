@@ -39,46 +39,47 @@ import kotlin.random.Random
 
 private val SIGILS = listOf("✦", "◈", "❖")
 
-sealed class MemoryUiPhase {
-    data object Intro : MemoryUiPhase()
+sealed class SequenceUiPhase {
+    data object Intro : SequenceUiPhase()
 
-    data class Flash(
+    data class Playback(
         val roundIndex: Int,
-        val targetSigil: String,
-        val runningScore: Int,
-    ) : MemoryUiPhase()
+        val sequence: List<String>,
+        /** Which beat is highlighted, or null during the short pause between beats. */
+        val showingIndex: Int?,
+    ) : SequenceUiPhase()
 
-    data class Pick(
+    data class EchoInput(
         val roundIndex: Int,
-        val targetSigil: String,
-        val choices: List<String>,
+        val sequence: List<String>,
+        val entered: List<String>,
         val runningScore: Int,
-    ) : MemoryUiPhase()
+    ) : SequenceUiPhase()
 
     data class RoundFeedback(
         val roundIndex: Int,
         val correct: Boolean,
         val runningScore: Int,
-    ) : MemoryUiPhase()
+    ) : SequenceUiPhase()
 
     data class Summary(
         val totalPoints: Int,
         val xpGranted: Boolean,
         val xpAlreadyClaimedToday: Boolean,
-    ) : MemoryUiPhase()
+    ) : SequenceUiPhase()
 }
 
-data class CompanionMemoryUiState(
+data class CompanionSequenceUiState(
     val companion: CompanionSnapshot,
     val species: FamiliarSpecies,
     val soundEnabled: Boolean,
     val hapticsEnabled: Boolean,
     val treatTossEasyMode: Boolean,
-    val phase: MemoryUiPhase,
+    val phase: SequenceUiPhase,
 )
 
 @HiltViewModel
-class CompanionMemoryViewModel @Inject constructor(
+class CompanionSequenceViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
     private val habitRepository: HabitRepository,
     private val metricsRepository: MetricsRepository,
@@ -93,17 +94,19 @@ class CompanionMemoryViewModel @Inject constructor(
 
     companion object {
         const val ROUNDS_TOTAL = 3
-        private const val FLASH_MS_EASY = 780L
-        private const val FLASH_MS_NORMAL = 520L
+        private const val DISPLAY_MS_NORMAL = 560L
+        private const val DISPLAY_MS_EASY = 720L
+        private const val GAP_MS_NORMAL = 220L
+        private const val GAP_MS_EASY = 300L
     }
 
     private val day = todayEpochDay()
     private val random = Random.Default
 
-    private val _ui = MutableStateFlow<CompanionMemoryUiState?>(null)
+    private val _ui = MutableStateFlow<CompanionSequenceUiState?>(null)
     val uiState = _ui.asStateFlow()
 
-    private var flashJob: Job? = null
+    private var playbackJob: Job? = null
 
     init {
         combine(
@@ -114,7 +117,7 @@ class CompanionMemoryViewModel @Inject constructor(
                 habitRepository.observeCompletionsForDay(day - 1),
                 metricsRepository.observeDay(day),
             ) { profile, habits, todayComp, yesterdayComp, metric ->
-                CmInner(profile, habits, todayComp, yesterdayComp, metric)
+                CsInner(profile, habits, todayComp, yesterdayComp, metric)
             },
             questCompletionRepository.observeCompletedIds(day),
             questCompletionRepository.observeCompletedIds(day - 1),
@@ -126,7 +129,7 @@ class CompanionMemoryViewModel @Inject constructor(
                 val (questToday, questYesterday) = questsPair
                 viewModelScope.launch {
                     if (!inner.profile.onboardingComplete || !homeSnap.settings.familiarEnabled) {
-                        flashJob?.cancel()
+                        playbackJob?.cancel()
                         _ui.value = null
                         return@launch
                     }
@@ -182,17 +185,17 @@ class CompanionMemoryViewModel @Inject constructor(
                         ch.companion.mood == companion.mood &&
                             ch.species == species &&
                             ch.treatTossEasyMode == homeSnap.settings.treatTossEasyMode &&
-                            ch.phase !is MemoryUiPhase.Intro &&
-                            ch.phase !is MemoryUiPhase.Summary
+                            ch.phase !is SequenceUiPhase.Intro &&
+                            ch.phase !is SequenceUiPhase.Summary
                     } == true
                     val phase = when {
                         current == null || !keepPhase -> {
-                            if (!keepPhase) flashJob?.cancel()
-                            MemoryUiPhase.Intro
+                            if (!keepPhase) playbackJob?.cancel()
+                            SequenceUiPhase.Intro
                         }
                         else -> current.phase
                     }
-                    _ui.value = CompanionMemoryUiState(
+                    _ui.value = CompanionSequenceUiState(
                         companion = companion,
                         species = species,
                         soundEnabled = homeSnap.settings.soundEnabled,
@@ -207,29 +210,43 @@ class CompanionMemoryViewModel @Inject constructor(
 
     fun startSession() {
         val base = _ui.value ?: return
-        flashJob?.cancel()
+        playbackJob?.cancel()
         beginRound(base, roundIndex = 1, runningScore = 0)
     }
 
-    fun onSigilPicked(choice: String) {
+    fun onSigilTapped(choice: String) {
         val base = _ui.value ?: return
-        val pick = base.phase as? MemoryUiPhase.Pick ?: return
-        flashJob?.cancel()
-        val correct = choice == pick.targetSigil
-        val newScore = pick.runningScore + if (correct) 2 else 0
-        if (correct) {
-            feedbackController.playTreatTossGreat(base.soundEnabled, base.hapticsEnabled)
-        } else {
+        val input = base.phase as? SequenceUiPhase.EchoInput ?: return
+        val expected = input.sequence[input.entered.size]
+        if (choice != expected) {
             feedbackController.playTreatTossMiss(base.soundEnabled, base.hapticsEnabled)
+            _ui.value = base.copy(
+                phase = SequenceUiPhase.RoundFeedback(input.roundIndex, false, input.runningScore),
+            )
+            return
         }
-        _ui.value = base.copy(
-            phase = MemoryUiPhase.RoundFeedback(pick.roundIndex, correct, newScore),
-        )
+        val newEntered = input.entered + choice
+        if (newEntered.size == input.sequence.size) {
+            feedbackController.playTreatTossGreat(base.soundEnabled, base.hapticsEnabled)
+            val newScore = input.runningScore + 2
+            _ui.value = base.copy(
+                phase = SequenceUiPhase.RoundFeedback(input.roundIndex, true, newScore),
+            )
+        } else {
+            _ui.value = base.copy(
+                phase = SequenceUiPhase.EchoInput(
+                    roundIndex = input.roundIndex,
+                    sequence = input.sequence,
+                    entered = newEntered,
+                    runningScore = input.runningScore,
+                ),
+            )
+        }
     }
 
     fun continueAfterRound() {
         val base = _ui.value ?: return
-        val fb = base.phase as? MemoryUiPhase.RoundFeedback ?: return
+        val fb = base.phase as? SequenceUiPhase.RoundFeedback ?: return
         if (fb.roundIndex >= ROUNDS_TOTAL) {
             viewModelScope.launch { finishSession(base.copy(phase = fb)) }
             return
@@ -237,42 +254,67 @@ class CompanionMemoryViewModel @Inject constructor(
         beginRound(base, roundIndex = fb.roundIndex + 1, runningScore = fb.runningScore)
     }
 
-    private fun beginRound(base: CompanionMemoryUiState, roundIndex: Int, runningScore: Int) {
-        flashJob?.cancel()
-        val target = SIGILS[random.nextInt(SIGILS.size)]
-        _ui.value = base.copy(
-            phase = MemoryUiPhase.Flash(roundIndex, target, runningScore),
-        )
-        val flashMs = if (base.treatTossEasyMode) FLASH_MS_EASY else FLASH_MS_NORMAL
-        flashJob = viewModelScope.launch {
-            delay(flashMs)
-            if (!isActive) return@launch
-            val b = _ui.value ?: return@launch
-            val f = b.phase as? MemoryUiPhase.Flash ?: return@launch
-            if (f.roundIndex != roundIndex) return@launch
-            val shuffled = SIGILS.shuffled(random)
-            _ui.value = b.copy(
-                phase = MemoryUiPhase.Pick(
-                    roundIndex = f.roundIndex,
-                    targetSigil = f.targetSigil,
-                    choices = shuffled,
-                    runningScore = f.runningScore,
+    private fun sequenceLength(roundIndex: Int, easyMode: Boolean): Int =
+        if (easyMode) {
+            when (roundIndex) {
+                1 -> 2
+                2 -> 2
+                else -> 3
+            }
+        } else {
+            roundIndex + 1
+        }
+
+    private fun buildSequence(length: Int): List<String> =
+        List(length) { SIGILS[random.nextInt(SIGILS.size)] }
+
+    private fun beginRound(base: CompanionSequenceUiState, roundIndex: Int, runningScore: Int) {
+        playbackJob?.cancel()
+        val sequence = buildSequence(sequenceLength(roundIndex, base.treatTossEasyMode))
+        val displayMs = if (base.treatTossEasyMode) DISPLAY_MS_EASY else DISPLAY_MS_NORMAL
+        val gapMs = if (base.treatTossEasyMode) GAP_MS_EASY else GAP_MS_NORMAL
+        playbackJob = viewModelScope.launch {
+            for (i in sequence.indices) {
+                val cur = _ui.value ?: return@launch
+                _ui.value = cur.copy(
+                    phase = SequenceUiPhase.Playback(roundIndex, sequence, showingIndex = i),
+                )
+                delay(displayMs)
+                if (!isActive) return@launch
+                val mid = _ui.value ?: return@launch
+                val pb = mid.phase as? SequenceUiPhase.Playback ?: return@launch
+                if (pb.roundIndex != roundIndex || pb.sequence != sequence) return@launch
+                _ui.value = mid.copy(
+                    phase = SequenceUiPhase.Playback(roundIndex, sequence, showingIndex = null),
+                )
+                delay(gapMs)
+                if (!isActive) return@launch
+            }
+            val fin = _ui.value ?: return@launch
+            val last = fin.phase as? SequenceUiPhase.Playback ?: return@launch
+            if (last.roundIndex != roundIndex || last.sequence != sequence) return@launch
+            _ui.value = fin.copy(
+                phase = SequenceUiPhase.EchoInput(
+                    roundIndex = roundIndex,
+                    sequence = sequence,
+                    entered = emptyList(),
+                    runningScore = runningScore,
                 ),
             )
         }
     }
 
-    private suspend fun finishSession(base: CompanionMemoryUiState) {
-        val fb = base.phase as? MemoryUiPhase.RoundFeedback ?: return
+    private suspend fun finishSession(base: CompanionSequenceUiState) {
+        val fb = base.phase as? SequenceUiPhase.RoundFeedback ?: return
         val snap = privacyPreferences.homeSnapshot.first()
         val hadPriorToday = snap.companionTreatXpEpochDay == day
         val granted = privacyPreferences.markCompanionTreatXpDayIfNew(day)
         if (granted) {
-            xpEngine.award(CompanionGameXp.SHARED_DAILY_XP, "Companion flash sigils")
+            xpEngine.award(CompanionGameXp.SHARED_DAILY_XP, "Companion echo sigils")
             feedbackController.playQuestSeal(base.soundEnabled, base.hapticsEnabled)
         }
         _ui.value = base.copy(
-            phase = MemoryUiPhase.Summary(
+            phase = SequenceUiPhase.Summary(
                 totalPoints = fb.runningScore,
                 xpGranted = granted,
                 xpAlreadyClaimedToday = !granted && hadPriorToday,
@@ -281,11 +323,11 @@ class CompanionMemoryViewModel @Inject constructor(
     }
 
     override fun onCleared() {
-        flashJob?.cancel()
+        playbackJob?.cancel()
         super.onCleared()
     }
 
-    private data class CmInner(
+    private data class CsInner(
         val profile: UserProfile,
         val habits: List<Habit>,
         val todayComp: Map<Long, Boolean>,

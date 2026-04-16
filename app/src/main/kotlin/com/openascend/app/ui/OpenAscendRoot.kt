@@ -23,6 +23,8 @@ import com.openascend.app.ui.character.CharacterScreen
 import com.openascend.app.ui.companion.CompanionHubScreen
 import com.openascend.app.ui.companion.CompanionMemoryScreen
 import com.openascend.app.ui.companion.CompanionPlayScreen
+import com.openascend.app.ui.companion.CompanionFlappyScreen
+import com.openascend.app.ui.companion.CompanionSequenceScreen
 import com.openascend.app.ui.checkin.CheckInScreen
 import com.openascend.app.ui.habits.HabitEditScreen
 import com.openascend.app.ui.habits.HabitsScreen
@@ -95,6 +97,8 @@ fun OpenAscendRoot(
                 onBack = { navController.popBackStack() },
                 onTreatToss = { navController.navigate(Routes.CompanionPlay) },
                 onFlashSigils = { navController.navigate(Routes.CompanionMemory) },
+                onEchoSigils = { navController.navigate(Routes.CompanionSequence) },
+                onGlideFlight = { navController.navigate(Routes.CompanionGlide) },
             )
         }
         composable(
@@ -108,6 +112,18 @@ fun OpenAscendRoot(
             deepLinks = listOf(navDeepLink { uriPattern = "${deepLinkBase}companion_memory" }),
         ) {
             CompanionMemoryScreen(onBack = { navController.popBackStack() })
+        }
+        composable(
+            Routes.CompanionSequence,
+            deepLinks = listOf(navDeepLink { uriPattern = "${deepLinkBase}companion_sequence" }),
+        ) {
+            CompanionSequenceScreen(onBack = { navController.popBackStack() })
+        }
+        composable(
+            Routes.CompanionGlide,
+            deepLinks = listOf(navDeepLink { uriPattern = "${deepLinkBase}companion_glide" }),
+        ) {
+            CompanionFlappyScreen(onBack = { navController.popBackStack() })
         }
         composable(
             Routes.Character,

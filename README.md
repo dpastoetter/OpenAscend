@@ -46,7 +46,7 @@ OpenAscend is an **open-source, Android-first “life RPG”**: habits and simpl
 
 ### Shipped vs roadmap
 
-**Shipped in recent builds (e.g. v0.05+):** bootstrap → onboarding (hero name, optional **starter path** / class fantasy, goals, **companion species**—enables the Home familiar when onboarding completes), home (welcome-first hero strip, familiar strip with **cute chibi pixel sprites** when expanded—mood-matched; **Play together** opens a **companion games hub**: **Treat toss** timing game and **Flash sigils** quick-memory rounds; **shared daily chronicle XP**—first finished companion game each calendar day can grant the bonus), **daily quests** grant XP and a small **spotlight** bump on the linked stat on Home; quest seal flair + snackbar), character sheet (**streak armor lore**), habits (**boss-prep** tag), check-in (differentiated **haptics/sound**; optional **Seal the sigil** micro-ritual after first evening seal), weekly review + **bitmap** recap share, **boss ritual** with **weekly seal** (persisted, **+40 XP once per week**, haptics), settings (theme, narrative packs, familiar, relaxed treat-toss / flash timing, reminders), **local reminders**, **home widget**, dark/light/system theme. **Daily plain-text “sigil” share** from Home was removed in favor of weekly share.
+**Shipped in recent builds (e.g. v0.05+):** bootstrap → onboarding (hero name, optional **starter path** / class fantasy, goals, **companion species**—enables the Home familiar when onboarding completes), home (welcome-first hero strip, familiar strip with **cute chibi pixel sprites** when expanded—mood-matched; **Play together** opens a **companion games hub**: **Treat toss** (timing), **Flash sigils** (quick memory), **Echo sigils** (Simon-style pattern), and **Glide loop** (tap-to-flap with the pixel familiar); **shared daily chronicle XP**—first qualifying companion session each calendar day can grant **+10 XP**), **daily quests** grant XP and a small **spotlight** bump on the linked stat on Home; quest seal flair + snackbar), character sheet (**streak armor lore**), habits (**boss-prep** tag), check-in (differentiated **haptics/sound**; optional **Seal the sigil** micro-ritual after first evening seal), weekly review + **bitmap** recap share, **boss ritual** with **weekly seal** (persisted, **+40 XP once per week**, haptics), settings (theme, narrative packs, familiar, **relaxed companion games**—wider treat bands, longer sigil flashes/pauses, easier glide gates/gravity, reminders), **local reminders**, **home widget**, dark/light/system theme. **Daily plain-text “sigil” share** from Home was removed in favor of weekly share.
 
 **Roadmap (prioritize as needed):** Health Connect for steps/sleep; optional split screens for sleep / finance / longevity; splash polish; cloud accounts only if the product leaves strict offline-first; billing only with a monetization story, `INTERNET`, Play Billing, and policy work.
 
@@ -71,6 +71,8 @@ OpenAscend is an **open-source, Android-first “life RPG”**: habits and simpl
 ### Privacy & trust
 
 Offline-first MVP: no telemetry wired to Settings toggles yet; add **`INTERNET`** only when network ships. **Backup:** Settings can save a plaintext JSON snapshot (including preferences) via the system file picker—store exports carefully. **Google cloud backup** intentionally **excludes** Room, DataStore, and app SharedPreferences (see `res/xml/backup_rules.xml` and `data_extraction_rules.xml`) so chronicle data is not uploaded to Google’s backup servers; **device-to-device transfer** can still copy that data when the user migrates phones. **Sharing** is user-initiated only. **Release builds** strip verbose `Log` calls via R8 (`proguard-rules.pro`) to reduce accidental leakage in logcat.
+
+**Defense in depth (app hardening):** `openascend://` deep links are only honored when the URI **scheme** is `openascend` (see `DeepLinkMapper.validatedDeepLinkRoute` + `OpenAscendAppContent`). Profile avatars resolve under `filesDir` with **canonical path checks** (`SafeUserFiles`) so stored relative paths cannot traverse outside app files. Gallery/camera avatar import decodes images with **dimension caps** and safe failure modes (`ProfileAvatarImporter`). Cleartext HTTP remains **disabled** globally (`res/xml/network_security_config.xml`).
 
 ## Player feel
 
@@ -119,7 +121,7 @@ Design priorities for the RPG fantasy—apply these **in order** when shaping co
 ## Features
 
 - **Onboarding** — Hero name, optional **path** (Warden / Skirmisher / Keeper, or “Surprise me”), quest goals, and **companion species** (Bear / Wolf / Dragon); enables the Home familiar in privacy settings when you finish onboarding.
-- **Daily flows** — Home centers on **welcome + familiar** (optional); **companion hub** from the strip: **Treat toss** or **Flash sigils** (three rounds each); **+10 chronicle XP** once per day for the **first** companion game you complete that day (shared pool). **Wildcard** daily quests on Tue/Fri; **quest seal** one-liners (snackbar), XP toward level, and a **+5 spotlight** on the quest’s linked stat on Home for the day. After the first evening seal of the day, optional **Seal the sigil** micro-ritual (tap-in-order; flavor + haptics only, no extra XP).
+- **Daily flows** — Home centers on **welcome + familiar** (optional); **companion hub** from the strip: **Treat toss**, **Flash sigils**, **Echo sigils** (three rounds each on the memory-style games), **Glide loop** (flappy-style flight—clear the run target in one flight for the same **+10 chronicle XP** eligibility as the others). **+10 chronicle XP** once per day for the **first qualifying** companion session that day (**shared pool** across all four games). **Wildcard** daily quests on Tue/Fri; **quest seal** one-liners (snackbar), XP toward level, and a **+5 spotlight** on the quest’s linked stat on Home for the day. After the first evening seal of the day, optional **Seal the sigil** micro-ritual (tap-in-order; flavor + haptics only, no extra XP).
 - **Character & progression** — Level, XP, archetype; **streak armor** explained on the character sheet (plain-language disclaimer-friendly copy).
 - **Habits** — Create/edit habits; optional **boss prep** tag (ties copy and feedback to the weekly boss arc).
 - **Profile** — Optional profile image (camera/gallery) stored on device.
@@ -229,7 +231,11 @@ Every push to `main` also uploads a debug APK as a workflow artifact from [CI](.
 | `companion`, `companion_games` | Companion games hub |
 | `companion_play` | Treat toss |
 | `companion_memory` | Flash sigils |
+| `companion_sequence` | Echo sigils |
+| `companion_glide` | Glide loop |
 | `check_in` / `checkin`, `weekly`, `boss`, `settings`, `character`, `habits` | Respective screens |
+
+Only URIs whose **scheme** is `openascend` (case-insensitive) are mapped; other schemes are ignored even if the host looks familiar.
 
 ## Tests
 
@@ -271,6 +277,8 @@ CI-style quick gate:
 
 - **build** — Domain, data, and app unit tests (including Compose/Robolectric where configured) plus `assembleDebug`; Gradle build cache; uploads the debug APK as a workflow artifact.
 - **instrumented** — `connectedDebugAndroidTest` on an API 34 `google_apis` x86_64 emulator (stat/XP smoke); longer timeout and pinned **android-emulator-runner** so cold builds can finish.
+
+**Note:** JVM tests under `:app` that call **`android.net.Uri`** APIs should run with **Robolectric** (e.g. `@RunWith(RobolectricTestRunner::class)` + `@Config`) so `Uri.parse` behaves like on-device; see `DeepLinkMapperTest`.
 
 ## Emulator (optional)
 

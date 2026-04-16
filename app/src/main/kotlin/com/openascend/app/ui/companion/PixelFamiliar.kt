@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.openascend.domain.companion.CompanionMood
 import com.openascend.domain.model.FamiliarSpecies
@@ -75,4 +76,32 @@ fun PixelFamiliar(
             contentScale = ContentScale.Fit,
         )
     }
+}
+
+/**
+ * Compact pixel familiar for in-game use (no full-width strip); optional tilt from vertical velocity.
+ */
+@Composable
+fun PixelFamiliarGameSprite(
+    species: FamiliarSpecies,
+    mood: CompanionMood,
+    contentDescription: String,
+    size: Dp = 52.dp,
+    modifier: Modifier = Modifier,
+    rotationDegrees: Float = 0f,
+) {
+    val context = LocalContext.current
+    val resId = FamiliarPixelDrawable.resId(species, mood)
+    val painter = remember(resId) {
+        val bmp = BitmapFactory.decodeResource(context.resources, resId)
+        BitmapPainter(bmp.asImageBitmap(), filterQuality = FilterQuality.None)
+    }
+    Image(
+        painter = painter,
+        contentDescription = contentDescription,
+        modifier = modifier
+            .size(size)
+            .graphicsLayer { rotationZ = rotationDegrees },
+        contentScale = ContentScale.Fit,
+    )
 }

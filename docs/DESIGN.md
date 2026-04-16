@@ -20,11 +20,15 @@
 ## Home, widget, and reminders (voice)
 
 - **Home** — Act line + **days left in the calendar-month “act”**; optional **boss-week** banner (`BossWeekArc`); **streak armor** chip when armor is high enough to matter; mood headline from yesterday’s check-in when present.
-- **Companion / familiar** — Copy can reference **yesterday’s** sealed check-in, habits/quests, and evening mood—keep lines warm, non-judgmental, second-person.
-- **Daily sigil** — Plain-text share blurb: chronicle tone + one-line disclaimer; not a medical/finance claim.
+- **Companion / familiar** — Copy can reference **yesterday’s** sealed check-in, habits/quests, and evening mood—keep lines warm, non-judgmental, second-person. The **companion games hub** (Treat toss, Flash sigils, Echo sigils, Glide loop) stays **theater for the chronicle**—same disclaimer posture as other playful surfaces; Glide loop is reflex play, not a wellness claim.
+- **Weekly share** — Recap is the primary **shareable** beat today (bitmap weekly card). Older “daily sigil” plain-text share from Home is **not** current product; if copy references sharing, anchor on **weekly** unless you intentionally document a legacy experiment.
 - **Widget** — Short **rotating story lines** (`WidgetStoryLines`) keyed by epoch day + flavor pack id; should read as in-world nudges, not chores.
 - **Notifications** — Same voice as the chronicle (see `strings.xml` `notify_*`); copy changes should stay aligned with this doc.
 - **Seal the sigil** (optional, after first evening seal of the day) — Short tap-in-order ritual; copy must stay **theater-only** (no therapy/medical/finance claims). See `SigilRitualCopy` and `SealSigilScreen`.
+
+## Companion mini-games (voice)
+
+Short, opt-in moments from Home’s familiar—**not** therapy, medical, or financial advice. **Echo sigils** leans on rhythm/listening language; **Glide loop** on silly flight / gates; keep failure lines gentle and retry-friendly.
 
 ## README pointer
 

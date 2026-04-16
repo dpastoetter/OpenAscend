@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -47,15 +48,35 @@ class ProfileAvatarImporter @Inject constructor(
 }
 
 private fun decodeSampled(context: Context, uri: Uri, maxSide: Int): Bitmap? {
-    val resolver = context.contentResolver
-    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-    resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
-    if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
-    val opts = BitmapFactory.Options().apply {
-        inSampleSize = calculateInSampleSize(bounds.outWidth, bounds.outHeight, maxSide)
+    return try {
+        val resolver = context.contentResolver
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        if (bounds.outWidth > MAX_DECODE_DIMENSION || bounds.outHeight > MAX_DECODE_DIMENSION) {
+            return null
+        }
+        val opts = BitmapFactory.Options().apply {
+            inSampleSize = calculateInSampleSize(bounds.outWidth, bounds.outHeight, maxSide)
+            inMutable = false
+        }
+        val bmp = resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, opts) }
+            ?: return null
+        if (bmp.width > maxSide * 2 || bmp.height > maxSide * 2) {
+            bmp.recycle()
+            return null
+        }
+        bmp
+    } catch (_: SecurityException) {
+        null
+    } catch (_: OutOfMemoryError) {
+        null
+    } catch (_: IOException) {
+        null
     }
-    return resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, opts) }
 }
+
+private const val MAX_DECODE_DIMENSION = 8192
 
 private fun calculateInSampleSize(width: Int, height: Int, maxSide: Int): Int {
     var inSampleSize = 1

@@ -19,7 +19,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import coil.compose.AsyncImage
-import java.io.File
+import com.openascend.app.util.SafeUserFiles
 
 @Composable
 fun ProfileAvatar(
@@ -33,7 +33,7 @@ fun ProfileAvatar(
 ) {
     val context = LocalContext.current
     val file = remember(avatarRelativePath) {
-        avatarRelativePath?.let { File(context.filesDir, it).takeIf { f -> f.exists() } }
+        avatarRelativePath?.let { SafeUserFiles.resolveUnderFilesDir(context, it) }
     }
     val shapeAndSize = modifier
         .size(size)

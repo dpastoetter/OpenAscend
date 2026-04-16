@@ -670,7 +670,7 @@ private fun SummaryBody(
                         color = scheme.primaryContainer,
                     ) {
                         Text(
-                            stringResource(R.string.companion_play_xp_granted, CompanionPlayViewModel.TREAT_TOSS_XP),
+                            stringResource(R.string.companion_play_xp_granted, CompanionGameXp.SHARED_DAILY_XP),
                             style = MaterialTheme.typography.bodyMedium,
                             color = scheme.onPrimaryContainer,
                             fontWeight = FontWeight.Medium,

@@ -1,6 +1,21 @@
 package com.openascend.app.navigation
 
+import android.net.Uri
+
 object DeepLinkMapper {
+
+    /**
+     * Validates [Uri] before navigation: only the `openascend` scheme and a known host are accepted.
+     * Ignores path/query/fragment so stray segments cannot influence routing.
+     */
+    fun validatedDeepLinkRoute(uri: Uri?): String? {
+        if (uri == null) return null
+        if (!uri.scheme.equals("openascend", ignoreCase = true)) return null
+        val host = uri.host?.trim()?.lowercase() ?: return null
+        if (host.isEmpty()) return null
+        return routeFromHost(host)
+    }
+
     /** Host from `openascend://{host}` → Nav route constant. */
     fun routeFromHost(host: String?): String? = when (host?.lowercase()) {
         "home" -> Routes.Home
@@ -13,6 +28,8 @@ object DeepLinkMapper {
         "companion", "companion_games" -> Routes.CompanionHub
         "companion_play", "companion_hide", "companion_hide_peek" -> Routes.CompanionPlay
         "companion_memory" -> Routes.CompanionMemory
+        "companion_sequence" -> Routes.CompanionSequence
+        "companion_glide" -> Routes.CompanionGlide
         else -> null
     }
 }

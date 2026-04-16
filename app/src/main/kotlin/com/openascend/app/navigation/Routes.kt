@@ -15,6 +15,8 @@ object Routes {
     const val CompanionHub = "companion_games"
     const val CompanionPlay = "companion_play"
     const val CompanionMemory = "companion_memory"
+    const val CompanionSequence = "companion_sequence"
+    const val CompanionGlide = "companion_glide"
 
     fun habitEdit(habitId: Long): String = "habit_edit/$habitId"
 }

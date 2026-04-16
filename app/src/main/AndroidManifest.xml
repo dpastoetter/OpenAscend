@@ -61,6 +61,8 @@
                 <data android:scheme="openascend" android:host="companion_games" />
                 <data android:scheme="openascend" android:host="companion_play" />
                 <data android:scheme="openascend" android:host="companion_memory" />
+                <data android:scheme="openascend" android:host="companion_sequence" />
+                <data android:scheme="openascend" android:host="companion_glide" />
                 <data android:scheme="openascend" android:host="companion_hide" />
                 <data android:scheme="openascend" android:host="companion_hide_peek" />
             </intent-filter>

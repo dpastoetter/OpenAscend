@@ -88,7 +88,6 @@ class CompanionPlayViewModel @Inject constructor(
 ) : ViewModel() {
 
     companion object {
-        const val TREAT_TOSS_XP = 10
         const val ROUNDS_TOTAL = 3
         private const val FRAME_MS = 16L
     }
@@ -247,7 +246,7 @@ class CompanionPlayViewModel @Inject constructor(
         val hadPriorToday = snap.companionTreatXpEpochDay == day
         val granted = privacyPreferences.markCompanionTreatXpDayIfNew(day)
         if (granted) {
-            xpEngine.award(TREAT_TOSS_XP, "Companion treat toss")
+            xpEngine.award(CompanionGameXp.SHARED_DAILY_XP, "Companion treat toss")
             feedbackController.playQuestSeal(base.soundEnabled, base.hapticsEnabled)
         }
         _ui.value = base.copy(

@@ -42,9 +42,9 @@ import com.openascend.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CompanionMemoryScreen(
+fun CompanionSequenceScreen(
     onBack: () -> Unit,
-    viewModel: CompanionMemoryViewModel = hiltViewModel(),
+    viewModel: CompanionSequenceViewModel = hiltViewModel(),
 ) {
     val ui by viewModel.uiState.collectAsState()
     val scheme = MaterialTheme.colorScheme
@@ -55,7 +55,7 @@ fun CompanionMemoryScreen(
             TopAppBar(
                 title = {
                     Text(
-                        stringResource(R.string.companion_memory_title),
+                        stringResource(R.string.companion_sequence_title),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                     )
@@ -111,7 +111,7 @@ fun CompanionMemoryScreen(
                     tonalElevation = 1.dp,
                 ) {
                     Text(
-                        stringResource(R.string.companion_memory_theater_note),
+                        stringResource(R.string.companion_sequence_theater_note),
                         style = MaterialTheme.typography.bodySmall,
                         color = scheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
@@ -119,27 +119,29 @@ fun CompanionMemoryScreen(
                 }
 
                 when (val phase = state.phase) {
-                    is MemoryUiPhase.Intro -> MemoryIntroBody(
+                    is SequenceUiPhase.Intro -> SequenceIntroBody(
                         speciesName = state.species.displayName,
                         onStart = { viewModel.startSession() },
                     )
-                    is MemoryUiPhase.Flash -> MemoryFlashBody(
+                    is SequenceUiPhase.Playback -> SequencePlaybackBody(
                         roundIndex = phase.roundIndex,
-                        sigil = phase.targetSigil,
+                        showingIndex = phase.showingIndex,
+                        sequence = phase.sequence,
                     )
-                    is MemoryUiPhase.Pick -> MemoryPickBody(
+                    is SequenceUiPhase.EchoInput -> SequenceEchoBody(
                         roundIndex = phase.roundIndex,
-                        choices = phase.choices,
+                        sequence = phase.sequence,
+                        entered = phase.entered,
                         runningScore = phase.runningScore,
-                        onPick = { viewModel.onSigilPicked(it) },
+                        onTap = { viewModel.onSigilTapped(it) },
                     )
-                    is MemoryUiPhase.RoundFeedback -> MemoryFeedbackBody(
+                    is SequenceUiPhase.RoundFeedback -> SequenceFeedbackBody(
                         roundIndex = phase.roundIndex,
                         correct = phase.correct,
                         runningScore = phase.runningScore,
                         onNext = { viewModel.continueAfterRound() },
                     )
-                    is MemoryUiPhase.Summary -> MemorySummaryBody(
+                    is SequenceUiPhase.Summary -> SequenceSummaryBody(
                         totalPoints = phase.totalPoints,
                         xpGranted = phase.xpGranted,
                         xpAlreadyToday = phase.xpAlreadyClaimedToday,
@@ -153,36 +155,37 @@ fun CompanionMemoryScreen(
 }
 
 @Composable
-private fun MemoryIntroBody(
+private fun SequenceIntroBody(
     speciesName: String,
     onStart: () -> Unit,
 ) {
     Text(
-        stringResource(R.string.companion_memory_intro, speciesName),
+        stringResource(R.string.companion_sequence_intro, speciesName),
         style = MaterialTheme.typography.bodyLarge,
     )
     Text(
-        stringResource(R.string.companion_memory_rules),
+        stringResource(R.string.companion_sequence_rules),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     Button(onClick = onStart, modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.companion_memory_start))
+        Text(stringResource(R.string.companion_sequence_start))
     }
 }
 
 @Composable
-private fun MemoryFlashBody(
+private fun SequencePlaybackBody(
     roundIndex: Int,
-    sigil: String,
+    showingIndex: Int?,
+    sequence: List<String>,
 ) {
     Text(
-        stringResource(R.string.companion_memory_round, roundIndex, CompanionMemoryViewModel.ROUNDS_TOTAL),
+        stringResource(R.string.companion_sequence_round, roundIndex, CompanionSequenceViewModel.ROUNDS_TOTAL),
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.primary,
     )
     Text(
-        stringResource(R.string.companion_memory_flash_hint),
+        stringResource(R.string.companion_sequence_playback_hint),
         style = MaterialTheme.typography.bodyMedium,
     )
     Box(
@@ -191,28 +194,34 @@ private fun MemoryFlashBody(
             .height(160.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(sigil, fontSize = 72.sp, textAlign = TextAlign.Center)
+        val glyph = when {
+            showingIndex == null -> stringResource(R.string.companion_sequence_between_beats)
+            else -> sequence[showingIndex]
+        }
+        val fontSize = if (showingIndex == null) 28.sp else 72.sp
+        Text(glyph, fontSize = fontSize, textAlign = TextAlign.Center)
     }
 }
 
 @Composable
-private fun MemoryPickBody(
+private fun SequenceEchoBody(
     roundIndex: Int,
-    choices: List<String>,
+    sequence: List<String>,
+    entered: List<String>,
     runningScore: Int,
-    onPick: (String) -> Unit,
+    onTap: (String) -> Unit,
 ) {
     Text(
-        stringResource(R.string.companion_memory_round, roundIndex, CompanionMemoryViewModel.ROUNDS_TOTAL),
+        stringResource(R.string.companion_sequence_round, roundIndex, CompanionSequenceViewModel.ROUNDS_TOTAL),
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.primary,
     )
     Text(
-        stringResource(R.string.companion_memory_pick_prompt),
+        stringResource(R.string.companion_sequence_echo_prompt, entered.size + 1, sequence.size),
         style = MaterialTheme.typography.bodyLarge,
     )
     Text(
-        stringResource(R.string.companion_memory_score_running, runningScore),
+        stringResource(R.string.companion_sequence_score_running, runningScore),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -220,42 +229,44 @@ private fun MemoryPickBody(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
-        choices.forEach { sigil ->
-            FilledTonalButton(onClick = { onPick(sigil) }) {
+        SIGIL_CHOICES.forEach { sigil ->
+            FilledTonalButton(onClick = { onTap(sigil) }) {
                 Text(sigil, fontSize = 28.sp)
             }
         }
     }
 }
 
+private val SIGIL_CHOICES = listOf("✦", "◈", "❖")
+
 @Composable
-private fun MemoryFeedbackBody(
+private fun SequenceFeedbackBody(
     roundIndex: Int,
     correct: Boolean,
     runningScore: Int,
     onNext: () -> Unit,
 ) {
     val title = if (correct) {
-        stringResource(R.string.companion_memory_correct_title)
+        stringResource(R.string.companion_sequence_correct_title)
     } else {
-        stringResource(R.string.companion_memory_wrong_title)
+        stringResource(R.string.companion_sequence_wrong_title)
     }
     val body = if (correct) {
-        stringResource(R.string.companion_memory_correct_body)
+        stringResource(R.string.companion_sequence_correct_body)
     } else {
-        stringResource(R.string.companion_memory_wrong_body)
+        stringResource(R.string.companion_sequence_wrong_body)
     }
     Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
     Text(body, style = MaterialTheme.typography.bodyMedium)
     Text(
-        stringResource(R.string.companion_memory_score_running, runningScore),
+        stringResource(R.string.companion_sequence_score_running, runningScore),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-    val nextLabel = if (roundIndex >= CompanionMemoryViewModel.ROUNDS_TOTAL) {
-        stringResource(R.string.companion_memory_see_summary)
+    val nextLabel = if (roundIndex >= CompanionSequenceViewModel.ROUNDS_TOTAL) {
+        stringResource(R.string.companion_sequence_see_summary)
     } else {
-        stringResource(R.string.companion_memory_next_round)
+        stringResource(R.string.companion_sequence_next_round)
     }
     Button(onClick = onNext, modifier = Modifier.fillMaxWidth()) {
         Text(nextLabel)
@@ -263,19 +274,19 @@ private fun MemoryFeedbackBody(
 }
 
 @Composable
-private fun MemorySummaryBody(
+private fun SequenceSummaryBody(
     totalPoints: Int,
     xpGranted: Boolean,
     xpAlreadyToday: Boolean,
     onDone: () -> Unit,
 ) {
     Text(
-        stringResource(R.string.companion_memory_summary_title),
+        stringResource(R.string.companion_sequence_summary_title),
         style = MaterialTheme.typography.titleLarge,
         fontWeight = FontWeight.Bold,
     )
     Text(
-        stringResource(R.string.companion_memory_summary_score, totalPoints),
+        stringResource(R.string.companion_sequence_summary_score, totalPoints),
         style = MaterialTheme.typography.bodyLarge,
     )
     when {
@@ -296,6 +307,6 @@ private fun MemorySummaryBody(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.companion_memory_done))
+        Text(stringResource(R.string.companion_sequence_done))
     }
 }

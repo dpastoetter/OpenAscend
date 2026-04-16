@@ -19,7 +19,7 @@ import com.openascend.domain.model.ThemePreference
 fun OpenAscendAppContent() {
     val context = LocalContext.current
     val deepRoute = remember(context) {
-        (context as? android.app.Activity)?.intent?.data?.host?.let(DeepLinkMapper::routeFromHost)
+        (context as? android.app.Activity)?.intent?.data?.let(DeepLinkMapper::validatedDeepLinkRoute)
     }
     val vm: MainActivityViewModel = hiltViewModel()
     val themePref by vm.themePreference.collectAsState()

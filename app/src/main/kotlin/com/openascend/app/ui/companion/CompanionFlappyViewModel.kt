@@ -37,48 +37,42 @@ import java.time.LocalDate
 import javax.inject.Inject
 import kotlin.random.Random
 
-private val SIGILS = listOf("✦", "◈", "❖")
+data class FlappyPipe(
+    val x: Float,
+    val gapCenter: Float,
+    val scored: Boolean,
+)
 
-sealed class MemoryUiPhase {
-    data object Intro : MemoryUiPhase()
+sealed class FlappyPhase {
+    data object Intro : FlappyPhase()
 
-    data class Flash(
-        val roundIndex: Int,
-        val targetSigil: String,
-        val runningScore: Int,
-    ) : MemoryUiPhase()
-
-    data class Pick(
-        val roundIndex: Int,
-        val targetSigil: String,
-        val choices: List<String>,
-        val runningScore: Int,
-    ) : MemoryUiPhase()
-
-    data class RoundFeedback(
-        val roundIndex: Int,
-        val correct: Boolean,
-        val runningScore: Int,
-    ) : MemoryUiPhase()
+    data class Playing(
+        val birdY: Float,
+        val birdVy: Float,
+        val pipes: List<FlappyPipe>,
+        val score: Int,
+        val openHalf: Float,
+    ) : FlappyPhase()
 
     data class Summary(
-        val totalPoints: Int,
+        val score: Int,
+        val victory: Boolean,
         val xpGranted: Boolean,
         val xpAlreadyClaimedToday: Boolean,
-    ) : MemoryUiPhase()
+    ) : FlappyPhase()
 }
 
-data class CompanionMemoryUiState(
+data class CompanionFlappyUiState(
     val companion: CompanionSnapshot,
     val species: FamiliarSpecies,
     val soundEnabled: Boolean,
     val hapticsEnabled: Boolean,
     val treatTossEasyMode: Boolean,
-    val phase: MemoryUiPhase,
+    val phase: FlappyPhase,
 )
 
 @HiltViewModel
-class CompanionMemoryViewModel @Inject constructor(
+class CompanionFlappyViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
     private val habitRepository: HabitRepository,
     private val metricsRepository: MetricsRepository,
@@ -92,18 +86,35 @@ class CompanionMemoryViewModel @Inject constructor(
 ) : ViewModel() {
 
     companion object {
-        const val ROUNDS_TOTAL = 3
-        private const val FLASH_MS_EASY = 780L
-        private const val FLASH_MS_NORMAL = 520L
+        const val FRAME_MS = 16L
+        /** Shared with [CompanionFlappyScreen] for layout. */
+        const val BIRD_CENTER_X_NORM = 0.22f
+        const val PIPE_WIDTH_NORM = 0.10f
+        private const val BIRD_RADIUS = 0.042f
+        private const val OPEN_HALF_NORMAL = 0.11f
+        private const val OPEN_HALF_EASY = 0.135f
+        private const val GRAVITY_NORMAL = 0.00138f
+        private const val GRAVITY_EASY = 0.00095f
+        private const val FLAP_NORMAL = -0.024f
+        private const val FLAP_EASY = -0.021f
+        private const val SPEED_NORMAL = 0.0059f
+        private const val SPEED_EASY = 0.0043f
+        private const val SPAWN_FURTHEST_MAX = 0.58f
+
+        fun victoryThreshold(easyMode: Boolean): Int = if (easyMode) 5 else 7
     }
 
     private val day = todayEpochDay()
     private val random = Random.Default
 
-    private val _ui = MutableStateFlow<CompanionMemoryUiState?>(null)
+    private val _ui = MutableStateFlow<CompanionFlappyUiState?>(null)
     val uiState = _ui.asStateFlow()
 
-    private var flashJob: Job? = null
+    private var gameJob: Job? = null
+    private var birdY = 0.5f
+    private var birdVy = 0f
+    private var score = 0
+    private var pipes = emptyList<FlappyPipe>()
 
     init {
         combine(
@@ -114,7 +125,7 @@ class CompanionMemoryViewModel @Inject constructor(
                 habitRepository.observeCompletionsForDay(day - 1),
                 metricsRepository.observeDay(day),
             ) { profile, habits, todayComp, yesterdayComp, metric ->
-                CmInner(profile, habits, todayComp, yesterdayComp, metric)
+                CfInner(profile, habits, todayComp, yesterdayComp, metric)
             },
             questCompletionRepository.observeCompletedIds(day),
             questCompletionRepository.observeCompletedIds(day - 1),
@@ -126,7 +137,7 @@ class CompanionMemoryViewModel @Inject constructor(
                 val (questToday, questYesterday) = questsPair
                 viewModelScope.launch {
                     if (!inner.profile.onboardingComplete || !homeSnap.settings.familiarEnabled) {
-                        flashJob?.cancel()
+                        gameJob?.cancel()
                         _ui.value = null
                         return@launch
                     }
@@ -182,17 +193,17 @@ class CompanionMemoryViewModel @Inject constructor(
                         ch.companion.mood == companion.mood &&
                             ch.species == species &&
                             ch.treatTossEasyMode == homeSnap.settings.treatTossEasyMode &&
-                            ch.phase !is MemoryUiPhase.Intro &&
-                            ch.phase !is MemoryUiPhase.Summary
+                            ch.phase !is FlappyPhase.Intro &&
+                            ch.phase !is FlappyPhase.Summary
                     } == true
                     val phase = when {
                         current == null || !keepPhase -> {
-                            if (!keepPhase) flashJob?.cancel()
-                            MemoryUiPhase.Intro
+                            if (!keepPhase) gameJob?.cancel()
+                            FlappyPhase.Intro
                         }
                         else -> current.phase
                     }
-                    _ui.value = CompanionMemoryUiState(
+                    _ui.value = CompanionFlappyUiState(
                         companion = companion,
                         species = species,
                         soundEnabled = homeSnap.settings.soundEnabled,
@@ -207,85 +218,141 @@ class CompanionMemoryViewModel @Inject constructor(
 
     fun startSession() {
         val base = _ui.value ?: return
-        flashJob?.cancel()
-        beginRound(base, roundIndex = 1, runningScore = 0)
-    }
-
-    fun onSigilPicked(choice: String) {
-        val base = _ui.value ?: return
-        val pick = base.phase as? MemoryUiPhase.Pick ?: return
-        flashJob?.cancel()
-        val correct = choice == pick.targetSigil
-        val newScore = pick.runningScore + if (correct) 2 else 0
-        if (correct) {
-            feedbackController.playTreatTossGreat(base.soundEnabled, base.hapticsEnabled)
-        } else {
-            feedbackController.playTreatTossMiss(base.soundEnabled, base.hapticsEnabled)
-        }
-        _ui.value = base.copy(
-            phase = MemoryUiPhase.RoundFeedback(pick.roundIndex, correct, newScore),
+        gameJob?.cancel()
+        birdY = 0.5f
+        birdVy = 0f
+        score = 0
+        pipes = listOf(
+            FlappyPipe(x = 0.82f, gapCenter = randomGap(base.treatTossEasyMode), scored = false),
         )
+        val openHalf = openHalfFor(base.treatTossEasyMode)
+        _ui.value = base.copy(
+            phase = FlappyPhase.Playing(birdY, birdVy, pipes, score, openHalf),
+        )
+        gameJob = viewModelScope.launch {
+            while (isActive) {
+                delay(FRAME_MS)
+                tick()
+            }
+        }
     }
 
-    fun continueAfterRound() {
-        val base = _ui.value ?: return
-        val fb = base.phase as? MemoryUiPhase.RoundFeedback ?: return
-        if (fb.roundIndex >= ROUNDS_TOTAL) {
-            viewModelScope.launch { finishSession(base.copy(phase = fb)) }
+    fun flap() {
+        val state = _ui.value ?: return
+        if (state.phase !is FlappyPhase.Playing) return
+        birdVy = if (state.treatTossEasyMode) FLAP_EASY else FLAP_NORMAL
+    }
+
+    fun returnToIntro() {
+        gameJob?.cancel()
+        val s = _ui.value ?: return
+        _ui.value = s.copy(phase = FlappyPhase.Intro)
+    }
+
+    private fun openHalfFor(easy: Boolean): Float = if (easy) OPEN_HALF_EASY else OPEN_HALF_NORMAL
+
+    private fun randomGap(easy: Boolean): Float {
+        val lo = if (easy) 0.37f else 0.35f
+        val hi = if (easy) 0.63f else 0.65f
+        return lo + random.nextFloat() * (hi - lo)
+    }
+
+    private fun tick() {
+        val state = _ui.value ?: return
+        if (state.phase !is FlappyPhase.Playing) {
+            gameJob?.cancel()
             return
         }
-        beginRound(base, roundIndex = fb.roundIndex + 1, runningScore = fb.runningScore)
-    }
+        val easy = state.treatTossEasyMode
+        val openHalf = openHalfFor(easy)
+        val gravity = if (easy) GRAVITY_EASY else GRAVITY_NORMAL
+        val speed = if (easy) SPEED_EASY else SPEED_NORMAL
 
-    private fun beginRound(base: CompanionMemoryUiState, roundIndex: Int, runningScore: Int) {
-        flashJob?.cancel()
-        val target = SIGILS[random.nextInt(SIGILS.size)]
-        _ui.value = base.copy(
-            phase = MemoryUiPhase.Flash(roundIndex, target, runningScore),
-        )
-        val flashMs = if (base.treatTossEasyMode) FLASH_MS_EASY else FLASH_MS_NORMAL
-        flashJob = viewModelScope.launch {
-            delay(flashMs)
-            if (!isActive) return@launch
-            val b = _ui.value ?: return@launch
-            val f = b.phase as? MemoryUiPhase.Flash ?: return@launch
-            if (f.roundIndex != roundIndex) return@launch
-            val shuffled = SIGILS.shuffled(random)
-            _ui.value = b.copy(
-                phase = MemoryUiPhase.Pick(
-                    roundIndex = f.roundIndex,
-                    targetSigil = f.targetSigil,
-                    choices = shuffled,
-                    runningScore = f.runningScore,
-                ),
-            )
+        birdVy += gravity
+        birdY += birdVy
+        if (birdY - BIRD_RADIUS < 0.04f) {
+            birdY = 0.04f + BIRD_RADIUS
+            birdVy = 0f
         }
+        if (birdY + BIRD_RADIUS > 0.96f) {
+            crash(state)
+            return
+        }
+
+        pipes = pipes.map { it.copy(x = it.x - speed) }.filter { it.x + PIPE_WIDTH_NORM > -0.1f }
+
+        val furthestRight = pipes.maxOfOrNull { it.x + PIPE_WIDTH_NORM } ?: 0f
+        if (furthestRight < SPAWN_FURTHEST_MAX) {
+            pipes = pipes + FlappyPipe(x = 1.02f, gapCenter = randomGap(easy), scored = false)
+        }
+
+        pipes = pipes.map { p ->
+            if (!p.scored && p.x + PIPE_WIDTH_NORM < BIRD_CENTER_X_NORM - BIRD_RADIUS * 0.25f) {
+                score++
+                p.copy(scored = true)
+            } else {
+                p
+            }
+        }
+
+        for (p in pipes) {
+            val overlapX = p.x < BIRD_CENTER_X_NORM + BIRD_RADIUS &&
+                p.x + PIPE_WIDTH_NORM > BIRD_CENTER_X_NORM - BIRD_RADIUS
+            if (!overlapX) continue
+            val gapLow = p.gapCenter - openHalf
+            val gapHigh = p.gapCenter + openHalf
+            if (birdY - BIRD_RADIUS < gapLow || birdY + BIRD_RADIUS > gapHigh) {
+                crash(state)
+                return
+            }
+        }
+
+        _ui.value = state.copy(
+            phase = FlappyPhase.Playing(
+                birdY = birdY,
+                birdVy = birdVy,
+                pipes = pipes,
+                score = score,
+                openHalf = openHalf,
+            ),
+        )
     }
 
-    private suspend fun finishSession(base: CompanionMemoryUiState) {
-        val fb = base.phase as? MemoryUiPhase.RoundFeedback ?: return
+    private fun crash(state: CompanionFlappyUiState) {
+        gameJob?.cancel()
+        val finalScore = score
+        feedbackController.playTreatTossMiss(state.soundEnabled, state.hapticsEnabled)
+        viewModelScope.launch { finishAfterCrash(state, finalScore) }
+    }
+
+    private suspend fun finishAfterCrash(state: CompanionFlappyUiState, finalScore: Int) {
+        val victory = finalScore >= victoryThreshold(state.treatTossEasyMode)
         val snap = privacyPreferences.homeSnapshot.first()
         val hadPriorToday = snap.companionTreatXpEpochDay == day
-        val granted = privacyPreferences.markCompanionTreatXpDayIfNew(day)
-        if (granted) {
-            xpEngine.award(CompanionGameXp.SHARED_DAILY_XP, "Companion flash sigils")
-            feedbackController.playQuestSeal(base.soundEnabled, base.hapticsEnabled)
+        var xpGranted = false
+        if (victory) {
+            xpGranted = privacyPreferences.markCompanionTreatXpDayIfNew(day)
+            if (xpGranted) {
+                xpEngine.award(CompanionGameXp.SHARED_DAILY_XP, "Companion glide")
+                feedbackController.playQuestSeal(state.soundEnabled, state.hapticsEnabled)
+            }
         }
-        _ui.value = base.copy(
-            phase = MemoryUiPhase.Summary(
-                totalPoints = fb.runningScore,
-                xpGranted = granted,
-                xpAlreadyClaimedToday = !granted && hadPriorToday,
+        _ui.value = state.copy(
+            phase = FlappyPhase.Summary(
+                score = finalScore,
+                victory = victory,
+                xpGranted = xpGranted,
+                xpAlreadyClaimedToday = victory && !xpGranted && hadPriorToday,
             ),
         )
     }
 
     override fun onCleared() {
-        flashJob?.cancel()
+        gameJob?.cancel()
         super.onCleared()
     }
 
-    private data class CmInner(
+    private data class CfInner(
         val profile: UserProfile,
         val habits: List<Habit>,
         val todayComp: Map<Long, Boolean>,

@@ -14,7 +14,7 @@ data class PrivacySettings(
     /** When true, show the compact familiar strip on Home. */
     val familiarEnabled: Boolean = false,
     val familiarSpecies: FamiliarSpecies = FamiliarSpecies.WOLF,
-    /** Slower needle + wider sweet bands for Treat toss (and similar companion timing games). */
+    /** Slower needle + wider sweet bands for treat toss; longer flashes/pauses for memory games; easier glide flight. */
     val treatTossEasyMode: Boolean = false,
     /** Pull sleep/steps from Health Connect when permitted. */
     val healthConnectSyncEnabled: Boolean = false,

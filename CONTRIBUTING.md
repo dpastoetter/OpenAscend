@@ -33,3 +33,7 @@ Run unit tests and Lint (same gate as a full local check):
 ```bash
 ./gradlew check test
 ```
+
+## App-module JVM tests and Android APIs
+
+Plain JVM unit tests load **stubbed** `android.*` classes. Calls such as **`android.net.Uri.parse(...)`** can throw at runtime unless the test runs under **Robolectric**. For new `:app` tests that touch `Uri`, `Context`, etc., prefer the same pattern as [`DeepLinkMapperTest`](app/src/test/kotlin/com/openascend/app/navigation/DeepLinkMapperTest.kt): `@RunWith(RobolectricTestRunner::class)` and `@Config(sdk = [34], application = Application::class)` (adjust SDK if the project standard changes).

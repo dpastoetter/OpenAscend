@@ -35,6 +35,8 @@ fun CompanionHubScreen(
     onBack: () -> Unit,
     onTreatToss: () -> Unit,
     onFlashSigils: () -> Unit,
+    onEchoSigils: () -> Unit,
+    onGlideFlight: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
 
@@ -114,6 +116,46 @@ fun CompanionHubScreen(
                     )
                     FilledTonalButton(onClick = onFlashSigils, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.companion_hub_memory_cta))
+                    }
+                }
+            }
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = scheme.surfaceVariant.copy(alpha = 0.45f)),
+            ) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        stringResource(R.string.companion_hub_sequence_title),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        stringResource(R.string.companion_hub_sequence_blurb),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = scheme.onSurfaceVariant,
+                    )
+                    FilledTonalButton(onClick = onEchoSigils, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.companion_hub_sequence_cta))
+                    }
+                }
+            }
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = scheme.surfaceVariant.copy(alpha = 0.45f)),
+            ) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        stringResource(R.string.companion_hub_glide_title),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        stringResource(R.string.companion_hub_glide_blurb),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = scheme.onSurfaceVariant,
+                    )
+                    FilledTonalButton(onClick = onGlideFlight, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.companion_hub_glide_cta))
                     }
                 }
             }

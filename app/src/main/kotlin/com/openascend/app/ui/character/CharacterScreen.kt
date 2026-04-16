@@ -123,8 +123,7 @@ fun CharacterScreen(
             ActivityResultContracts.RequestPermission(),
         ) { granted ->
             if (!granted) return@rememberLauncherForActivityResult
-            captureFile.delete()
-            captureFile.createNewFile()
+            if (!prepareCameraCaptureFile(captureFile)) return@rememberLauncherForActivityResult
             val uri = FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
@@ -135,8 +134,7 @@ fun CharacterScreen(
         }
 
         fun launchCameraCapture() {
-            captureFile.delete()
-            captureFile.createNewFile()
+            if (!prepareCameraCaptureFile(captureFile)) return
             val uri = FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
@@ -257,6 +255,14 @@ fun CharacterScreen(
         }
     }
 }
+
+private fun prepareCameraCaptureFile(file: File): Boolean =
+    try {
+        file.delete()
+        file.createNewFile()
+    } catch (_: Exception) {
+        false
+    }
 
 @Composable
 private fun CharacterStatRow(
