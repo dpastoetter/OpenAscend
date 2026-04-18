@@ -37,6 +37,9 @@ fun CompanionHubScreen(
     onFlashSigils: () -> Unit,
     onEchoSigils: () -> Unit,
     onGlideFlight: () -> Unit,
+    onMimicPrank: () -> Unit,
+    onStackDrop: () -> Unit,
+    onThreadRun: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
 
@@ -156,6 +159,66 @@ fun CompanionHubScreen(
                     )
                     FilledTonalButton(onClick = onGlideFlight, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.companion_hub_glide_cta))
+                    }
+                }
+            }
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = scheme.surfaceVariant.copy(alpha = 0.45f)),
+            ) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        stringResource(R.string.companion_hub_mimic_title),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        stringResource(R.string.companion_hub_mimic_blurb),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = scheme.onSurfaceVariant,
+                    )
+                    FilledTonalButton(onClick = onMimicPrank, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.companion_hub_mimic_cta))
+                    }
+                }
+            }
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = scheme.surfaceVariant.copy(alpha = 0.45f)),
+            ) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        stringResource(R.string.companion_hub_stack_title),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        stringResource(R.string.companion_hub_stack_blurb),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = scheme.onSurfaceVariant,
+                    )
+                    FilledTonalButton(onClick = onStackDrop, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.companion_hub_stack_cta))
+                    }
+                }
+            }
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = scheme.surfaceVariant.copy(alpha = 0.45f)),
+            ) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        stringResource(R.string.companion_hub_thread_title),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        stringResource(R.string.companion_hub_thread_blurb),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = scheme.onSurfaceVariant,
+                    )
+                    FilledTonalButton(onClick = onThreadRun, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.companion_hub_thread_cta))
                     }
                 }
             }

@@ -62,6 +62,10 @@ jobs:
 
       - run: chmod +x gradlew
 
+      # Emulator system images + AVD need several GB; free preinstalled stacks we do not use.
+      - name: Free disk space for emulator
+        run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/share/swift
+
       - name: Instrumented tests (stat/XP smoke on device)
         uses: reactivecircus/android-emulator-runner@v2.37.0
         with:
@@ -72,4 +76,4 @@ jobs:
           emulator-boot-timeout: 900
           # Avoid snapshot save on exit (reduces "stop: Not implemented" / netsim noise on teardown).
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -no-snapshot-save -noaudio -no-boot-anim
-          script: ./gradlew connectedDebugAndroidTest --stacktrace
+          script: bash .github/scripts/run-connected-android-tests.sh
