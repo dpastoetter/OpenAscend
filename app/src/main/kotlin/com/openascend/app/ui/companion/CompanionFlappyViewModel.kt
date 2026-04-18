@@ -91,10 +91,11 @@ class CompanionFlappyViewModel @Inject constructor(
         /** Shared with [CompanionFlappyScreen] for layout. */
         const val BIRD_CENTER_X_NORM = 0.22f
         const val PIPE_WIDTH_NORM = 0.10f
-        private const val BIRD_RADIUS = 0.042f
-        private const val OPEN_HALF_NORMAL = 0.11f
-        private const val OPEN_HALF_EASY = 0.135f
-        private const val OPEN_HALF_HARD = 0.095f
+        /** Matches half of the 48.dp sprite in the 320.dp-tall playfield ([CompanionFlappyScreen]). */
+        private const val BIRD_RADIUS = 0.075f
+        private const val OPEN_HALF_NORMAL = 0.15f
+        private const val OPEN_HALF_EASY = 0.175f
+        private const val OPEN_HALF_HARD = 0.125f
         private const val GRAVITY_NORMAL = 0.00138f
         private const val GRAVITY_EASY = 0.00095f
         private const val GRAVITY_HARD = 0.00155f
@@ -232,7 +233,7 @@ class CompanionFlappyViewModel @Inject constructor(
         birdVy = 0f
         score = 0
         pipes = listOf(
-            FlappyPipe(x = 0.82f, gapCenter = randomGap(base.gameDifficulty), scored = false),
+            FlappyPipe(x = 0.82f, gapCenter = randomGapFirstPipe(base.gameDifficulty), scored = false),
         )
         val openHalf = openHalfFor(base.gameDifficulty)
         _ui.value = base.copy(
@@ -268,11 +269,22 @@ class CompanionFlappyViewModel @Inject constructor(
         CompanionGameDifficulty.HARD -> OPEN_HALF_HARD
     }
 
+    /** First obstacle: gap must actually fit the bird at the default start height (0.5). */
+    private fun randomGapFirstPipe(difficulty: CompanionGameDifficulty): Float {
+        val oh = openHalfFor(difficulty)
+        val margin = 0.028f
+        val minC = 0.5f - oh + BIRD_RADIUS + margin
+        val maxC = 0.5f + oh - BIRD_RADIUS - margin
+        val lo = maxOf(minC, 0.36f)
+        val hi = minOf(maxC, 0.64f)
+        return if (hi > lo) lo + random.nextFloat() * (hi - lo) else 0.5f
+    }
+
     private fun randomGap(difficulty: CompanionGameDifficulty): Float {
         val (lo, hi) = when (difficulty) {
-            CompanionGameDifficulty.EASY -> 0.37f to 0.63f
-            CompanionGameDifficulty.NORMAL -> 0.35f to 0.65f
-            CompanionGameDifficulty.HARD -> 0.36f to 0.64f
+            CompanionGameDifficulty.EASY -> 0.38f to 0.62f
+            CompanionGameDifficulty.NORMAL -> 0.36f to 0.64f
+            CompanionGameDifficulty.HARD -> 0.37f to 0.63f
         }
         return lo + random.nextFloat() * (hi - lo)
     }
