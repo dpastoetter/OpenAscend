@@ -37,6 +37,7 @@ import androidx.core.app.ShareCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.openascend.app.BuildConfig
 import com.openascend.app.R
+import com.openascend.domain.model.CompanionGameDifficulty
 import com.openascend.domain.model.FamiliarSpecies
 import com.openascend.domain.model.ThemePreference
 import kotlinx.coroutines.launch
@@ -198,15 +199,38 @@ fun SettingsScreen(
                     )
                 }
             }
-            ToggleRow(
-                title = stringResource(R.string.settings_treat_toss_easy),
-                checked = ui.privacy.treatTossEasyMode,
-                onCheckedChange = {
-                    viewModel.setPrivacy(ui.privacy.copy(treatTossEasyMode = it))
-                },
-            )
             Text(
-                stringResource(R.string.settings_treat_toss_easy_blurb),
+                stringResource(R.string.settings_companion_difficulty_title),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Row(
+                modifier = Modifier
+                    .horizontalScroll(rememberScrollState())
+                    .alpha(if (ui.privacy.familiarEnabled) 1f else 0.45f),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                CompanionGameDifficulty.entries.forEach { level ->
+                    FilterChip(
+                        selected = ui.privacy.companionGameDifficulty == level,
+                        onClick = {
+                            if (ui.privacy.familiarEnabled) {
+                                viewModel.setPrivacy(ui.privacy.copy(companionGameDifficulty = level))
+                            }
+                        },
+                        label = {
+                            Text(
+                                when (level) {
+                                    CompanionGameDifficulty.EASY -> stringResource(R.string.settings_companion_difficulty_easy)
+                                    CompanionGameDifficulty.NORMAL -> stringResource(R.string.settings_companion_difficulty_normal)
+                                    CompanionGameDifficulty.HARD -> stringResource(R.string.settings_companion_difficulty_hard)
+                                },
+                            )
+                        },
+                    )
+                }
+            }
+            Text(
+                stringResource(R.string.settings_companion_difficulty_blurb),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

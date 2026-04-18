@@ -42,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.openascend.app.R
+import com.openascend.domain.model.CompanionGameDifficulty
 
 private val threadPathNorm = listOf(
     Offset(0.08f, 0.55f),
@@ -155,7 +156,11 @@ fun CompanionThreadScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = scheme.onSurfaceVariant,
                         )
-                        val lanePx = if (state.treatTossEasyMode) 26f else 18f
+                        val lanePx = when (state.gameDifficulty) {
+                            CompanionGameDifficulty.EASY -> 28f
+                            CompanionGameDifficulty.NORMAL -> 18f
+                            CompanionGameDifficulty.HARD -> 14f
+                        }
                         Box(
                             Modifier
                                 .fillMaxWidth()

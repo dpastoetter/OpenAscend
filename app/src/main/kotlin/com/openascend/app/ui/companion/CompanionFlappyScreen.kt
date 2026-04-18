@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.openascend.app.R
 import com.openascend.domain.companion.CompanionMood
+import com.openascend.domain.model.CompanionGameDifficulty
 import com.openascend.domain.model.FamiliarSpecies
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -129,20 +130,20 @@ fun CompanionFlappyScreen(
                 when (val phase = state.phase) {
                     is FlappyPhase.Intro -> GlideIntroBody(
                         speciesName = state.species.displayName,
-                        easyMode = state.treatTossEasyMode,
+                        gameDifficulty = state.gameDifficulty,
                         onStart = { viewModel.startSession() },
                     )
                     is FlappyPhase.Playing -> GlidePlayingBody(
                         species = state.species,
                         mood = state.companion.mood,
                         moodLabel = state.companion.moodLabel,
-                        easyMode = state.treatTossEasyMode,
+                        gameDifficulty = state.gameDifficulty,
                         playing = phase,
                         onFlap = { viewModel.flap() },
                     )
                     is FlappyPhase.Summary -> GlideSummaryBody(
                         summary = phase,
-                        easyMode = state.treatTossEasyMode,
+                        gameDifficulty = state.gameDifficulty,
                         onTryAgain = { viewModel.returnToIntro() },
                         onDone = onBack,
                     )
@@ -156,10 +157,10 @@ fun CompanionFlappyScreen(
 @Composable
 private fun GlideIntroBody(
     speciesName: String,
-    easyMode: Boolean,
+    gameDifficulty: CompanionGameDifficulty,
     onStart: () -> Unit,
 ) {
-    val need = CompanionFlappyViewModel.victoryThreshold(easyMode)
+    val need = CompanionFlappyViewModel.victoryThreshold(gameDifficulty)
     Text(
         stringResource(R.string.companion_glide_intro, speciesName),
         style = MaterialTheme.typography.bodyLarge,
@@ -179,7 +180,7 @@ private fun GlidePlayingBody(
     species: FamiliarSpecies,
     mood: CompanionMood,
     moodLabel: String,
-    easyMode: Boolean,
+    gameDifficulty: CompanionGameDifficulty,
     playing: FlappyPhase.Playing,
     onFlap: () -> Unit,
 ) {
@@ -187,7 +188,7 @@ private fun GlidePlayingBody(
     val skyTop = scheme.primaryContainer.copy(alpha = 0.35f)
     val skyBot = scheme.secondaryContainer.copy(alpha = 0.4f)
     val pipeColor = scheme.tertiaryContainer.copy(alpha = 0.92f)
-    val victoryNeed = CompanionFlappyViewModel.victoryThreshold(easyMode)
+    val victoryNeed = CompanionFlappyViewModel.victoryThreshold(gameDifficulty)
 
     Text(
         stringResource(R.string.companion_glide_tap_hint),
@@ -249,12 +250,12 @@ private fun GlidePlayingBody(
 @Composable
 private fun GlideSummaryBody(
     summary: FlappyPhase.Summary,
-    easyMode: Boolean,
+    gameDifficulty: CompanionGameDifficulty,
     onTryAgain: () -> Unit,
     onDone: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
-    val need = CompanionFlappyViewModel.victoryThreshold(easyMode)
+    val need = CompanionFlappyViewModel.victoryThreshold(gameDifficulty)
     Text(
         stringResource(R.string.companion_glide_summary_title),
         style = MaterialTheme.typography.titleLarge,

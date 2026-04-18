@@ -7,6 +7,7 @@ import com.openascend.app.util.todayEpochDay
 import com.openascend.data.local.prefs.PrivacyPreferences
 import com.openascend.domain.companion.CompanionResolver
 import com.openascend.domain.companion.CompanionSnapshot
+import com.openascend.domain.model.CompanionGameDifficulty
 import com.openascend.domain.model.DailyMetric
 import com.openascend.domain.model.FamiliarSpecies
 import com.openascend.domain.model.Habit
@@ -66,7 +67,7 @@ data class CompanionStackUiState(
     val species: FamiliarSpecies,
     val soundEnabled: Boolean,
     val hapticsEnabled: Boolean,
-    val treatTossEasyMode: Boolean,
+    val gameDifficulty: CompanionGameDifficulty,
     val phase: StackUiPhase,
 )
 
@@ -85,15 +86,35 @@ class CompanionStackViewModel @Inject constructor(
 ) : ViewModel() {
 
     companion object {
-        fun victoryHeight(easy: Boolean): Int = if (easy) 6 else 8
+        fun victoryHeight(difficulty: CompanionGameDifficulty): Int = when (difficulty) {
+            CompanionGameDifficulty.EASY -> 6
+            CompanionGameDifficulty.NORMAL -> 8
+            CompanionGameDifficulty.HARD -> 10
+        }
 
-        private fun initialLandHalf(easy: Boolean): Float = if (easy) 0.16f else 0.12f
+        private fun initialLandHalf(difficulty: CompanionGameDifficulty): Float = when (difficulty) {
+            CompanionGameDifficulty.EASY -> 0.16f
+            CompanionGameDifficulty.NORMAL -> 0.12f
+            CompanionGameDifficulty.HARD -> 0.10f
+        }
 
-        private fun phaseSpeedPerFrame(easy: Boolean): Float = if (easy) 0.038f else 0.055f
+        private fun phaseSpeedPerFrame(difficulty: CompanionGameDifficulty): Float = when (difficulty) {
+            CompanionGameDifficulty.EASY -> 0.038f
+            CompanionGameDifficulty.NORMAL -> 0.055f
+            CompanionGameDifficulty.HARD -> 0.068f
+        }
 
-        private fun minLandHalf(easy: Boolean): Float = if (easy) 0.045f else 0.035f
+        private fun minLandHalf(difficulty: CompanionGameDifficulty): Float = when (difficulty) {
+            CompanionGameDifficulty.EASY -> 0.045f
+            CompanionGameDifficulty.NORMAL -> 0.035f
+            CompanionGameDifficulty.HARD -> 0.028f
+        }
 
-        private fun shrinkFactor(easy: Boolean): Float = if (easy) 0.96f else 0.92f
+        private fun shrinkFactor(difficulty: CompanionGameDifficulty): Float = when (difficulty) {
+            CompanionGameDifficulty.EASY -> 0.96f
+            CompanionGameDifficulty.NORMAL -> 0.92f
+            CompanionGameDifficulty.HARD -> 0.88f
+        }
     }
 
     private val day = todayEpochDay()
@@ -179,7 +200,7 @@ class CompanionStackViewModel @Inject constructor(
                     val keepPhase = current?.let { ch ->
                         ch.companion.mood == companion.mood &&
                             ch.species == species &&
-                            ch.treatTossEasyMode == homeSnap.settings.treatTossEasyMode &&
+                            ch.gameDifficulty == homeSnap.settings.companionGameDifficulty &&
                             ch.phase !is StackUiPhase.Intro &&
                             ch.phase !is StackUiPhase.Summary
                     } == true
@@ -195,7 +216,7 @@ class CompanionStackViewModel @Inject constructor(
                         species = species,
                         soundEnabled = homeSnap.settings.soundEnabled,
                         hapticsEnabled = homeSnap.settings.hapticsEnabled,
-                        treatTossEasyMode = homeSnap.settings.treatTossEasyMode,
+                        gameDifficulty = homeSnap.settings.companionGameDifficulty,
                         phase = phase,
                     )
                 }
@@ -206,14 +227,14 @@ class CompanionStackViewModel @Inject constructor(
     fun startSession() {
         val base = _ui.value ?: return
         gameJob?.cancel()
-        val easy = base.treatTossEasyMode
+        val d = base.gameDifficulty
         val rad0 = 0f
         _ui.value = base.copy(
             phase = StackUiPhase.Playing(
                 phaseRad = rad0,
                 cursorX = STACK_CENTER + SWEEP_AMPLITUDE * sin(rad0),
                 stackHeight = 0,
-                landHalfWidth = initialLandHalf(easy),
+                landHalfWidth = initialLandHalf(d),
             ),
         )
         gameJob = viewModelScope.launch {
@@ -227,7 +248,7 @@ class CompanionStackViewModel @Inject constructor(
     fun tryDrop() {
         val state = _ui.value ?: return
         val play = state.phase as? StackUiPhase.Playing ?: return
-        val easy = state.treatTossEasyMode
+        val d = state.gameDifficulty
         val hit = abs(play.cursorX - STACK_CENTER) <= play.landHalfWidth
         if (!hit) {
             gameJob?.cancel()
@@ -237,13 +258,13 @@ class CompanionStackViewModel @Inject constructor(
         }
         feedbackController.playTreatTossGreat(state.soundEnabled, state.hapticsEnabled)
         val newHeight = play.stackHeight + 1
-        val goal = victoryHeight(easy)
+        val goal = victoryHeight(d)
         if (newHeight >= goal) {
             gameJob?.cancel()
             viewModelScope.launch { finish(state, victory = true, finalHeight = newHeight) }
             return
         }
-        val newHalf = (play.landHalfWidth * shrinkFactor(easy)).coerceAtLeast(minLandHalf(easy))
+        val newHalf = (play.landHalfWidth * shrinkFactor(d)).coerceAtLeast(minLandHalf(d))
         _ui.value = state.copy(
             phase = StackUiPhase.Playing(
                 phaseRad = play.phaseRad,
@@ -263,7 +284,7 @@ class CompanionStackViewModel @Inject constructor(
     private fun tick() {
         val state = _ui.value ?: return
         val play = state.phase as? StackUiPhase.Playing ?: return
-        val speed = phaseSpeedPerFrame(state.treatTossEasyMode)
+        val speed = phaseSpeedPerFrame(state.gameDifficulty)
         val newRad = play.phaseRad + speed
         _ui.value = state.copy(
             phase = play.copy(

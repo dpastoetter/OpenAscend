@@ -7,6 +7,7 @@ import com.openascend.app.util.todayEpochDay
 import com.openascend.data.local.prefs.PrivacyPreferences
 import com.openascend.domain.companion.CompanionResolver
 import com.openascend.domain.companion.CompanionSnapshot
+import com.openascend.domain.model.CompanionGameDifficulty
 import com.openascend.domain.model.DailyMetric
 import com.openascend.domain.model.FamiliarSpecies
 import com.openascend.domain.model.Habit
@@ -67,7 +68,7 @@ data class CompanionFlappyUiState(
     val species: FamiliarSpecies,
     val soundEnabled: Boolean,
     val hapticsEnabled: Boolean,
-    val treatTossEasyMode: Boolean,
+    val gameDifficulty: CompanionGameDifficulty,
     val phase: FlappyPhase,
 )
 
@@ -93,15 +94,23 @@ class CompanionFlappyViewModel @Inject constructor(
         private const val BIRD_RADIUS = 0.042f
         private const val OPEN_HALF_NORMAL = 0.11f
         private const val OPEN_HALF_EASY = 0.135f
+        private const val OPEN_HALF_HARD = 0.095f
         private const val GRAVITY_NORMAL = 0.00138f
         private const val GRAVITY_EASY = 0.00095f
+        private const val GRAVITY_HARD = 0.00155f
         private const val FLAP_NORMAL = -0.024f
         private const val FLAP_EASY = -0.021f
+        private const val FLAP_HARD = -0.023f
         private const val SPEED_NORMAL = 0.0059f
         private const val SPEED_EASY = 0.0043f
+        private const val SPEED_HARD = 0.0064f
         private const val SPAWN_FURTHEST_MAX = 0.58f
 
-        fun victoryThreshold(easyMode: Boolean): Int = if (easyMode) 5 else 7
+        fun victoryThreshold(difficulty: CompanionGameDifficulty): Int = when (difficulty) {
+            CompanionGameDifficulty.EASY -> 5
+            CompanionGameDifficulty.NORMAL -> 7
+            CompanionGameDifficulty.HARD -> 9
+        }
     }
 
     private val day = todayEpochDay()
@@ -192,7 +201,7 @@ class CompanionFlappyViewModel @Inject constructor(
                     val keepPhase = current?.let { ch ->
                         ch.companion.mood == companion.mood &&
                             ch.species == species &&
-                            ch.treatTossEasyMode == homeSnap.settings.treatTossEasyMode &&
+                            ch.gameDifficulty == homeSnap.settings.companionGameDifficulty &&
                             ch.phase !is FlappyPhase.Intro &&
                             ch.phase !is FlappyPhase.Summary
                     } == true
@@ -208,7 +217,7 @@ class CompanionFlappyViewModel @Inject constructor(
                         species = species,
                         soundEnabled = homeSnap.settings.soundEnabled,
                         hapticsEnabled = homeSnap.settings.hapticsEnabled,
-                        treatTossEasyMode = homeSnap.settings.treatTossEasyMode,
+                        gameDifficulty = homeSnap.settings.companionGameDifficulty,
                         phase = phase,
                     )
                 }
@@ -223,9 +232,9 @@ class CompanionFlappyViewModel @Inject constructor(
         birdVy = 0f
         score = 0
         pipes = listOf(
-            FlappyPipe(x = 0.82f, gapCenter = randomGap(base.treatTossEasyMode), scored = false),
+            FlappyPipe(x = 0.82f, gapCenter = randomGap(base.gameDifficulty), scored = false),
         )
-        val openHalf = openHalfFor(base.treatTossEasyMode)
+        val openHalf = openHalfFor(base.gameDifficulty)
         _ui.value = base.copy(
             phase = FlappyPhase.Playing(birdY, birdVy, pipes, score, openHalf),
         )
@@ -240,7 +249,11 @@ class CompanionFlappyViewModel @Inject constructor(
     fun flap() {
         val state = _ui.value ?: return
         if (state.phase !is FlappyPhase.Playing) return
-        birdVy = if (state.treatTossEasyMode) FLAP_EASY else FLAP_NORMAL
+        birdVy = when (state.gameDifficulty) {
+            CompanionGameDifficulty.EASY -> FLAP_EASY
+            CompanionGameDifficulty.NORMAL -> FLAP_NORMAL
+            CompanionGameDifficulty.HARD -> FLAP_HARD
+        }
     }
 
     fun returnToIntro() {
@@ -249,11 +262,18 @@ class CompanionFlappyViewModel @Inject constructor(
         _ui.value = s.copy(phase = FlappyPhase.Intro)
     }
 
-    private fun openHalfFor(easy: Boolean): Float = if (easy) OPEN_HALF_EASY else OPEN_HALF_NORMAL
+    private fun openHalfFor(difficulty: CompanionGameDifficulty): Float = when (difficulty) {
+        CompanionGameDifficulty.EASY -> OPEN_HALF_EASY
+        CompanionGameDifficulty.NORMAL -> OPEN_HALF_NORMAL
+        CompanionGameDifficulty.HARD -> OPEN_HALF_HARD
+    }
 
-    private fun randomGap(easy: Boolean): Float {
-        val lo = if (easy) 0.37f else 0.35f
-        val hi = if (easy) 0.63f else 0.65f
+    private fun randomGap(difficulty: CompanionGameDifficulty): Float {
+        val (lo, hi) = when (difficulty) {
+            CompanionGameDifficulty.EASY -> 0.37f to 0.63f
+            CompanionGameDifficulty.NORMAL -> 0.35f to 0.65f
+            CompanionGameDifficulty.HARD -> 0.36f to 0.64f
+        }
         return lo + random.nextFloat() * (hi - lo)
     }
 
@@ -263,10 +283,18 @@ class CompanionFlappyViewModel @Inject constructor(
             gameJob?.cancel()
             return
         }
-        val easy = state.treatTossEasyMode
-        val openHalf = openHalfFor(easy)
-        val gravity = if (easy) GRAVITY_EASY else GRAVITY_NORMAL
-        val speed = if (easy) SPEED_EASY else SPEED_NORMAL
+        val d = state.gameDifficulty
+        val openHalf = openHalfFor(d)
+        val gravity = when (d) {
+            CompanionGameDifficulty.EASY -> GRAVITY_EASY
+            CompanionGameDifficulty.NORMAL -> GRAVITY_NORMAL
+            CompanionGameDifficulty.HARD -> GRAVITY_HARD
+        }
+        val speed = when (d) {
+            CompanionGameDifficulty.EASY -> SPEED_EASY
+            CompanionGameDifficulty.NORMAL -> SPEED_NORMAL
+            CompanionGameDifficulty.HARD -> SPEED_HARD
+        }
 
         birdVy += gravity
         birdY += birdVy
@@ -283,7 +311,7 @@ class CompanionFlappyViewModel @Inject constructor(
 
         val furthestRight = pipes.maxOfOrNull { it.x + PIPE_WIDTH_NORM } ?: 0f
         if (furthestRight < SPAWN_FURTHEST_MAX) {
-            pipes = pipes + FlappyPipe(x = 1.02f, gapCenter = randomGap(easy), scored = false)
+            pipes = pipes + FlappyPipe(x = 1.02f, gapCenter = randomGap(d), scored = false)
         }
 
         pipes = pipes.map { p ->
@@ -326,7 +354,7 @@ class CompanionFlappyViewModel @Inject constructor(
     }
 
     private suspend fun finishAfterCrash(state: CompanionFlappyUiState, finalScore: Int) {
-        val victory = finalScore >= victoryThreshold(state.treatTossEasyMode)
+        val victory = finalScore >= victoryThreshold(state.gameDifficulty)
         val snap = privacyPreferences.homeSnapshot.first()
         val hadPriorToday = snap.companionTreatXpEpochDay == day
         var xpGranted = false

@@ -8,6 +8,7 @@ import com.openascend.data.local.prefs.PrivacyPreferences
 import com.openascend.domain.companion.CompanionResolver
 import com.openascend.domain.companion.CompanionSnapshot
 import com.openascend.domain.companion.TreatTossTiming
+import com.openascend.domain.model.CompanionGameDifficulty
 import com.openascend.domain.model.DailyMetric
 import com.openascend.domain.model.FamiliarSpecies
 import com.openascend.domain.model.Habit
@@ -69,7 +70,7 @@ data class CompanionPlayUiState(
     val species: FamiliarSpecies,
     val soundEnabled: Boolean,
     val hapticsEnabled: Boolean,
-    val treatTossEasyMode: Boolean,
+    val gameDifficulty: CompanionGameDifficulty,
     val phase: TreatUiPhase,
 )
 
@@ -179,7 +180,7 @@ class CompanionPlayViewModel @Inject constructor(
                     val keepPhase = current?.let { ch ->
                         ch.companion.mood == companion.mood &&
                             ch.species == species &&
-                            ch.treatTossEasyMode == homeSnap.settings.treatTossEasyMode &&
+                            ch.gameDifficulty == homeSnap.settings.companionGameDifficulty &&
                             ch.phase !is TreatUiPhase.Intro &&
                             ch.phase !is TreatUiPhase.Summary
                     } == true
@@ -195,7 +196,7 @@ class CompanionPlayViewModel @Inject constructor(
                         species = species,
                         soundEnabled = homeSnap.settings.soundEnabled,
                         hapticsEnabled = homeSnap.settings.hapticsEnabled,
-                        treatTossEasyMode = homeSnap.settings.treatTossEasyMode,
+                        gameDifficulty = homeSnap.settings.companionGameDifficulty,
                         phase = phase,
                     )
                 }
@@ -217,7 +218,7 @@ class CompanionPlayViewModel @Inject constructor(
         val playing = base.phase as? TreatUiPhase.Playing ?: return
         needleJob?.cancel()
         val n = _needle.value
-        val bands = TreatTossTiming.scoreBands(base.companion.mood, base.treatTossEasyMode)
+        val bands = TreatTossTiming.scoreBands(base.companion.mood, base.gameDifficulty)
         val q = classify(n, bands)
         val pts = pointsFor(q)
         sessionAccumulated += pts
@@ -265,7 +266,7 @@ class CompanionPlayViewModel @Inject constructor(
             species = base.species,
             mood = base.companion.mood,
             roundIndex = roundIndex,
-            easyMode = base.treatTossEasyMode,
+            difficulty = base.gameDifficulty,
         )
         val phaseOffset = if (base.species == FamiliarSpecies.DRAGON) 0.38 else 0.0
         needleJob = viewModelScope.launch {

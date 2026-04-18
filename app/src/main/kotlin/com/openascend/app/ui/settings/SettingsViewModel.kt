@@ -7,6 +7,7 @@ import com.openascend.app.notifications.ReminderWorker
 import androidx.lifecycle.viewModelScope
 import com.openascend.data.export.UserDataExporter
 import com.openascend.data.export.UserDataImporter
+import com.openascend.domain.model.CompanionGameDifficulty
 import com.openascend.domain.model.FamiliarSpecies
 import com.openascend.domain.model.PrivacySettings
 import com.openascend.domain.model.ThemePreference
@@ -51,7 +52,7 @@ class SettingsViewModel @Inject constructor(
                     soundEnabled = true,
                     familiarEnabled = false,
                     familiarSpecies = FamiliarSpecies.WOLF,
-                    treatTossEasyMode = false,
+                    companionGameDifficulty = CompanionGameDifficulty.NORMAL,
                     healthConnectSyncEnabled = false,
                     remindersEnabled = false,
                     reminderMorningEnabled = true,

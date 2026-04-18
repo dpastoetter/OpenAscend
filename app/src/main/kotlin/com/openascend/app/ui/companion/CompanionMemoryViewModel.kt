@@ -7,6 +7,7 @@ import com.openascend.app.util.todayEpochDay
 import com.openascend.data.local.prefs.PrivacyPreferences
 import com.openascend.domain.companion.CompanionResolver
 import com.openascend.domain.companion.CompanionSnapshot
+import com.openascend.domain.model.CompanionGameDifficulty
 import com.openascend.domain.model.DailyMetric
 import com.openascend.domain.model.FamiliarSpecies
 import com.openascend.domain.model.Habit
@@ -73,7 +74,7 @@ data class CompanionMemoryUiState(
     val species: FamiliarSpecies,
     val soundEnabled: Boolean,
     val hapticsEnabled: Boolean,
-    val treatTossEasyMode: Boolean,
+    val gameDifficulty: CompanionGameDifficulty,
     val phase: MemoryUiPhase,
 )
 
@@ -95,6 +96,7 @@ class CompanionMemoryViewModel @Inject constructor(
         const val ROUNDS_TOTAL = 3
         private const val FLASH_MS_EASY = 780L
         private const val FLASH_MS_NORMAL = 520L
+        private const val FLASH_MS_HARD = 380L
     }
 
     private val day = todayEpochDay()
@@ -181,7 +183,7 @@ class CompanionMemoryViewModel @Inject constructor(
                     val keepPhase = current?.let { ch ->
                         ch.companion.mood == companion.mood &&
                             ch.species == species &&
-                            ch.treatTossEasyMode == homeSnap.settings.treatTossEasyMode &&
+                            ch.gameDifficulty == homeSnap.settings.companionGameDifficulty &&
                             ch.phase !is MemoryUiPhase.Intro &&
                             ch.phase !is MemoryUiPhase.Summary
                     } == true
@@ -197,7 +199,7 @@ class CompanionMemoryViewModel @Inject constructor(
                         species = species,
                         soundEnabled = homeSnap.settings.soundEnabled,
                         hapticsEnabled = homeSnap.settings.hapticsEnabled,
-                        treatTossEasyMode = homeSnap.settings.treatTossEasyMode,
+                        gameDifficulty = homeSnap.settings.companionGameDifficulty,
                         phase = phase,
                     )
                 }
@@ -243,7 +245,11 @@ class CompanionMemoryViewModel @Inject constructor(
         _ui.value = base.copy(
             phase = MemoryUiPhase.Flash(roundIndex, target, runningScore),
         )
-        val flashMs = if (base.treatTossEasyMode) FLASH_MS_EASY else FLASH_MS_NORMAL
+        val flashMs = when (base.gameDifficulty) {
+            CompanionGameDifficulty.EASY -> FLASH_MS_EASY
+            CompanionGameDifficulty.NORMAL -> FLASH_MS_NORMAL
+            CompanionGameDifficulty.HARD -> FLASH_MS_HARD
+        }
         flashJob = viewModelScope.launch {
             delay(flashMs)
             if (!isActive) return@launch

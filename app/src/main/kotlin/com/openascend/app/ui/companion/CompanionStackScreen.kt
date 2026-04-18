@@ -100,7 +100,7 @@ fun CompanionStackScreen(
             }
 
             val state = ui!!
-            val goal = CompanionStackViewModel.victoryHeight(state.treatTossEasyMode)
+            val goal = CompanionStackViewModel.victoryHeight(state.gameDifficulty)
             Column(
                 Modifier
                     .padding(horizontal = 20.dp)

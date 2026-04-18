@@ -69,6 +69,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.openascend.app.R
 import com.openascend.domain.companion.CompanionMood
 import com.openascend.domain.companion.TreatTossTiming
+import com.openascend.domain.model.CompanionGameDifficulty
 import com.openascend.domain.model.FamiliarSpecies
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -176,7 +177,7 @@ fun CompanionPlayScreen(
                             roundIndex = phase.roundIndex,
                             species = state.species,
                             mood = state.companion.mood,
-                            treatTossEasyMode = state.treatTossEasyMode,
+                            gameDifficulty = state.gameDifficulty,
                             needle = needle,
                             onToss = { viewModel.onTossTap() },
                         )
@@ -330,13 +331,13 @@ private fun PlayingBody(
     roundIndex: Int,
     species: FamiliarSpecies,
     mood: CompanionMood,
-    treatTossEasyMode: Boolean,
+    gameDifficulty: CompanionGameDifficulty,
     needle: Float,
     onToss: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
     val progress = roundIndex.toFloat() / CompanionPlayViewModel.ROUNDS_TOTAL.toFloat()
-    val bands = TreatTossTiming.scoreBands(mood, treatTossEasyMode)
+    val bands = TreatTossTiming.scoreBands(mood, gameDifficulty)
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         LinearProgressIndicator(

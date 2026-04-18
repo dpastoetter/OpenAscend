@@ -37,7 +37,6 @@ fun CompanionHubScreen(
     onFlashSigils: () -> Unit,
     onEchoSigils: () -> Unit,
     onGlideFlight: () -> Unit,
-    onMimicPrank: () -> Unit,
     onStackDrop: () -> Unit,
     onThreadRun: () -> Unit,
 ) {
@@ -159,26 +158,6 @@ fun CompanionHubScreen(
                     )
                     FilledTonalButton(onClick = onGlideFlight, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.companion_hub_glide_cta))
-                    }
-                }
-            }
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = scheme.surfaceVariant.copy(alpha = 0.45f)),
-            ) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(
-                        stringResource(R.string.companion_hub_mimic_title),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Text(
-                        stringResource(R.string.companion_hub_mimic_blurb),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = scheme.onSurfaceVariant,
-                    )
-                    FilledTonalButton(onClick = onMimicPrank, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.companion_hub_mimic_cta))
                     }
                 }
             }

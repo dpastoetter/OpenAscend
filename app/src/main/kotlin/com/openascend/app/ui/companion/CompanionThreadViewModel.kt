@@ -7,6 +7,7 @@ import com.openascend.app.util.todayEpochDay
 import com.openascend.data.local.prefs.PrivacyPreferences
 import com.openascend.domain.companion.CompanionResolver
 import com.openascend.domain.companion.CompanionSnapshot
+import com.openascend.domain.model.CompanionGameDifficulty
 import com.openascend.domain.model.DailyMetric
 import com.openascend.domain.model.FamiliarSpecies
 import com.openascend.domain.model.Habit
@@ -101,7 +102,7 @@ data class CompanionThreadUiState(
     val species: FamiliarSpecies,
     val soundEnabled: Boolean,
     val hapticsEnabled: Boolean,
-    val treatTossEasyMode: Boolean,
+    val gameDifficulty: CompanionGameDifficulty,
     val phase: ThreadUiPhase,
 )
 
@@ -122,11 +123,23 @@ class CompanionThreadViewModel @Inject constructor(
     companion object {
         private val pathLength = polylineLength(WARD_PATH)
 
-        private fun laneThreshold(easy: Boolean): Float = if (easy) 0.095f else 0.062f
+        private fun laneThreshold(difficulty: CompanionGameDifficulty): Float = when (difficulty) {
+            CompanionGameDifficulty.EASY -> 0.095f
+            CompanionGameDifficulty.NORMAL -> 0.062f
+            CompanionGameDifficulty.HARD -> 0.048f
+        }
 
-        private fun startRadius(easy: Boolean): Float = if (easy) 0.14f else 0.095f
+        private fun startRadius(difficulty: CompanionGameDifficulty): Float = when (difficulty) {
+            CompanionGameDifficulty.EASY -> 0.14f
+            CompanionGameDifficulty.NORMAL -> 0.095f
+            CompanionGameDifficulty.HARD -> 0.075f
+        }
 
-        private fun winProgress(): Float = 0.94f
+        fun winProgressThreshold(difficulty: CompanionGameDifficulty): Float = when (difficulty) {
+            CompanionGameDifficulty.EASY -> 0.90f
+            CompanionGameDifficulty.NORMAL -> 0.94f
+            CompanionGameDifficulty.HARD -> 0.965f
+        }
     }
 
     private val day = todayEpochDay()
@@ -212,7 +225,7 @@ class CompanionThreadViewModel @Inject constructor(
                     val keepPhase = current?.let { ch ->
                         ch.companion.mood == companion.mood &&
                             ch.species == species &&
-                            ch.treatTossEasyMode == homeSnap.settings.treatTossEasyMode &&
+                            ch.gameDifficulty == homeSnap.settings.companionGameDifficulty &&
                             ch.phase !is ThreadUiPhase.Intro &&
                             ch.phase !is ThreadUiPhase.Summary
                     } == true
@@ -228,7 +241,7 @@ class CompanionThreadViewModel @Inject constructor(
                         species = species,
                         soundEnabled = homeSnap.settings.soundEnabled,
                         hapticsEnabled = homeSnap.settings.hapticsEnabled,
-                        treatTossEasyMode = homeSnap.settings.treatTossEasyMode,
+                        gameDifficulty = homeSnap.settings.companionGameDifficulty,
                         phase = phase,
                     )
                 }
@@ -247,10 +260,10 @@ class CompanionThreadViewModel @Inject constructor(
         if (base.phase !is ThreadUiPhase.Playing) return
         val start = WARD_PATH.first()
         val d = hypot(nx - start.x, ny - start.y)
-        strokeActive = d <= startRadius(base.treatTossEasyMode)
+        strokeActive = d <= startRadius(base.gameDifficulty)
         if (strokeActive) {
             val (laneD, arc) = closestOnPolyline(WARD_PATH, Pt(nx, ny))
-            if (laneD <= laneThreshold(base.treatTossEasyMode)) {
+            if (laneD <= laneThreshold(base.gameDifficulty)) {
                 val p = (arc / pathLength).coerceIn(0f, 1f)
                 _ui.value = base.copy(phase = ThreadUiPhase.Playing(progress = p))
             }
@@ -262,7 +275,7 @@ class CompanionThreadViewModel @Inject constructor(
         val play = base.phase as? ThreadUiPhase.Playing ?: return
         if (!strokeActive) return
         val (d, arc) = closestOnPolyline(WARD_PATH, Pt(nx, ny))
-        if (d > laneThreshold(base.treatTossEasyMode)) {
+        if (d > laneThreshold(base.gameDifficulty)) {
             strokeActive = false
             viewModelScope.launch { finish(base, victory = false) }
             return
@@ -270,7 +283,7 @@ class CompanionThreadViewModel @Inject constructor(
         val rel = (arc / pathLength).coerceIn(0f, 1f)
         val merged = maxOf(play.progress, rel)
         _ui.value = base.copy(phase = ThreadUiPhase.Playing(progress = merged))
-        if (merged >= winProgress()) {
+        if (merged >= winProgressThreshold(base.gameDifficulty)) {
             strokeActive = false
             viewModelScope.launch { finish(base.copy(phase = ThreadUiPhase.Playing(progress = merged)), victory = true) }
         }
@@ -283,7 +296,7 @@ class CompanionThreadViewModel @Inject constructor(
         if (!strokeActive && play.progress <= 0f) return
         strokeActive = false
         val p = play.progress
-        val victory = p >= winProgress()
+        val victory = p >= winProgressThreshold(base.gameDifficulty)
         viewModelScope.launch { finish(base, victory = victory) }
     }
 

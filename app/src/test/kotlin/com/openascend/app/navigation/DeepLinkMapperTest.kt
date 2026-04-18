@@ -27,7 +27,6 @@ class DeepLinkMapperTest {
         assertEquals(Routes.CompanionMemory, DeepLinkMapper.routeFromHost("companion_memory"))
         assertEquals(Routes.CompanionSequence, DeepLinkMapper.routeFromHost("companion_sequence"))
         assertEquals(Routes.CompanionGlide, DeepLinkMapper.routeFromHost("companion_glide"))
-        assertEquals(Routes.CompanionMimic, DeepLinkMapper.routeFromHost("companion_mimic"))
         assertEquals(Routes.CompanionStack, DeepLinkMapper.routeFromHost("companion_stack"))
         assertEquals(Routes.CompanionThread, DeepLinkMapper.routeFromHost("companion_thread"))
         assertEquals(Routes.CompanionPlay, DeepLinkMapper.routeFromHost("companion_hide"))

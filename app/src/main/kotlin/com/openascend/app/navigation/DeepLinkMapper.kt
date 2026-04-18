@@ -30,7 +30,6 @@ object DeepLinkMapper {
         "companion_memory" -> Routes.CompanionMemory
         "companion_sequence" -> Routes.CompanionSequence
         "companion_glide" -> Routes.CompanionGlide
-        "companion_mimic" -> Routes.CompanionMimic
         "companion_stack" -> Routes.CompanionStack
         "companion_thread" -> Routes.CompanionThread
         else -> null

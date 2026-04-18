@@ -1,5 +1,6 @@
 package com.openascend.domain.companion
 
+import com.openascend.domain.model.CompanionGameDifficulty
 import com.openascend.domain.model.FamiliarSpecies
 
 /**
@@ -11,8 +12,11 @@ object TreatTossTiming {
     /** Base scale inside `sin(t * base * …)` before other multipliers. */
     private const val BASE_ANGULAR = 2.05
 
-    /** Easy mode: slower needle oscillation. */
+    /** Easy: slower needle oscillation. */
     const val EASY_SPEED_MULTIPLIER = 0.72
+
+    /** Hard: faster needle. */
+    private const val HARD_SPEED_MULTIPLIER = 1.14
 
     /** Per-round difficulty ramp after round 1 (multiplicative). */
     fun roundSpeedRamp(roundIndex: Int): Double =
@@ -41,11 +45,15 @@ object TreatTossTiming {
         species: FamiliarSpecies,
         mood: CompanionMood,
         roundIndex: Int,
-        easyMode: Boolean,
+        difficulty: CompanionGameDifficulty,
     ): Double {
         var v = BASE_ANGULAR * speciesSpeedFactor(species) * moodSpeedFactor(mood) * roundSpeedRamp(roundIndex)
-        if (easyMode) v *= EASY_SPEED_MULTIPLIER
-        return v.coerceIn(0.85, 3.4)
+        v *= when (difficulty) {
+            CompanionGameDifficulty.EASY -> EASY_SPEED_MULTIPLIER
+            CompanionGameDifficulty.NORMAL -> 1.0
+            CompanionGameDifficulty.HARD -> HARD_SPEED_MULTIPLIER
+        }
+        return v.coerceIn(0.85, 3.65)
     }
 
     data class Bands(
@@ -56,20 +64,34 @@ object TreatTossTiming {
     )
 
     /**
-     * **Sparkling**: slightly narrower great band (reward precision) when not in easy mode.
+     * **Sparkling**: slightly narrower great band (reward precision) on normal/hard.
      * **Fading**: slightly wider OK band for forgiveness.
      */
-    fun scoreBands(mood: CompanionMood, easyMode: Boolean): Bands {
-        val great = when {
-            easyMode -> 0.38f to 0.62f
-            mood == CompanionMood.SPARKLING -> 0.44f to 0.56f
-            else -> 0.42f to 0.58f
+    fun scoreBands(mood: CompanionMood, difficulty: CompanionGameDifficulty): Bands {
+        return when (difficulty) {
+            CompanionGameDifficulty.EASY -> Bands(0.38f, 0.62f, 0.22f, 0.78f)
+            CompanionGameDifficulty.NORMAL -> {
+                val great = when (mood) {
+                    CompanionMood.SPARKLING -> 0.44f to 0.56f
+                    else -> 0.42f to 0.58f
+                }
+                val ok = when (mood) {
+                    CompanionMood.FADING -> 0.26f to 0.74f
+                    else -> 0.28f to 0.72f
+                }
+                Bands(great.first, great.second, ok.first, ok.second)
+            }
+            CompanionGameDifficulty.HARD -> {
+                val great = when (mood) {
+                    CompanionMood.SPARKLING -> 0.475f to 0.525f
+                    else -> 0.465f to 0.535f
+                }
+                val ok = when (mood) {
+                    CompanionMood.FADING -> 0.30f to 0.70f
+                    else -> 0.32f to 0.68f
+                }
+                Bands(great.first, great.second, ok.first, ok.second)
+            }
         }
-        val ok = when {
-            easyMode -> 0.22f to 0.78f
-            mood == CompanionMood.FADING -> 0.26f to 0.74f
-            else -> 0.28f to 0.72f
-        }
-        return Bands(great.first, great.second, ok.first, ok.second)
     }
 }

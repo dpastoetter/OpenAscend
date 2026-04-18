@@ -7,6 +7,7 @@ import com.openascend.app.util.todayEpochDay
 import com.openascend.data.local.prefs.PrivacyPreferences
 import com.openascend.domain.companion.CompanionResolver
 import com.openascend.domain.companion.CompanionSnapshot
+import com.openascend.domain.model.CompanionGameDifficulty
 import com.openascend.domain.model.DailyMetric
 import com.openascend.domain.model.FamiliarSpecies
 import com.openascend.domain.model.Habit
@@ -74,7 +75,7 @@ data class CompanionSequenceUiState(
     val species: FamiliarSpecies,
     val soundEnabled: Boolean,
     val hapticsEnabled: Boolean,
-    val treatTossEasyMode: Boolean,
+    val gameDifficulty: CompanionGameDifficulty,
     val phase: SequenceUiPhase,
 )
 
@@ -96,8 +97,10 @@ class CompanionSequenceViewModel @Inject constructor(
         const val ROUNDS_TOTAL = 3
         private const val DISPLAY_MS_NORMAL = 560L
         private const val DISPLAY_MS_EASY = 720L
+        private const val DISPLAY_MS_HARD = 420L
         private const val GAP_MS_NORMAL = 220L
         private const val GAP_MS_EASY = 300L
+        private const val GAP_MS_HARD = 160L
     }
 
     private val day = todayEpochDay()
@@ -184,7 +187,7 @@ class CompanionSequenceViewModel @Inject constructor(
                     val keepPhase = current?.let { ch ->
                         ch.companion.mood == companion.mood &&
                             ch.species == species &&
-                            ch.treatTossEasyMode == homeSnap.settings.treatTossEasyMode &&
+                            ch.gameDifficulty == homeSnap.settings.companionGameDifficulty &&
                             ch.phase !is SequenceUiPhase.Intro &&
                             ch.phase !is SequenceUiPhase.Summary
                     } == true
@@ -200,7 +203,7 @@ class CompanionSequenceViewModel @Inject constructor(
                         species = species,
                         soundEnabled = homeSnap.settings.soundEnabled,
                         hapticsEnabled = homeSnap.settings.hapticsEnabled,
-                        treatTossEasyMode = homeSnap.settings.treatTossEasyMode,
+                        gameDifficulty = homeSnap.settings.companionGameDifficulty,
                         phase = phase,
                     )
                 }
@@ -254,15 +257,15 @@ class CompanionSequenceViewModel @Inject constructor(
         beginRound(base, roundIndex = fb.roundIndex + 1, runningScore = fb.runningScore)
     }
 
-    private fun sequenceLength(roundIndex: Int, easyMode: Boolean): Int =
-        if (easyMode) {
-            when (roundIndex) {
+    private fun sequenceLength(roundIndex: Int, difficulty: CompanionGameDifficulty): Int =
+        when (difficulty) {
+            CompanionGameDifficulty.EASY -> when (roundIndex) {
                 1 -> 2
                 2 -> 2
                 else -> 3
             }
-        } else {
-            roundIndex + 1
+            CompanionGameDifficulty.NORMAL -> roundIndex + 1
+            CompanionGameDifficulty.HARD -> roundIndex + 2
         }
 
     private fun buildSequence(length: Int): List<String> =
@@ -270,9 +273,17 @@ class CompanionSequenceViewModel @Inject constructor(
 
     private fun beginRound(base: CompanionSequenceUiState, roundIndex: Int, runningScore: Int) {
         playbackJob?.cancel()
-        val sequence = buildSequence(sequenceLength(roundIndex, base.treatTossEasyMode))
-        val displayMs = if (base.treatTossEasyMode) DISPLAY_MS_EASY else DISPLAY_MS_NORMAL
-        val gapMs = if (base.treatTossEasyMode) GAP_MS_EASY else GAP_MS_NORMAL
+        val sequence = buildSequence(sequenceLength(roundIndex, base.gameDifficulty))
+        val displayMs = when (base.gameDifficulty) {
+            CompanionGameDifficulty.EASY -> DISPLAY_MS_EASY
+            CompanionGameDifficulty.NORMAL -> DISPLAY_MS_NORMAL
+            CompanionGameDifficulty.HARD -> DISPLAY_MS_HARD
+        }
+        val gapMs = when (base.gameDifficulty) {
+            CompanionGameDifficulty.EASY -> GAP_MS_EASY
+            CompanionGameDifficulty.NORMAL -> GAP_MS_NORMAL
+            CompanionGameDifficulty.HARD -> GAP_MS_HARD
+        }
         playbackJob = viewModelScope.launch {
             for (i in sequence.indices) {
                 val cur = _ui.value ?: return@launch

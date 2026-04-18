@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.openascend.domain.model.CompanionGameDifficulty
 import com.openascend.domain.model.FamiliarSpecies
 import com.openascend.domain.model.PrivacySettings
 import com.openascend.domain.model.ThemePreference
@@ -51,6 +52,7 @@ class PrivacyPreferences(
         val familiarEnabled = booleanPreferencesKey("familiar_enabled")
         val familiarSpecies = stringPreferencesKey("familiar_species")
         val treatTossEasyMode = booleanPreferencesKey("treat_toss_easy_mode")
+        val companionGameDifficulty = stringPreferencesKey("companion_game_difficulty")
         val healthConnectSync = booleanPreferencesKey("health_connect_sync_enabled")
         val remindersEnabled = booleanPreferencesKey("reminders_enabled")
         val reminderMorning = booleanPreferencesKey("reminder_morning_enabled")
@@ -65,6 +67,13 @@ class PrivacyPreferences(
         val themeRaw = p[Keys.theme]
         val theme = themeRaw?.let { runCatching { ThemePreference.valueOf(it) }.getOrNull() }
             ?: ThemePreference.SYSTEM
+        val diffRaw = p[Keys.companionGameDifficulty]
+        val companionDifficulty = diffRaw?.let { runCatching { CompanionGameDifficulty.valueOf(it) }.getOrNull() }
+            ?: if (p[Keys.treatTossEasyMode] == true) {
+                CompanionGameDifficulty.EASY
+            } else {
+                CompanionGameDifficulty.NORMAL
+            }
         return PrivacySettings(
             analyticsOptIn = p[Keys.analytics] ?: false,
             crashReportsOptIn = p[Keys.crash] ?: false,
@@ -74,7 +83,7 @@ class PrivacyPreferences(
             soundEnabled = p[Keys.sound] ?: true,
             familiarEnabled = p[Keys.familiarEnabled] ?: false,
             familiarSpecies = FamiliarSpecies.fromId(p[Keys.familiarSpecies]),
-            treatTossEasyMode = p[Keys.treatTossEasyMode] ?: false,
+            companionGameDifficulty = companionDifficulty,
             healthConnectSyncEnabled = p[Keys.healthConnectSync] ?: false,
             remindersEnabled = p[Keys.remindersEnabled] ?: false,
             reminderMorningEnabled = p[Keys.reminderMorning] ?: true,
@@ -170,7 +179,8 @@ class PrivacyPreferences(
             p[Keys.sound] = settings.soundEnabled
             p[Keys.familiarEnabled] = settings.familiarEnabled
             p[Keys.familiarSpecies] = settings.familiarSpecies.id
-            p[Keys.treatTossEasyMode] = settings.treatTossEasyMode
+            p[Keys.companionGameDifficulty] = settings.companionGameDifficulty.name
+            p[Keys.treatTossEasyMode] = settings.companionGameDifficulty == CompanionGameDifficulty.EASY
             p[Keys.healthConnectSync] = settings.healthConnectSyncEnabled
             p[Keys.remindersEnabled] = settings.remindersEnabled
             p[Keys.reminderMorning] = settings.reminderMorningEnabled

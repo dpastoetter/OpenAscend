@@ -24,7 +24,6 @@ import com.openascend.app.ui.companion.CompanionHubScreen
 import com.openascend.app.ui.companion.CompanionMemoryScreen
 import com.openascend.app.ui.companion.CompanionPlayScreen
 import com.openascend.app.ui.companion.CompanionFlappyScreen
-import com.openascend.app.ui.companion.CompanionMimicScreen
 import com.openascend.app.ui.companion.CompanionStackScreen
 import com.openascend.app.ui.companion.CompanionSequenceScreen
 import com.openascend.app.ui.companion.CompanionThreadScreen
@@ -102,7 +101,6 @@ fun OpenAscendRoot(
                 onFlashSigils = { navController.navigate(Routes.CompanionMemory) },
                 onEchoSigils = { navController.navigate(Routes.CompanionSequence) },
                 onGlideFlight = { navController.navigate(Routes.CompanionGlide) },
-                onMimicPrank = { navController.navigate(Routes.CompanionMimic) },
                 onStackDrop = { navController.navigate(Routes.CompanionStack) },
                 onThreadRun = { navController.navigate(Routes.CompanionThread) },
             )
@@ -130,12 +128,6 @@ fun OpenAscendRoot(
             deepLinks = listOf(navDeepLink { uriPattern = "${deepLinkBase}companion_glide" }),
         ) {
             CompanionFlappyScreen(onBack = { navController.popBackStack() })
-        }
-        composable(
-            Routes.CompanionMimic,
-            deepLinks = listOf(navDeepLink { uriPattern = "${deepLinkBase}companion_mimic" }),
-        ) {
-            CompanionMimicScreen(onBack = { navController.popBackStack() })
         }
         composable(
             Routes.CompanionStack,
