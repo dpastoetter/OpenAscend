@@ -18,8 +18,8 @@ android {
         applicationId = "com.openascend.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "0.07"
+        versionCode = 9
+        versionName = "0.08"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
