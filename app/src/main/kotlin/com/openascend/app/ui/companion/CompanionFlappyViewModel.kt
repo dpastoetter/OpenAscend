@@ -42,6 +42,8 @@ data class FlappyPipe(
     val x: Float,
     val gapCenter: Float,
     val scored: Boolean,
+    /** Vertical half-gap for this pipe (frozen at spawn so ramp does not shrink past pipes unfairly). */
+    val gapHalf: Float,
 )
 
 sealed class FlappyPhase {
@@ -91,7 +93,7 @@ class CompanionFlappyViewModel @Inject constructor(
         /** Shared with [CompanionFlappyScreen] for layout. */
         const val BIRD_CENTER_X_NORM = 0.22f
         const val PIPE_WIDTH_NORM = 0.10f
-        /** Matches half of the 48.dp sprite in the 320.dp-tall playfield ([CompanionFlappyScreen]). */
+        /** Normalized hit radius; sprite is 48.dp tall in the playfield ([CompanionFlappyScreen]). */
         private const val BIRD_RADIUS = 0.075f
         private const val OPEN_HALF_NORMAL = 0.15f
         private const val OPEN_HALF_EASY = 0.175f
@@ -105,15 +107,13 @@ class CompanionFlappyViewModel @Inject constructor(
         private const val SPEED_NORMAL = 0.0059f
         private const val SPEED_EASY = 0.0043f
         private const val SPEED_HARD = 0.0064f
-        /**
-         * Spawn the next pipe only once the rightmost pipe's right edge has moved past this x (0–1).
-         * Lower value → spawn later → more horizontal space between consecutive pipes.
-         */
-        private const val SPAWN_FURTHEST_MAX = 0.42f
         /** Left edge (normalized) of the first pipe; farther right gives a calmer first approach. */
         private const val FIRST_PIPE_X = 0.88f
         /** Left edge (normalized) for each newly spawned pipe after the first. */
         private const val PIPE_SPAWN_X = 1.02f
+
+        /** Pipes cleared before internal ramp reaches full difficulty (smoothstep 0..1). */
+        private const val RAMP_PIPE_COUNT = 10f
 
         fun victoryThreshold(difficulty: CompanionGameDifficulty): Int = when (difficulty) {
             CompanionGameDifficulty.EASY -> 5
@@ -242,9 +242,14 @@ class CompanionFlappyViewModel @Inject constructor(
         birdVy = 0f
         score = 0
         pipes = listOf(
-            FlappyPipe(x = FIRST_PIPE_X, gapCenter = randomGapFirstPipe(base.gameDifficulty), scored = false),
+            FlappyPipe(
+                x = FIRST_PIPE_X,
+                gapCenter = randomGapFirstPipe(base.gameDifficulty),
+                scored = false,
+                gapHalf = openHalfRamped(0, base.gameDifficulty),
+            ),
         )
-        val openHalf = openHalfFor(base.gameDifficulty)
+        val openHalf = openHalfRamped(score, base.gameDifficulty)
         _ui.value = base.copy(
             phase = FlappyPhase.Playing(birdY, birdVy, pipes, score, openHalf),
         )
@@ -259,11 +264,8 @@ class CompanionFlappyViewModel @Inject constructor(
     fun flap() {
         val state = _ui.value ?: return
         if (state.phase !is FlappyPhase.Playing) return
-        birdVy = when (state.gameDifficulty) {
-            CompanionGameDifficulty.EASY -> FLAP_EASY
-            CompanionGameDifficulty.NORMAL -> FLAP_NORMAL
-            CompanionGameDifficulty.HARD -> FLAP_HARD
-        }
+        val playing = state.phase as FlappyPhase.Playing
+        birdVy = flapImpulseRamped(playing.score, state.gameDifficulty)
     }
 
     fun returnToIntro() {
@@ -278,9 +280,78 @@ class CompanionFlappyViewModel @Inject constructor(
         CompanionGameDifficulty.HARD -> OPEN_HALF_HARD
     }
 
+    private fun rampT(clearedPipes: Int): Float =
+        (clearedPipes / RAMP_PIPE_COUNT).coerceIn(0f, 1f)
+
+    /** Ease-in-out so early pipes stay forgiving longer, then tighten. */
+    private fun ramp(clearedPipes: Int): Float {
+        val t = rampT(clearedPipes)
+        return t * t * (3f - 2f * t)
+    }
+
+    private fun openHalfRamped(clearedPipes: Int, difficulty: CompanionGameDifficulty): Float {
+        val base = openHalfFor(difficulty)
+        val t = ramp(clearedPipes)
+        val wide = base * 1.22f
+        val tight = base * 0.88f
+        return wide + (tight - wide) * t
+    }
+
+    private fun gravityRamped(clearedPipes: Int, difficulty: CompanionGameDifficulty): Float {
+        val t = ramp(clearedPipes)
+        val g0 = when (difficulty) {
+            CompanionGameDifficulty.EASY -> GRAVITY_EASY * 0.88f
+            CompanionGameDifficulty.NORMAL -> GRAVITY_EASY * 0.98f
+            CompanionGameDifficulty.HARD -> GRAVITY_NORMAL * 0.96f
+        }
+        val g1 = when (difficulty) {
+            CompanionGameDifficulty.EASY -> GRAVITY_NORMAL * 0.95f
+            CompanionGameDifficulty.NORMAL -> GRAVITY_HARD
+            CompanionGameDifficulty.HARD -> GRAVITY_HARD * 1.06f
+        }
+        return g0 + (g1 - g0) * t
+    }
+
+    private fun speedRamped(clearedPipes: Int, difficulty: CompanionGameDifficulty): Float {
+        val t = ramp(clearedPipes)
+        val s0 = when (difficulty) {
+            CompanionGameDifficulty.EASY -> SPEED_EASY * 0.9f
+            CompanionGameDifficulty.NORMAL -> SPEED_EASY * 0.98f
+            CompanionGameDifficulty.HARD -> SPEED_NORMAL * 0.96f
+        }
+        val s1 = when (difficulty) {
+            CompanionGameDifficulty.EASY -> SPEED_NORMAL
+            CompanionGameDifficulty.NORMAL -> SPEED_HARD
+            CompanionGameDifficulty.HARD -> SPEED_HARD * 1.08f
+        }
+        return s0 + (s1 - s0) * t
+    }
+
+    private fun spawnFurthestMaxRamped(clearedPipes: Int): Float {
+        val t = ramp(clearedPipes)
+        val loose = 0.34f
+        val busy = 0.48f
+        return loose + (busy - loose) * t
+    }
+
+    private fun flapImpulseRamped(clearedPipes: Int, difficulty: CompanionGameDifficulty): Float {
+        val t = ramp(clearedPipes)
+        val weak = when (difficulty) {
+            CompanionGameDifficulty.EASY -> FLAP_EASY * 0.94f
+            CompanionGameDifficulty.NORMAL -> FLAP_EASY * 0.98f
+            CompanionGameDifficulty.HARD -> FLAP_NORMAL * 0.98f
+        }
+        val strong = when (difficulty) {
+            CompanionGameDifficulty.EASY -> FLAP_NORMAL
+            CompanionGameDifficulty.NORMAL -> FLAP_HARD
+            CompanionGameDifficulty.HARD -> FLAP_HARD * 1.06f
+        }
+        return weak + (strong - weak) * t
+    }
+
     /** First obstacle: gap must actually fit the bird at the default start height (0.5). */
     private fun randomGapFirstPipe(difficulty: CompanionGameDifficulty): Float {
-        val oh = openHalfFor(difficulty)
+        val oh = openHalfRamped(0, difficulty)
         val margin = 0.028f
         val minC = 0.5f - oh + BIRD_RADIUS + margin
         val maxC = 0.5f + oh - BIRD_RADIUS - margin
@@ -289,12 +360,15 @@ class CompanionFlappyViewModel @Inject constructor(
         return if (hi > lo) lo + random.nextFloat() * (hi - lo) else 0.5f
     }
 
-    private fun randomGap(difficulty: CompanionGameDifficulty): Float {
-        val (lo, hi) = when (difficulty) {
+    private fun randomGap(difficulty: CompanionGameDifficulty, clearedPipes: Int): Float {
+        val squeeze = 0.02f * ramp(clearedPipes)
+        val (lo0, hi0) = when (difficulty) {
             CompanionGameDifficulty.EASY -> 0.38f to 0.62f
             CompanionGameDifficulty.NORMAL -> 0.36f to 0.64f
             CompanionGameDifficulty.HARD -> 0.37f to 0.63f
         }
+        val lo = (lo0 + squeeze).coerceAtMost(hi0 - 0.04f)
+        val hi = (hi0 - squeeze).coerceAtLeast(lo + 0.04f)
         return lo + random.nextFloat() * (hi - lo)
     }
 
@@ -305,17 +379,9 @@ class CompanionFlappyViewModel @Inject constructor(
             return
         }
         val d = state.gameDifficulty
-        val openHalf = openHalfFor(d)
-        val gravity = when (d) {
-            CompanionGameDifficulty.EASY -> GRAVITY_EASY
-            CompanionGameDifficulty.NORMAL -> GRAVITY_NORMAL
-            CompanionGameDifficulty.HARD -> GRAVITY_HARD
-        }
-        val speed = when (d) {
-            CompanionGameDifficulty.EASY -> SPEED_EASY
-            CompanionGameDifficulty.NORMAL -> SPEED_NORMAL
-            CompanionGameDifficulty.HARD -> SPEED_HARD
-        }
+        val rampKey = score
+        val gravity = gravityRamped(rampKey, d)
+        val speed = speedRamped(rampKey, d)
 
         birdVy += gravity
         birdY += birdVy
@@ -330,11 +396,6 @@ class CompanionFlappyViewModel @Inject constructor(
 
         pipes = pipes.map { it.copy(x = it.x - speed) }.filter { it.x + PIPE_WIDTH_NORM > -0.1f }
 
-        val furthestRight = pipes.maxOfOrNull { it.x + PIPE_WIDTH_NORM } ?: 0f
-        if (furthestRight < SPAWN_FURTHEST_MAX) {
-            pipes = pipes + FlappyPipe(x = PIPE_SPAWN_X, gapCenter = randomGap(d), scored = false)
-        }
-
         pipes = pipes.map { p ->
             if (!p.scored && p.x + PIPE_WIDTH_NORM < BIRD_CENTER_X_NORM - BIRD_RADIUS * 0.25f) {
                 score++
@@ -344,12 +405,25 @@ class CompanionFlappyViewModel @Inject constructor(
             }
         }
 
+        val furthestRight = pipes.maxOfOrNull { it.x + PIPE_WIDTH_NORM } ?: 0f
+        val spawnMax = spawnFurthestMaxRamped(score)
+        if (furthestRight < spawnMax) {
+            pipes = pipes + FlappyPipe(
+                x = PIPE_SPAWN_X,
+                gapCenter = randomGap(d, score),
+                scored = false,
+                gapHalf = openHalfRamped(score, d),
+            )
+        }
+
+        val openHalfUi = openHalfRamped(score, d)
+
         for (p in pipes) {
             val overlapX = p.x < BIRD_CENTER_X_NORM + BIRD_RADIUS &&
                 p.x + PIPE_WIDTH_NORM > BIRD_CENTER_X_NORM - BIRD_RADIUS
             if (!overlapX) continue
-            val gapLow = p.gapCenter - openHalf
-            val gapHigh = p.gapCenter + openHalf
+            val gapLow = p.gapCenter - p.gapHalf
+            val gapHigh = p.gapCenter + p.gapHalf
             if (birdY - BIRD_RADIUS < gapLow || birdY + BIRD_RADIUS > gapHigh) {
                 crash(state)
                 return
@@ -362,7 +436,7 @@ class CompanionFlappyViewModel @Inject constructor(
                 birdVy = birdVy,
                 pipes = pipes,
                 score = score,
-                openHalf = openHalf,
+                openHalf = openHalfUi,
             ),
         )
     }

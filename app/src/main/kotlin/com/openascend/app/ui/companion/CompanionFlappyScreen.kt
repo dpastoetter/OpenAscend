@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -56,31 +58,34 @@ fun CompanionFlappyScreen(
 ) {
     val ui by viewModel.uiState.collectAsState()
     val scheme = MaterialTheme.colorScheme
+    val isPlaying = ui?.phase is FlappyPhase.Playing
 
     Scaffold(
         containerColor = Color.Transparent,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        stringResource(R.string.companion_glide_title),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Outlined.ArrowBack,
-                            contentDescription = stringResource(R.string.cd_back),
+            if (!isPlaying) {
+                TopAppBar(
+                    title = {
+                        Text(
+                            stringResource(R.string.companion_glide_title),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
                         )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    scrolledContainerColor = scheme.surfaceContainer,
-                ),
-            )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                Icons.AutoMirrored.Outlined.ArrowBack,
+                                contentDescription = stringResource(R.string.cd_back),
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        scrolledContainerColor = scheme.surfaceContainer,
+                    ),
+                )
+            }
         },
     ) { innerPadding ->
         Box(
@@ -122,26 +127,15 @@ fun CompanionFlappyScreen(
 
             when (val phase = state.phase) {
                 is FlappyPhase.Playing -> {
-                    Column(
-                        Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 20.dp)
-                            .pointerInput(Unit) {
-                                detectTapGestures { viewModel.flap() }
-                            },
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                    ) {
-                        Spacer(Modifier.height(4.dp))
-                        theaterNote()
-                        GlidePlayingBody(
-                            species = state.species,
-                            mood = state.companion.mood,
-                            moodLabel = state.companion.moodLabel,
-                            gameDifficulty = state.gameDifficulty,
-                            playing = phase,
-                        )
-                        Spacer(Modifier.height(24.dp))
-                    }
+                    GlidePlayingFullscreen(
+                        species = state.species,
+                        mood = state.companion.mood,
+                        moodLabel = state.companion.moodLabel,
+                        gameDifficulty = state.gameDifficulty,
+                        playing = phase,
+                        onBack = onBack,
+                        onFlap = { viewModel.flap() },
+                    )
                 }
                 is FlappyPhase.Intro -> {
                     Column(
@@ -207,34 +201,80 @@ private fun GlideIntroBody(
 }
 
 @Composable
-private fun GlidePlayingBody(
+private fun GlidePlayingFullscreen(
     species: FamiliarSpecies,
     mood: CompanionMood,
     moodLabel: String,
     gameDifficulty: CompanionGameDifficulty,
     playing: FlappyPhase.Playing,
+    onBack: () -> Unit,
+    onFlap: () -> Unit,
+) {
+    val scheme = MaterialTheme.colorScheme
+    val victoryNeed = CompanionFlappyViewModel.victoryThreshold(gameDifficulty)
+    Box(
+        Modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                detectTapGestures { onFlap() }
+            },
+    ) {
+        GlidePlayfield(
+            species = species,
+            mood = mood,
+            moodLabel = moodLabel,
+            playing = playing,
+            modifier = Modifier.fillMaxSize(),
+        )
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .statusBarsPadding()
+                .padding(4.dp),
+        ) {
+            Icon(
+                Icons.AutoMirrored.Outlined.ArrowBack,
+                contentDescription = stringResource(R.string.cd_back),
+            )
+        }
+        Text(
+            stringResource(R.string.companion_glide_score_line, playing.score, victoryNeed),
+            style = MaterialTheme.typography.labelLarge,
+            color = scheme.primary,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .statusBarsPadding()
+                .padding(top = 10.dp, start = 48.dp, end = 48.dp)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+        )
+        Text(
+            stringResource(R.string.companion_glide_tap_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = scheme.onSurface,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .padding(bottom = 4.dp),
+        )
+    }
+}
+
+@Composable
+private fun GlidePlayfield(
+    species: FamiliarSpecies,
+    mood: CompanionMood,
+    moodLabel: String,
+    playing: FlappyPhase.Playing,
+    modifier: Modifier = Modifier,
 ) {
     val scheme = MaterialTheme.colorScheme
     val skyTop = scheme.primaryContainer.copy(alpha = 0.35f)
     val skyBot = scheme.secondaryContainer.copy(alpha = 0.4f)
     val pipeColor = scheme.tertiaryContainer.copy(alpha = 0.92f)
-    val victoryNeed = CompanionFlappyViewModel.victoryThreshold(gameDifficulty)
 
-    Text(
-        stringResource(R.string.companion_glide_tap_hint),
-        style = MaterialTheme.typography.bodyMedium,
-    )
-    Text(
-        stringResource(R.string.companion_glide_score_line, playing.score, victoryNeed),
-        style = MaterialTheme.typography.labelLarge,
-        color = scheme.primary,
-    )
-
-    BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(320.dp),
-    ) {
+    BoxWithConstraints(modifier = modifier) {
         val w = maxWidth
         val h = maxHeight
         Canvas(Modifier.fillMaxSize()) {
@@ -242,8 +282,8 @@ private fun GlidePlayingBody(
             for (pipe in playing.pipes) {
                 val left = pipe.x * size.width
                 val pw = CompanionFlappyViewModel.PIPE_WIDTH_NORM * size.width
-                val gapTop = (pipe.gapCenter - playing.openHalf) * size.height
-                val gapBot = (pipe.gapCenter + playing.openHalf) * size.height
+                val gapTop = (pipe.gapCenter - pipe.gapHalf) * size.height
+                val gapBot = (pipe.gapCenter + pipe.gapHalf) * size.height
                 drawRect(pipeColor, topLeft = Offset(left, 0f), size = Size(pw, gapTop.coerceAtLeast(0f)))
                 drawRect(
                     pipeColor,
