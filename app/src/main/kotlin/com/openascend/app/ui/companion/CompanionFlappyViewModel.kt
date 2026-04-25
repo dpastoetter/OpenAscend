@@ -93,8 +93,8 @@ class CompanionFlappyViewModel @Inject constructor(
         /** Shared with [CompanionFlappyScreen] for layout. */
         const val BIRD_CENTER_X_NORM = 0.22f
         const val PIPE_WIDTH_NORM = 0.10f
-        /** Normalized hit radius; sprite is 48.dp tall in the playfield ([CompanionFlappyScreen]). */
-        private const val BIRD_RADIUS = 0.075f
+        /** Normalized hit radius; tuned to better match the 48.dp sprite in the playfield ([CompanionFlappyScreen]). */
+        private const val BIRD_RADIUS = 0.06f
         private const val OPEN_HALF_NORMAL = 0.15f
         private const val OPEN_HALF_EASY = 0.175f
         private const val OPEN_HALF_HARD = 0.125f
