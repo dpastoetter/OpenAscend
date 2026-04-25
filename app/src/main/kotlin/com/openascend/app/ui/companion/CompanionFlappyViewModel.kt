@@ -397,7 +397,7 @@ class CompanionFlappyViewModel @Inject constructor(
         pipes = pipes.map { it.copy(x = it.x - speed) }.filter { it.x + PIPE_WIDTH_NORM > -0.1f }
 
         pipes = pipes.map { p ->
-            if (!p.scored && p.x + PIPE_WIDTH_NORM < BIRD_CENTER_X_NORM - BIRD_RADIUS * 0.25f) {
+            if (!p.scored && p.x + PIPE_WIDTH_NORM < BIRD_CENTER_X_NORM - BIRD_RADIUS) {
                 score++
                 p.copy(scored = true)
             } else {
