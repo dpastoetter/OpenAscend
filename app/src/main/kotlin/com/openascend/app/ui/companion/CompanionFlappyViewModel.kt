@@ -108,7 +108,7 @@ class CompanionFlappyViewModel @Inject constructor(
         private const val SPEED_EASY = 0.0043f
         private const val SPEED_HARD = 0.0064f
         /** Left edge (normalized) of the first pipe; farther right gives a calmer first approach. */
-        private const val FIRST_PIPE_X = 0.88f
+        private const val FIRST_PIPE_X = 0.92f
         /** Left edge (normalized) for each newly spawned pipe after the first. */
         private const val PIPE_SPAWN_X = 1.02f
 
@@ -352,11 +352,11 @@ class CompanionFlappyViewModel @Inject constructor(
     /** First obstacle: gap must actually fit the bird at the default start height (0.5). */
     private fun randomGapFirstPipe(difficulty: CompanionGameDifficulty): Float {
         val oh = openHalfRamped(0, difficulty)
-        val margin = 0.028f
+        val margin = 0.036f
         val minC = 0.5f - oh + BIRD_RADIUS + margin
         val maxC = 0.5f + oh - BIRD_RADIUS - margin
-        val lo = maxOf(minC, 0.36f)
-        val hi = minOf(maxC, 0.64f)
+        val lo = maxOf(minC, 0.34f)
+        val hi = minOf(maxC, 0.66f)
         return if (hi > lo) lo + random.nextFloat() * (hi - lo) else 0.5f
     }
 
@@ -406,7 +406,9 @@ class CompanionFlappyViewModel @Inject constructor(
         }
 
         val furthestRight = pipes.maxOfOrNull { it.x + PIPE_WIDTH_NORM } ?: 0f
-        val spawnMax = spawnFurthestMaxRamped(score)
+        val spawnMax = spawnFurthestMaxRamped(score).let { max ->
+            if (score == 0) minOf(max, 0.28f) else max
+        }
         if (furthestRight < spawnMax) {
             pipes = pipes + FlappyPipe(
                 x = PIPE_SPAWN_X,

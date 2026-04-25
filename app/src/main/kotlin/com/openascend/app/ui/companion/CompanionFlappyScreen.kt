@@ -212,19 +212,40 @@ private fun GlidePlayingFullscreen(
 ) {
     val scheme = MaterialTheme.colorScheme
     val victoryNeed = CompanionFlappyViewModel.victoryThreshold(gameDifficulty)
-    Box(
-        Modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTapGestures { onFlap() }
-            },
-    ) {
+    Box(Modifier.fillMaxSize()) {
         GlidePlayfield(
             species = species,
             mood = mood,
             moodLabel = moodLabel,
             playing = playing,
             modifier = Modifier.fillMaxSize(),
+        )
+        Text(
+            stringResource(R.string.companion_glide_score_line, playing.score, victoryNeed),
+            style = MaterialTheme.typography.labelLarge,
+            color = scheme.primary,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .statusBarsPadding()
+                .padding(top = 8.dp, start = 48.dp, end = 48.dp)
+                .padding(horizontal = 6.dp, vertical = 2.dp),
+        )
+        Text(
+            stringResource(R.string.companion_glide_tap_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = scheme.onSurface,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(horizontal = 12.dp, vertical = 6.dp)
+                .padding(bottom = 2.dp),
+        )
+        Box(
+            Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures { onFlap() }
+                },
         )
         IconButton(
             onClick = onBack,
@@ -238,26 +259,6 @@ private fun GlidePlayingFullscreen(
                 contentDescription = stringResource(R.string.cd_back),
             )
         }
-        Text(
-            stringResource(R.string.companion_glide_score_line, playing.score, victoryNeed),
-            style = MaterialTheme.typography.labelLarge,
-            color = scheme.primary,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .statusBarsPadding()
-                .padding(top = 10.dp, start = 48.dp, end = 48.dp)
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-        )
-        Text(
-            stringResource(R.string.companion_glide_tap_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = scheme.onSurface,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 10.dp)
-                .padding(bottom = 4.dp),
-        )
     }
 }
 
