@@ -105,7 +105,15 @@ class CompanionFlappyViewModel @Inject constructor(
         private const val SPEED_NORMAL = 0.0059f
         private const val SPEED_EASY = 0.0043f
         private const val SPEED_HARD = 0.0064f
-        private const val SPAWN_FURTHEST_MAX = 0.58f
+        /**
+         * Spawn the next pipe only once the rightmost pipe's right edge has moved past this x (0–1).
+         * Lower value → spawn later → more horizontal space between consecutive pipes.
+         */
+        private const val SPAWN_FURTHEST_MAX = 0.42f
+        /** Left edge (normalized) of the first pipe; farther right gives a calmer first approach. */
+        private const val FIRST_PIPE_X = 0.88f
+        /** Left edge (normalized) for each newly spawned pipe after the first. */
+        private const val PIPE_SPAWN_X = 1.02f
 
         fun victoryThreshold(difficulty: CompanionGameDifficulty): Int = when (difficulty) {
             CompanionGameDifficulty.EASY -> 5
@@ -233,7 +241,7 @@ class CompanionFlappyViewModel @Inject constructor(
         birdVy = 0f
         score = 0
         pipes = listOf(
-            FlappyPipe(x = 0.82f, gapCenter = randomGapFirstPipe(base.gameDifficulty), scored = false),
+            FlappyPipe(x = FIRST_PIPE_X, gapCenter = randomGapFirstPipe(base.gameDifficulty), scored = false),
         )
         val openHalf = openHalfFor(base.gameDifficulty)
         _ui.value = base.copy(
@@ -323,7 +331,7 @@ class CompanionFlappyViewModel @Inject constructor(
 
         val furthestRight = pipes.maxOfOrNull { it.x + PIPE_WIDTH_NORM } ?: 0f
         if (furthestRight < SPAWN_FURTHEST_MAX) {
-            pipes = pipes + FlappyPipe(x = 1.02f, gapCenter = randomGap(d), scored = false)
+            pipes = pipes + FlappyPipe(x = PIPE_SPAWN_X, gapCenter = randomGap(d), scored = false)
         }
 
         pipes = pipes.map { p ->

@@ -42,7 +42,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.openascend.app.R
 import com.openascend.domain.companion.CompanionMood
@@ -106,14 +105,7 @@ fun CompanionFlappyScreen(
             }
 
             val state = ui!!
-            Column(
-                Modifier
-                    .padding(horizontal = 20.dp)
-                    .verticalScroll(rememberScrollState())
-                    .fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                Spacer(Modifier.height(4.dp))
+            val theaterNote: @Composable () -> Unit = {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = scheme.surfaceContainerHighest.copy(alpha = 0.65f),
@@ -126,29 +118,68 @@ fun CompanionFlappyScreen(
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                     )
                 }
+            }
 
-                when (val phase = state.phase) {
-                    is FlappyPhase.Intro -> GlideIntroBody(
-                        speciesName = state.species.displayName,
-                        gameDifficulty = state.gameDifficulty,
-                        onStart = { viewModel.startSession() },
-                    )
-                    is FlappyPhase.Playing -> GlidePlayingBody(
-                        species = state.species,
-                        mood = state.companion.mood,
-                        moodLabel = state.companion.moodLabel,
-                        gameDifficulty = state.gameDifficulty,
-                        playing = phase,
-                        onFlap = { viewModel.flap() },
-                    )
-                    is FlappyPhase.Summary -> GlideSummaryBody(
-                        summary = phase,
-                        gameDifficulty = state.gameDifficulty,
-                        onTryAgain = { viewModel.returnToIntro() },
-                        onDone = onBack,
-                    )
+            when (val phase = state.phase) {
+                is FlappyPhase.Playing -> {
+                    Column(
+                        Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 20.dp)
+                            .pointerInput(Unit) {
+                                detectTapGestures { viewModel.flap() }
+                            },
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        Spacer(Modifier.height(4.dp))
+                        theaterNote()
+                        GlidePlayingBody(
+                            species = state.species,
+                            mood = state.companion.mood,
+                            moodLabel = state.companion.moodLabel,
+                            gameDifficulty = state.gameDifficulty,
+                            playing = phase,
+                        )
+                        Spacer(Modifier.height(24.dp))
+                    }
                 }
-                Spacer(Modifier.height(24.dp))
+                is FlappyPhase.Intro -> {
+                    Column(
+                        Modifier
+                            .padding(horizontal = 20.dp)
+                            .verticalScroll(rememberScrollState())
+                            .fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        Spacer(Modifier.height(4.dp))
+                        theaterNote()
+                        GlideIntroBody(
+                            speciesName = state.species.displayName,
+                            gameDifficulty = state.gameDifficulty,
+                            onStart = { viewModel.startSession() },
+                        )
+                        Spacer(Modifier.height(24.dp))
+                    }
+                }
+                is FlappyPhase.Summary -> {
+                    Column(
+                        Modifier
+                            .padding(horizontal = 20.dp)
+                            .verticalScroll(rememberScrollState())
+                            .fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        Spacer(Modifier.height(4.dp))
+                        theaterNote()
+                        GlideSummaryBody(
+                            summary = phase,
+                            gameDifficulty = state.gameDifficulty,
+                            onTryAgain = { viewModel.returnToIntro() },
+                            onDone = onBack,
+                        )
+                        Spacer(Modifier.height(24.dp))
+                    }
+                }
             }
         }
     }
@@ -182,7 +213,6 @@ private fun GlidePlayingBody(
     moodLabel: String,
     gameDifficulty: CompanionGameDifficulty,
     playing: FlappyPhase.Playing,
-    onFlap: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
     val skyTop = scheme.primaryContainer.copy(alpha = 0.35f)
@@ -203,10 +233,7 @@ private fun GlidePlayingBody(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
-            .height(320.dp)
-            .pointerInput(Unit) {
-                detectTapGestures { onFlap() }
-            },
+            .height(320.dp),
     ) {
         val w = maxWidth
         val h = maxHeight
