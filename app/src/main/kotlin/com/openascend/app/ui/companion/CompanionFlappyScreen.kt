@@ -19,6 +19,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Pause
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -29,11 +31,15 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -58,7 +64,7 @@ fun CompanionFlappyScreen(
 ) {
     val ui by viewModel.uiState.collectAsState()
     val scheme = MaterialTheme.colorScheme
-    val isPlaying = ui?.phase is FlappyPhase.Playing
+    val isPlaying = ui?.phase is FlappyPhase.Playing || ui?.phase is FlappyPhase.Paused
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -135,6 +141,24 @@ fun CompanionFlappyScreen(
                         playing = phase,
                         onBack = onBack,
                         onFlap = { viewModel.flap() },
+                        onPause = { viewModel.pause() },
+                        onResume = { viewModel.resume() },
+                        onRestart = { viewModel.startSession() },
+                    )
+                }
+                is FlappyPhase.Paused -> {
+                    GlidePlayingFullscreen(
+                        species = state.species,
+                        mood = state.companion.mood,
+                        moodLabel = state.companion.moodLabel,
+                        gameDifficulty = state.gameDifficulty,
+                        playing = phase.playing,
+                        onBack = onBack,
+                        onFlap = { /* disabled while paused */ },
+                        onPause = { /* already paused */ },
+                        onResume = { viewModel.resume() },
+                        onRestart = { viewModel.startSession() },
+                        paused = true,
                     )
                 }
                 is FlappyPhase.Intro -> {
@@ -209,9 +233,14 @@ private fun GlidePlayingFullscreen(
     playing: FlappyPhase.Playing,
     onBack: () -> Unit,
     onFlap: () -> Unit,
+    onPause: () -> Unit,
+    onResume: () -> Unit,
+    onRestart: () -> Unit,
+    paused: Boolean = false,
 ) {
     val scheme = MaterialTheme.colorScheme
     val victoryNeed = CompanionFlappyViewModel.victoryThreshold(gameDifficulty)
+    var showPause by remember(paused) { mutableStateOf(paused) }
     Box(Modifier.fillMaxSize()) {
         GlidePlayfield(
             species = species,
@@ -220,43 +249,110 @@ private fun GlidePlayingFullscreen(
             playing = playing,
             modifier = Modifier.fillMaxSize(),
         )
-        Text(
-            stringResource(R.string.companion_glide_score_line, playing.score, victoryNeed),
-            style = MaterialTheme.typography.labelLarge,
-            color = scheme.primary,
+        Surface(
+            shape = RoundedCornerShape(999.dp),
+            color = scheme.surfaceContainerHighest.copy(alpha = 0.62f),
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .statusBarsPadding()
-                .padding(top = 8.dp, start = 48.dp, end = 48.dp)
-                .padding(horizontal = 6.dp, vertical = 2.dp),
-        )
-        Text(
-            stringResource(R.string.companion_glide_tap_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = scheme.onSurface,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(horizontal = 12.dp, vertical = 6.dp)
-                .padding(bottom = 2.dp),
-        )
-        Box(
-            Modifier
-                .fillMaxSize()
-                .pointerInput(Unit) {
-                    detectTapGestures { onFlap() }
-                },
-        )
+                .padding(top = 10.dp),
+        ) {
+            Text(
+                stringResource(R.string.companion_glide_score_line, playing.score, victoryNeed),
+                style = MaterialTheme.typography.labelLarge,
+                color = scheme.onSurface,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            )
+        }
+
+        val showHint = !paused && playing.flapCount == 0 && playing.elapsedMs < 2500L
+        if (showHint) {
+            Surface(
+                shape = RoundedCornerShape(999.dp),
+                color = scheme.surfaceContainerHighest.copy(alpha = 0.55f),
+                tonalElevation = 1.dp,
+                shadowElevation = 0.dp,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(bottom = 12.dp),
+            ) {
+                Text(
+                    stringResource(R.string.companion_glide_tap_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                )
+            }
+        }
+
+        if (!paused) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTapGestures { onFlap() }
+                    },
+            )
+        }
         IconButton(
-            onClick = onBack,
+            onClick = {
+                showPause = true
+                onPause()
+            },
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .statusBarsPadding()
                 .padding(4.dp),
         ) {
             Icon(
-                Icons.AutoMirrored.Outlined.ArrowBack,
-                contentDescription = stringResource(R.string.cd_back),
+                Icons.Outlined.Pause,
+                contentDescription = stringResource(R.string.cd_pause),
+            )
+        }
+
+        if (showPause) {
+            AlertDialog(
+                onDismissRequest = { /* explicit choice only */ },
+                title = { Text(stringResource(R.string.companion_glide_paused_title)) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedButton(
+                            onClick = {
+                                showPause = false
+                                onBack()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Outlined.ArrowBack,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 8.dp),
+                            )
+                            Text(stringResource(R.string.companion_glide_exit))
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showPause = false
+                            onResume()
+                        },
+                    ) {
+                        Text(stringResource(R.string.companion_glide_resume))
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            showPause = false
+                            onRestart()
+                        },
+                    ) {
+                        Text(stringResource(R.string.companion_glide_restart))
+                    }
+                },
             )
         }
     }

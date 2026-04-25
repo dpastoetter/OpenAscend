@@ -55,6 +55,12 @@ sealed class FlappyPhase {
         val pipes: List<FlappyPipe>,
         val score: Int,
         val openHalf: Float,
+        val flapCount: Int,
+        val elapsedMs: Long,
+    ) : FlappyPhase()
+
+    data class Paused(
+        val playing: Playing,
     ) : FlappyPhase()
 
     data class Summary(
@@ -133,6 +139,8 @@ class CompanionFlappyViewModel @Inject constructor(
     private var birdVy = 0f
     private var score = 0
     private var pipes = emptyList<FlappyPipe>()
+    private var flapCount = 0
+    private var elapsedMs = 0L
 
     init {
         combine(
@@ -241,6 +249,8 @@ class CompanionFlappyViewModel @Inject constructor(
         birdY = 0.5f
         birdVy = 0f
         score = 0
+        flapCount = 0
+        elapsedMs = 0L
         pipes = listOf(
             FlappyPipe(
                 x = FIRST_PIPE_X,
@@ -251,7 +261,7 @@ class CompanionFlappyViewModel @Inject constructor(
         )
         val openHalf = openHalfRamped(score, base.gameDifficulty)
         _ui.value = base.copy(
-            phase = FlappyPhase.Playing(birdY, birdVy, pipes, score, openHalf),
+            phase = FlappyPhase.Playing(birdY, birdVy, pipes, score, openHalf, flapCount, elapsedMs),
         )
         gameJob = viewModelScope.launch {
             while (isActive) {
@@ -266,6 +276,31 @@ class CompanionFlappyViewModel @Inject constructor(
         if (state.phase !is FlappyPhase.Playing) return
         val playing = state.phase as FlappyPhase.Playing
         birdVy = flapImpulseRamped(playing.score, state.gameDifficulty)
+        flapCount++
+    }
+
+    fun pause() {
+        val state = _ui.value ?: return
+        val playing = state.phase as? FlappyPhase.Playing ?: return
+        gameJob?.cancel()
+        _ui.value = state.copy(phase = FlappyPhase.Paused(playing))
+    }
+
+    fun resume() {
+        val state = _ui.value ?: return
+        state.phase as? FlappyPhase.Paused ?: return
+        // Keep using the authoritative vars (birdY/birdVy/pipes/score) and refresh the snapshot.
+        val openHalf = openHalfRamped(score, state.gameDifficulty)
+        _ui.value = state.copy(
+            phase = FlappyPhase.Playing(birdY, birdVy, pipes, score, openHalf, flapCount, elapsedMs),
+        )
+        gameJob?.cancel()
+        gameJob = viewModelScope.launch {
+            while (isActive) {
+                delay(FRAME_MS)
+                tick()
+            }
+        }
     }
 
     fun returnToIntro() {
@@ -378,6 +413,7 @@ class CompanionFlappyViewModel @Inject constructor(
             gameJob?.cancel()
             return
         }
+        elapsedMs += FRAME_MS
         val d = state.gameDifficulty
         val rampKey = score
         val gravity = gravityRamped(rampKey, d)
@@ -439,6 +475,8 @@ class CompanionFlappyViewModel @Inject constructor(
                 pipes = pipes,
                 score = score,
                 openHalf = openHalfUi,
+                flapCount = flapCount,
+                elapsedMs = elapsedMs,
             ),
         )
     }

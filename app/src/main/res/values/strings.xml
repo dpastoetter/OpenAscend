@@ -4,6 +4,7 @@
     <string name="widget_description">Level, active quest, and weekly boss snapshot.</string>
 
     <string name="cd_back">Back</string>
+    <string name="cd_pause">Pause</string>
     <string name="cd_add_habit">Add habit</string>
     <string name="cd_profile_photo_options">Profile photo options</string>
     <string name="cd_expand_companion">Show more companion details</string>
@@ -201,6 +202,10 @@
     <string name="companion_glide_start">Take off</string>
     <string name="companion_glide_tap_hint">Tap the sky lane to flap.</string>
     <string name="companion_glide_score_line">Gates cleared: %1$d · target %2$d</string>
+    <string name="companion_glide_paused_title">Paused</string>
+    <string name="companion_glide_resume">Resume</string>
+    <string name="companion_glide_restart">Restart</string>
+    <string name="companion_glide_exit">Exit</string>
     <string name="companion_glide_summary_title">Flight over</string>
     <string name="companion_glide_summary_score">Gates cleared: %1$d (target %2$d for the chronicle bonus).</string>
     <string name="companion_glide_summary_retry_hint">Try again—reach %1$d gates in one run to qualify for the daily bonus if you have not claimed it yet.</string>
