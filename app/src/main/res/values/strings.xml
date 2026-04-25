@@ -44,10 +44,16 @@
     <string name="settings_companion_blurb">Optional familiar on Home. Off by default.</string>
     <string name="settings_companion_toggle">Show companion on Home</string>
     <string name="settings_companion_difficulty_title">Companion games difficulty</string>
+    <string name="settings_companion_difficulty_treat_toss">Treat toss</string>
+    <string name="settings_companion_difficulty_memory_flash">Flash sigils</string>
+    <string name="settings_companion_difficulty_echo_sequence">Echo sigils</string>
+    <string name="settings_companion_difficulty_glide">Glide loop</string>
+    <string name="settings_companion_difficulty_stack">Stack drop</string>
+    <string name="settings_companion_difficulty_thread">Thread-run</string>
     <string name="settings_companion_difficulty_easy">Easy</string>
     <string name="settings_companion_difficulty_normal">Normal</string>
     <string name="settings_companion_difficulty_hard">Hard</string>
-    <string name="settings_companion_difficulty_blurb">One setting for every companion mini-game (treat toss, flash sigils, echo sigils, glide loop, stack drop, thread-run): Easy is forgiving; Normal is the default balance; Hard tightens timing, lanes, and goals.</string>
+    <string name="settings_companion_difficulty_blurb">Set each companion mini-game independently. Easy is forgiving; Normal is the default balance; Hard tightens timing, lanes, and goals.</string>
     <string name="settings_feedback">Feedback</string>
     <string name="settings_haptics">Haptics (seal, level-up)</string>
     <string name="settings_sound">Sound (seal chime)</string>

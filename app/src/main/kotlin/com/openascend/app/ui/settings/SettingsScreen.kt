@@ -203,31 +203,84 @@ fun SettingsScreen(
                 stringResource(R.string.settings_companion_difficulty_title),
                 style = MaterialTheme.typography.titleSmall,
             )
-            Row(
-                modifier = Modifier
-                    .horizontalScroll(rememberScrollState())
-                    .alpha(if (ui.privacy.familiarEnabled) 1f else 0.45f),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                CompanionGameDifficulty.entries.forEach { level ->
-                    FilterChip(
-                        selected = ui.privacy.companionGameDifficulty == level,
-                        onClick = {
-                            if (ui.privacy.familiarEnabled) {
-                                viewModel.setPrivacy(ui.privacy.copy(companionGameDifficulty = level))
-                            }
-                        },
-                        label = {
-                            Text(
-                                when (level) {
-                                    CompanionGameDifficulty.EASY -> stringResource(R.string.settings_companion_difficulty_easy)
-                                    CompanionGameDifficulty.NORMAL -> stringResource(R.string.settings_companion_difficulty_normal)
-                                    CompanionGameDifficulty.HARD -> stringResource(R.string.settings_companion_difficulty_hard)
-                                },
-                            )
-                        },
-                    )
-                }
+            val perGame = ui.privacy.resolvedPerGameDifficulties()
+            CompanionDifficultyRow(
+                title = stringResource(R.string.settings_companion_difficulty_treat_toss),
+                enabled = ui.privacy.familiarEnabled,
+                selected = perGame.treatToss,
+            ) { level ->
+                val next = perGame.copy(treatToss = level)
+                viewModel.setPrivacy(
+                    ui.privacy.copy(
+                        companionPerGameDifficulties = next,
+                        companionGameDifficulty = next.treatToss,
+                    ),
+                )
+            }
+            CompanionDifficultyRow(
+                title = stringResource(R.string.settings_companion_difficulty_memory_flash),
+                enabled = ui.privacy.familiarEnabled,
+                selected = perGame.memoryFlash,
+            ) { level ->
+                val next = perGame.copy(memoryFlash = level)
+                viewModel.setPrivacy(
+                    ui.privacy.copy(
+                        companionPerGameDifficulties = next,
+                        companionGameDifficulty = next.treatToss,
+                    ),
+                )
+            }
+            CompanionDifficultyRow(
+                title = stringResource(R.string.settings_companion_difficulty_echo_sequence),
+                enabled = ui.privacy.familiarEnabled,
+                selected = perGame.echoSequence,
+            ) { level ->
+                val next = perGame.copy(echoSequence = level)
+                viewModel.setPrivacy(
+                    ui.privacy.copy(
+                        companionPerGameDifficulties = next,
+                        companionGameDifficulty = next.treatToss,
+                    ),
+                )
+            }
+            CompanionDifficultyRow(
+                title = stringResource(R.string.settings_companion_difficulty_glide),
+                enabled = ui.privacy.familiarEnabled,
+                selected = perGame.glide,
+            ) { level ->
+                val next = perGame.copy(glide = level)
+                viewModel.setPrivacy(
+                    ui.privacy.copy(
+                        companionPerGameDifficulties = next,
+                        companionGameDifficulty = next.treatToss,
+                    ),
+                )
+            }
+            CompanionDifficultyRow(
+                title = stringResource(R.string.settings_companion_difficulty_stack),
+                enabled = ui.privacy.familiarEnabled,
+                selected = perGame.stack,
+            ) { level ->
+                val next = perGame.copy(stack = level)
+                viewModel.setPrivacy(
+                    ui.privacy.copy(
+                        companionPerGameDifficulties = next,
+                        companionGameDifficulty = next.treatToss,
+                    ),
+                )
+            }
+            CompanionDifficultyRow(
+                title = stringResource(R.string.settings_companion_difficulty_thread),
+                enabled = ui.privacy.familiarEnabled,
+                selected = perGame.thread,
+            ) { level ->
+                val next = perGame.copy(thread = level)
+                viewModel.setPrivacy(
+                    ui.privacy.copy(
+                        companionPerGameDifficulties = next,
+                        companionGameDifficulty = next.treatToss,
+                    ),
+                )
             }
             Text(
                 stringResource(R.string.settings_companion_difficulty_blurb),
@@ -358,6 +411,40 @@ fun SettingsScreen(
             ) {
                 Text(stringResource(R.string.settings_import_backup))
             }
+        }
+    }
+}
+
+@Composable
+private fun CompanionDifficultyRow(
+    title: String,
+    enabled: Boolean,
+    selected: CompanionGameDifficulty,
+    onPick: (CompanionGameDifficulty) -> Unit,
+) {
+    Text(title, style = MaterialTheme.typography.bodyMedium)
+    Row(
+        modifier = Modifier
+            .horizontalScroll(rememberScrollState())
+            .alpha(if (enabled) 1f else 0.45f),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        CompanionGameDifficulty.entries.forEach { level ->
+            FilterChip(
+                selected = selected == level,
+                onClick = {
+                    if (enabled) onPick(level)
+                },
+                label = {
+                    Text(
+                        when (level) {
+                            CompanionGameDifficulty.EASY -> stringResource(R.string.settings_companion_difficulty_easy)
+                            CompanionGameDifficulty.NORMAL -> stringResource(R.string.settings_companion_difficulty_normal)
+                            CompanionGameDifficulty.HARD -> stringResource(R.string.settings_companion_difficulty_hard)
+                        },
+                    )
+                },
+            )
         }
     }
 }

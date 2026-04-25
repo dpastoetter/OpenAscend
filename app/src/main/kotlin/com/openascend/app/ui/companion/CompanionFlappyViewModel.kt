@@ -206,11 +206,12 @@ class CompanionFlappyViewModel @Inject constructor(
                         yesterdayMoodHeadline = moodHeadline,
                     )
                     val species = homeSnap.settings.familiarSpecies
+                    val difficulty = homeSnap.settings.resolvedPerGameDifficulties().glide
                     val current = _ui.value
                     val keepPhase = current?.let { ch ->
                         ch.companion.mood == companion.mood &&
                             ch.species == species &&
-                            ch.gameDifficulty == homeSnap.settings.companionGameDifficulty &&
+                            ch.gameDifficulty == difficulty &&
                             ch.phase !is FlappyPhase.Intro &&
                             ch.phase !is FlappyPhase.Summary
                     } == true
@@ -226,7 +227,7 @@ class CompanionFlappyViewModel @Inject constructor(
                         species = species,
                         soundEnabled = homeSnap.settings.soundEnabled,
                         hapticsEnabled = homeSnap.settings.hapticsEnabled,
-                        gameDifficulty = homeSnap.settings.companionGameDifficulty,
+                        gameDifficulty = difficulty,
                         phase = phase,
                     )
                 }

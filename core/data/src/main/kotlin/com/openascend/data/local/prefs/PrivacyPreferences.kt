@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.openascend.domain.model.CompanionGameDifficulty
+import com.openascend.domain.model.CompanionPerGameDifficulties
 import com.openascend.domain.model.FamiliarSpecies
 import com.openascend.domain.model.PrivacySettings
 import com.openascend.domain.model.ThemePreference
@@ -53,6 +54,12 @@ class PrivacyPreferences(
         val familiarSpecies = stringPreferencesKey("familiar_species")
         val treatTossEasyMode = booleanPreferencesKey("treat_toss_easy_mode")
         val companionGameDifficulty = stringPreferencesKey("companion_game_difficulty")
+        val companionDifficultyTreatToss = stringPreferencesKey("companion_difficulty_treat_toss")
+        val companionDifficultyMemoryFlash = stringPreferencesKey("companion_difficulty_memory_flash")
+        val companionDifficultyEchoSequence = stringPreferencesKey("companion_difficulty_echo_sequence")
+        val companionDifficultyGlide = stringPreferencesKey("companion_difficulty_glide")
+        val companionDifficultyStack = stringPreferencesKey("companion_difficulty_stack")
+        val companionDifficultyThread = stringPreferencesKey("companion_difficulty_thread")
         val healthConnectSync = booleanPreferencesKey("health_connect_sync_enabled")
         val remindersEnabled = booleanPreferencesKey("reminders_enabled")
         val reminderMorning = booleanPreferencesKey("reminder_morning_enabled")
@@ -74,6 +81,36 @@ class PrivacyPreferences(
             } else {
                 CompanionGameDifficulty.NORMAL
             }
+
+        val treatTossRaw = p[Keys.companionDifficultyTreatToss]
+        val memoryRaw = p[Keys.companionDifficultyMemoryFlash]
+        val echoRaw = p[Keys.companionDifficultyEchoSequence]
+        val glideRaw = p[Keys.companionDifficultyGlide]
+        val stackRaw = p[Keys.companionDifficultyStack]
+        val threadRaw = p[Keys.companionDifficultyThread]
+
+        val perGame = if (
+            treatTossRaw == null ||
+            memoryRaw == null ||
+            echoRaw == null ||
+            glideRaw == null ||
+            stackRaw == null ||
+            threadRaw == null
+        ) {
+            CompanionPerGameDifficulties.uniform(companionDifficulty)
+        } else {
+            fun parse(raw: String): CompanionGameDifficulty =
+                runCatching { CompanionGameDifficulty.valueOf(raw) }.getOrDefault(companionDifficulty)
+            CompanionPerGameDifficulties(
+                treatToss = parse(treatTossRaw),
+                memoryFlash = parse(memoryRaw),
+                echoSequence = parse(echoRaw),
+                glide = parse(glideRaw),
+                stack = parse(stackRaw),
+                thread = parse(threadRaw),
+            )
+        }
+
         return PrivacySettings(
             analyticsOptIn = p[Keys.analytics] ?: false,
             crashReportsOptIn = p[Keys.crash] ?: false,
@@ -84,6 +121,7 @@ class PrivacyPreferences(
             familiarEnabled = p[Keys.familiarEnabled] ?: false,
             familiarSpecies = FamiliarSpecies.fromId(p[Keys.familiarSpecies]),
             companionGameDifficulty = companionDifficulty,
+            companionPerGameDifficulties = perGame,
             healthConnectSyncEnabled = p[Keys.healthConnectSync] ?: false,
             remindersEnabled = p[Keys.remindersEnabled] ?: false,
             reminderMorningEnabled = p[Keys.reminderMorning] ?: true,
@@ -171,6 +209,7 @@ class PrivacyPreferences(
 
     suspend fun save(settings: PrivacySettings) {
         store.edit { p ->
+            val perGame = settings.resolvedPerGameDifficulties()
             p[Keys.analytics] = settings.analyticsOptIn
             p[Keys.crash] = settings.crashReportsOptIn
             p[Keys.theme] = settings.themePreference.name
@@ -179,8 +218,14 @@ class PrivacyPreferences(
             p[Keys.sound] = settings.soundEnabled
             p[Keys.familiarEnabled] = settings.familiarEnabled
             p[Keys.familiarSpecies] = settings.familiarSpecies.id
-            p[Keys.companionGameDifficulty] = settings.companionGameDifficulty.name
-            p[Keys.treatTossEasyMode] = settings.companionGameDifficulty == CompanionGameDifficulty.EASY
+            p[Keys.companionGameDifficulty] = perGame.treatToss.name
+            p[Keys.treatTossEasyMode] = perGame.treatToss == CompanionGameDifficulty.EASY
+            p[Keys.companionDifficultyTreatToss] = perGame.treatToss.name
+            p[Keys.companionDifficultyMemoryFlash] = perGame.memoryFlash.name
+            p[Keys.companionDifficultyEchoSequence] = perGame.echoSequence.name
+            p[Keys.companionDifficultyGlide] = perGame.glide.name
+            p[Keys.companionDifficultyStack] = perGame.stack.name
+            p[Keys.companionDifficultyThread] = perGame.thread.name
             p[Keys.healthConnectSync] = settings.healthConnectSyncEnabled
             p[Keys.remindersEnabled] = settings.remindersEnabled
             p[Keys.reminderMorning] = settings.reminderMorningEnabled

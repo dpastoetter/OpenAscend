@@ -16,6 +16,11 @@ data class PrivacySettings(
     val familiarSpecies: FamiliarSpecies = FamiliarSpecies.WOLF,
     /** Tunes every companion mini-game (treat toss, flash/echo sigils, glide, stack drop, thread-run). */
     val companionGameDifficulty: CompanionGameDifficulty = CompanionGameDifficulty.NORMAL,
+    /**
+     * Optional per-mini-game tuning. When absent (older installs / backups), games fall back to
+     * [companionGameDifficulty].
+     */
+    val companionPerGameDifficulties: CompanionPerGameDifficulties? = null,
     /** Pull sleep/steps from Health Connect when permitted. */
     val healthConnectSyncEnabled: Boolean = false,
     /** Master switch for local reminder notifications. */
@@ -23,4 +28,7 @@ data class PrivacySettings(
     val reminderMorningEnabled: Boolean = true,
     val reminderEveningEnabled: Boolean = true,
     val reminderBossEnabled: Boolean = true,
-)
+) {
+    fun resolvedPerGameDifficulties(): CompanionPerGameDifficulties =
+        companionPerGameDifficulties ?: CompanionPerGameDifficulties.uniform(companionGameDifficulty)
+}

@@ -196,11 +196,12 @@ class CompanionStackViewModel @Inject constructor(
                         yesterdayMoodHeadline = moodHeadline,
                     )
                     val species = homeSnap.settings.familiarSpecies
+                    val difficulty = homeSnap.settings.resolvedPerGameDifficulties().stack
                     val current = _ui.value
                     val keepPhase = current?.let { ch ->
                         ch.companion.mood == companion.mood &&
                             ch.species == species &&
-                            ch.gameDifficulty == homeSnap.settings.companionGameDifficulty &&
+                            ch.gameDifficulty == difficulty &&
                             ch.phase !is StackUiPhase.Intro &&
                             ch.phase !is StackUiPhase.Summary
                     } == true
@@ -216,7 +217,7 @@ class CompanionStackViewModel @Inject constructor(
                         species = species,
                         soundEnabled = homeSnap.settings.soundEnabled,
                         hapticsEnabled = homeSnap.settings.hapticsEnabled,
-                        gameDifficulty = homeSnap.settings.companionGameDifficulty,
+                        gameDifficulty = difficulty,
                         phase = phase,
                     )
                 }
