@@ -1,6 +1,9 @@
 package com.openascend.app.ui.companion
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,7 +23,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Pause
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -35,6 +37,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,6 +49,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -311,12 +315,68 @@ private fun GlidePlayingFullscreen(
             )
         }
 
+        if (playing.elapsedMs < CompanionFlappyViewModel.COUNTDOWN_MS) {
+            val label = when {
+                playing.elapsedMs < 400L -> "3"
+                playing.elapsedMs < 800L -> "2"
+                else -> stringResource(R.string.companion_glide_go)
+            }
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.35f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.displayMedium,
+                    color = scheme.onPrimary,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+
         if (showPause) {
-            AlertDialog(
-                onDismissRequest = { /* explicit choice only */ },
-                title = { Text(stringResource(R.string.companion_glide_paused_title)) },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.55f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = scheme.surfaceContainerHigh,
+                    modifier = Modifier
+                        .padding(24.dp)
+                        .fillMaxWidth(0.88f),
+                ) {
+                    Column(
+                        Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Text(
+                            stringResource(R.string.companion_glide_paused_title),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Button(
+                            onClick = {
+                                showPause = false
+                                onResume()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(stringResource(R.string.companion_glide_resume))
+                        }
+                        FilledTonalButton(
+                            onClick = {
+                                showPause = false
+                                onRestart()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(stringResource(R.string.companion_glide_restart))
+                        }
                         OutlinedButton(
                             onClick = {
                                 showPause = false
@@ -324,36 +384,11 @@ private fun GlidePlayingFullscreen(
                             },
                             modifier = Modifier.fillMaxWidth(),
                         ) {
-                            Icon(
-                                Icons.AutoMirrored.Outlined.ArrowBack,
-                                contentDescription = null,
-                                modifier = Modifier.padding(end = 8.dp),
-                            )
                             Text(stringResource(R.string.companion_glide_exit))
                         }
                     }
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            showPause = false
-                            onResume()
-                        },
-                    ) {
-                        Text(stringResource(R.string.companion_glide_resume))
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = {
-                            showPause = false
-                            onRestart()
-                        },
-                    ) {
-                        Text(stringResource(R.string.companion_glide_restart))
-                    }
-                },
-            )
+                }
+            }
         }
     }
 }
@@ -371,10 +406,19 @@ private fun GlidePlayfield(
     val skyBot = scheme.secondaryContainer.copy(alpha = 0.4f)
     val pipeColor = scheme.tertiaryContainer.copy(alpha = 0.92f)
 
+    val pulseAnim = remember { Animatable(0f) }
+    LaunchedEffect(playing.flapPulseSeq) {
+        if (playing.flapPulseSeq == 0) return@LaunchedEffect
+        pulseAnim.snapTo(1f)
+        pulseAnim.animateTo(0f, animationSpec = tween(200))
+    }
+
     BoxWithConstraints(modifier = modifier) {
         val w = maxWidth
         val h = maxHeight
         Canvas(Modifier.fillMaxSize()) {
+            val birdCenterX = size.width * CompanionFlappyViewModel.BIRD_CENTER_X_NORM
+            val birdCenterY = size.height * playing.birdY
             drawRect(brush = Brush.verticalGradient(listOf(skyTop, skyBot)))
             for (pipe in playing.pipes) {
                 val left = pipe.x * size.width
@@ -386,6 +430,15 @@ private fun GlidePlayfield(
                     pipeColor,
                     topLeft = Offset(left, gapBot),
                     size = Size(pw, (size.height - gapBot).coerceAtLeast(0f)),
+                )
+            }
+            if (pulseAnim.value > 0.01f) {
+                val r = size.minDimension * 0.06f * pulseAnim.value
+                drawCircle(
+                    color = scheme.primary.copy(alpha = 0.35f * pulseAnim.value),
+                    radius = r,
+                    center = Offset(birdCenterX, birdCenterY),
+                    style = Stroke(width = 4f),
                 )
             }
         }

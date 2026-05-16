@@ -46,6 +46,8 @@ fun FamiliarStrip(
     companion: CompanionSnapshot,
     species: FamiliarSpecies,
     modifier: Modifier = Modifier,
+    dailyBoonAvailable: Boolean? = null,
+    memoryWhisper: String? = null,
     onPlayTogether: (() -> Unit)? = null,
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
@@ -107,6 +109,27 @@ fun FamiliarStrip(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                memoryWhisper?.let { whisper ->
+                    Text(
+                        whisper,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                dailyBoonAvailable?.let { available ->
+                    Text(
+                        stringResource(
+                            if (available) R.string.home_daily_boon_available
+                            else R.string.home_daily_boon_claimed,
+                        ),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (available) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    )
+                }
                 if (onPlayTogether != null) {
                     TextButton(
                         onClick = onPlayTogether,

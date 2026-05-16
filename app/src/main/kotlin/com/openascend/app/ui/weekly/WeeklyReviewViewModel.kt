@@ -17,10 +17,14 @@ import com.openascend.domain.repository.ProfileRepository
 import com.openascend.domain.service.BankHealthScorer
 import com.openascend.domain.service.BossGenerator
 import com.openascend.domain.service.StatComputationService
+import com.openascend.domain.service.XpLedgerAggregator
+import com.openascend.domain.service.XpLedgerSummary
+import com.openascend.domain.repository.XpRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -36,6 +40,7 @@ data class WeeklyUiState(
     val actTitle: String,
     val bossDeferredThisWeek: Boolean,
     val bossSealedThisWeek: Boolean,
+    val xpLedger: XpLedgerSummary,
 )
 
 @HiltViewModel
@@ -47,6 +52,7 @@ class WeeklyReviewViewModel @Inject constructor(
     private val bossGenerator: BossGenerator,
     private val narrativeRepository: NarrativeRepository,
     private val privacyPreferences: PrivacyPreferences,
+    private val xpRepository: XpRepository,
 ) : ViewModel() {
 
     private val day = todayEpochDay()
@@ -80,10 +86,19 @@ class WeeklyReviewViewModel @Inject constructor(
                         stats = rolling,
                         narrative = narrative,
                         bossDeferredForThisWeek = deferred,
+                        bossSealedThisWeek = sealed,
+                    )
+                    val weekStartMillis = LocalDate.ofEpochDay(weekStart)
+                        .atStartOfDay(java.time.ZoneId.systemDefault())
+                        .toInstant()
+                        .toEpochMilli()
+                    val xpLedger = XpLedgerAggregator.summarize(
+                        xpRepository.observeEvents(200).first(),
+                        sinceEpochMillis = weekStartMillis,
                     )
                     val todayMetric = metricsRepository.getDay(day)
                     val bankScore = todayMetric?.bankControlScore
-                    val summary = buildShareSummary(profile, rolling, boss)
+                    val summary = buildShareSummary(profile, rolling, boss, xpLedger)
                     _ui.value = WeeklyUiState(
                         profile = profile,
                         rolling = rolling,
@@ -93,6 +108,7 @@ class WeeklyReviewViewModel @Inject constructor(
                         actTitle = narrative.actTitle,
                         bossDeferredThisWeek = deferred,
                         bossSealedThisWeek = sealed,
+                        xpLedger = xpLedger,
                     )
                 }
             }
@@ -123,10 +139,23 @@ class WeeklyReviewViewModel @Inject constructor(
         return map
     }
 
-    private fun buildShareSummary(profile: UserProfile, rolling: StatBlock, boss: WeeklyBoss): String = buildString {
+    private fun buildShareSummary(
+        profile: UserProfile,
+        rolling: StatBlock,
+        boss: WeeklyBoss,
+        xpLedger: XpLedgerSummary,
+    ): String = buildString {
         appendLine("${profile.displayName} · OpenAscend weekly scroll")
         appendLine("Recovery ${rolling.recovery} · Stamina ${rolling.stamina} · Stability ${rolling.stability}")
         appendLine("Discipline ${rolling.discipline} · Vitality ${rolling.vitality}")
+        if (xpLedger.total > 0) {
+            appendLine("XP this week: ${xpLedger.total}")
+            if (xpLedger.checkInXp > 0) appendLine("Check-in +${xpLedger.checkInXp}")
+            if (xpLedger.questXp > 0) appendLine("Quests +${xpLedger.questXp}")
+            if (xpLedger.bossXp > 0) appendLine("Boss +${xpLedger.bossXp}")
+            if (xpLedger.companionXp > 0) appendLine("Companion +${xpLedger.companionXp}")
+            if (xpLedger.habitXp > 0) appendLine("Habits +${xpLedger.habitXp}")
+        }
         appendLine("Boss: ${boss.name}")
         appendLine(boss.tell)
         appendLine(boss.flavor)

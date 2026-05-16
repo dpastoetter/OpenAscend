@@ -10,6 +10,9 @@ import com.openascend.domain.model.DailyMetric
 import com.openascend.domain.repository.HabitRepository
 import com.openascend.domain.repository.MetricsRepository
 import com.openascend.domain.repository.ProfileRepository
+import com.openascend.app.ui.FeedbackLineFormatter
+import com.openascend.domain.narrative.StarterPaths
+import com.openascend.domain.service.HabitRewards
 import com.openascend.domain.service.XpEngine
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -37,6 +40,10 @@ data class CheckInUiState(
     val vitality: String,
     val habits: List<com.openascend.domain.model.Habit>,
     val completions: Map<Long, Boolean>,
+    val healthConnectEnabled: Boolean,
+    val sleepFromHealthConnect: Boolean,
+    val stepsFromHealthConnect: Boolean,
+    val starterPathLabel: String?,
 )
 
 @HiltViewModel
@@ -61,7 +68,9 @@ class CheckInViewModel @Inject constructor(
         metricsRepository.observeDay(day),
         habitRepository.observeHabits(),
         habitRepository.observeCompletionsForDay(day),
-    ) { metric, habits, completions ->
+        privacyPreferences.settings,
+        profileRepository.observeProfile(),
+    ) { metric, habits, completions, settings, profile ->
         CheckInUiState(
             epochDay = day,
             sleepHours = metric?.sleepHours?.toString().orEmpty(),
@@ -71,21 +80,30 @@ class CheckInViewModel @Inject constructor(
             vitality = metric?.vitalityScore?.toString().orEmpty(),
             habits = habits,
             completions = completions,
+            healthConnectEnabled = settings.healthConnectSyncEnabled,
+            sleepFromHealthConnect = settings.healthConnectSyncEnabled &&
+                metric?.sleepHours != null,
+            stepsFromHealthConnect = settings.healthConnectSyncEnabled &&
+                metric?.steps != null,
+            starterPathLabel = profile.starterPath,
         )
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),
-        CheckInUiState(day, "", "", "", "", "", emptyList(), emptyMap()),
+        CheckInUiState(day, "", "", "", "", "", emptyList(), emptyMap(), false, false, false, null),
     )
 
     fun toggleHabit(habitId: Long, done: Boolean) {
         viewModelScope.launch {
+            val wasDone = habitRepository.isCompleted(habitId, day)
             habitRepository.setCompleted(habitId, day, done)
-            if (!done) return@launch
-            val habit = habitRepository.getHabit(habitId)
+            if (!done || wasDone) return@launch
+            val habit = habitRepository.getHabit(habitId) ?: return@launch
+            val xp = HabitRewards.xpForDifficulty(habit.difficulty)
+            xpEngine.award(xp, "Habit: ${habit.name}")
             val settings = privacyPreferences.settings.first()
             feedbackController.playHabitSeal(settings.soundEnabled, settings.hapticsEnabled)
-            if (habit?.bossPrep == true) {
+            if (habit.bossPrep) {
                 _bossPrepLore.emit("Boss-prep habit sealed—the weekly encounter takes notice.")
             }
         }
@@ -134,7 +152,8 @@ class CheckInViewModel @Inject constructor(
                     "The path had a gap; your streak reset kindly—fresh ink, no shame."
                 else -> null
             }
-            val snackbarMessage = lore ?: "Check-in sealed."
+            val pathLabel = StarterPaths.labelForStoredId(profile.starterPath)
+            val snackbarMessage = lore ?: FeedbackLineFormatter.checkIn(pathLabel)
             _saveEffects.emit(
                 CheckInSaveEffect(
                     snackbarMessage = snackbarMessage,

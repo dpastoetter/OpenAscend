@@ -10,12 +10,21 @@ class WidgetSnapshotStore(
 ) {
     private val p = context.applicationContext.getSharedPreferences("openascend_widget", Context.MODE_PRIVATE)
 
-    fun write(level: Int, questTitle: String, bossName: String, flavorLine: String) {
+    fun write(
+        level: Int,
+        questTitle: String,
+        bossName: String,
+        flavorLine: String,
+        dailyBoonAvailable: Boolean = false,
+        actionUri: String = "openascend://home",
+    ) {
         p.edit()
             .putInt("level", level)
             .putString("quest", questTitle.take(120))
             .putString("boss", bossName.take(120))
             .putString("flavor", flavorLine.take(200))
+            .putBoolean("daily_boon", dailyBoonAvailable)
+            .putString("action_uri", actionUri)
             .apply()
     }
 
@@ -23,4 +32,6 @@ class WidgetSnapshotStore(
     fun readQuestTitle(): String = p.getString("quest", "—") ?: "—"
     fun readBossName(): String = p.getString("boss", "—") ?: "—"
     fun readFlavorLine(): String = p.getString("flavor", "—") ?: "—"
+    fun readDailyBoonAvailable(): Boolean = p.getBoolean("daily_boon", false)
+    fun readActionUri(): String = p.getString("action_uri", "openascend://home") ?: "openascend://home"
 }

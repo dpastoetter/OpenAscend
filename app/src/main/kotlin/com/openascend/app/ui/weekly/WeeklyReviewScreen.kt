@@ -107,6 +107,31 @@ fun WeeklyReviewScreen(
                 "Discipline ${ui.rolling.discipline} · Vitality ${ui.rolling.vitality}",
                 fontWeight = FontWeight.Medium,
             )
+            if (ui.xpLedger.total > 0) {
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            stringResource(R.string.weekly_xp_ledger_title),
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        if (ui.xpLedger.checkInXp > 0) {
+                            Text(stringResource(R.string.weekly_xp_line_checkin, ui.xpLedger.checkInXp))
+                        }
+                        if (ui.xpLedger.questXp > 0) {
+                            Text(stringResource(R.string.weekly_xp_line_quests, ui.xpLedger.questXp))
+                        }
+                        if (ui.xpLedger.bossXp > 0) {
+                            Text(stringResource(R.string.weekly_xp_line_boss, ui.xpLedger.bossXp))
+                        }
+                        if (ui.xpLedger.companionXp > 0) {
+                            Text(stringResource(R.string.weekly_xp_line_companion, ui.xpLedger.companionXp))
+                        }
+                        if (ui.xpLedger.habitXp > 0) {
+                            Text(stringResource(R.string.weekly_xp_line_habits, ui.xpLedger.habitXp))
+                        }
+                    }
+                }
+            }
             if (!ui.bossDeferredThisWeek) {
                 TextButton(
                     onClick = { viewModel.deferBossToNextWeek() },

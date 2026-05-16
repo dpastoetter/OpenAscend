@@ -1,6 +1,7 @@
 package com.openascend.app.ui.home
 
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,10 +24,10 @@ import androidx.compose.material.icons.outlined.Spa
 import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ElevatedAssistChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +36,8 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -57,6 +60,7 @@ import com.openascend.domain.model.CoreStat
 import com.openascend.domain.model.GameQuest
 import com.openascend.domain.model.QuestDisplayBonus
 import com.openascend.domain.narrative.StatLore
+import com.openascend.domain.service.ChronicleCompassKind
 
 @Composable
 fun HomeScreen(
@@ -87,10 +91,16 @@ fun HomeScreen(
     val ui = state!!
     val snack = remember { SnackbarHostState() }
     val sealFlair by viewModel.questSealFlair.collectAsState()
+    val habitFlair by viewModel.habitSealFlair.collectAsState()
     LaunchedEffect(sealFlair) {
         val msg = sealFlair ?: return@LaunchedEffect
         snack.showSnackbar(msg)
         viewModel.consumeQuestSealFlair()
+    }
+    LaunchedEffect(habitFlair) {
+        val msg = habitFlair ?: return@LaunchedEffect
+        snack.showSnackbar(msg)
+        viewModel.consumeHabitSealFlair()
     }
     LaunchedEffect(ui.levelUpSheet?.newLevel) {
         if (ui.levelUpSheet != null) {
@@ -108,9 +118,11 @@ fun HomeScreen(
             AlertDialog(
                 onDismissRequest = { viewModel.dismissLevelUp() },
                 confirmButton = {
-                    TextButton(onClick = { viewModel.dismissLevelUp() }) { Text("Continue") }
+                    TextButton(onClick = { viewModel.dismissLevelUp() }) {
+                        Text(stringResource(R.string.action_continue))
+                    }
                 },
-                title = { Text("Level ${levelUp.newLevel}") },
+                title = { Text(stringResource(R.string.home_level_up_title, levelUp.newLevel)) },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(levelUp.archetypeDisplay, fontWeight = FontWeight.SemiBold)
@@ -122,11 +134,11 @@ fun HomeScreen(
         suffixPick != null -> {
             AlertDialog(
                 onDismissRequest = { viewModel.dismissSuffixPicker() },
-                title = { Text("Choose your epithet") },
+                title = { Text(stringResource(R.string.home_epithet_title)) },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
-                            "A cosmetic title for level ${suffixPick.bandLevel}.",
+                            stringResource(R.string.home_epithet_blurb, suffixPick.bandLevel),
                             style = MaterialTheme.typography.bodySmall,
                         )
                         suffixPick.choices.forEach { choice ->
@@ -140,7 +152,9 @@ fun HomeScreen(
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = { viewModel.dismissSuffixPicker() }) { Text("Not now") }
+                    TextButton(onClick = { viewModel.dismissSuffixPicker() }) {
+                        Text(stringResource(R.string.action_not_now))
+                    }
                 },
             )
         }
@@ -150,7 +164,9 @@ fun HomeScreen(
         AlertDialog(
             onDismissRequest = { loreStat = null },
             confirmButton = {
-                TextButton(onClick = { loreStat = null }) { Text("Nice") }
+                TextButton(onClick = { loreStat = null }) {
+                    Text(stringResource(R.string.action_nice))
+                }
             },
             title = { Text(st.name) },
             text = { Text(StatLore.line(st)) },
@@ -183,18 +199,18 @@ fun HomeScreen(
             )
             Column(Modifier.weight(1f)) {
                 Text(
-                    "Welcome back, ${ui.profile.displayName}",
+                    stringResource(R.string.home_welcome_back, ui.profile.displayName),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    "Your life, scored like a game.",
+                    stringResource(R.string.home_tagline),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 ui.starterPathLabel?.let { path ->
                     Text(
-                        "Path: $path",
+                        stringResource(R.string.home_path_label, path),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary,
                     )
@@ -202,37 +218,103 @@ fun HomeScreen(
             }
         }
 
+        ChronicleCompassCard(
+            compass = ui.compass,
+            actTitle = ui.actTitle,
+            onPrimary = {
+                when (ui.compass.kind) {
+                    ChronicleCompassKind.WeeklyReview -> onOpenWeekly()
+                    ChronicleCompassKind.EveningCheckIn -> onOpenCheckIn()
+                    ChronicleCompassKind.BossEncounter -> onOpenBossRitual()
+                    ChronicleCompassKind.SealQuest -> {
+                        ui.quests.firstOrNull { !it.completed }?.let { viewModel.completeQuest(it) }
+                    }
+                    ChronicleCompassKind.Steady -> {
+                        if (ui.compass.habitsOpenCount > 0) {
+                            onOpenCheckIn()
+                        } else {
+                            ui.quests.firstOrNull { !it.completed }?.let { viewModel.completeQuest(it) }
+                                ?: onOpenWeekly()
+                        }
+                    }
+                }
+            },
+        )
+
         if (ui.familiarEnabled) {
             FamiliarStrip(
                 companion = ui.companion,
                 species = ui.familiarSpecies,
+                dailyBoonAvailable = ui.dailyBoonAvailable,
+                memoryWhisper = ui.companionMemoryWhisper,
                 onPlayTogether = onOpenCompanionPlay,
             )
         }
 
+        val activeHabits = ui.habits.filter { !it.isRestDay }
+        if (activeHabits.isNotEmpty()) {
+            Text(
+                stringResource(R.string.home_todays_rites),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+            ) {
+                activeHabits.forEach { habit ->
+                    val done = ui.todayCompletions[habit.id] == true
+                    FilterChip(
+                        selected = done,
+                        onClick = { viewModel.toggleHabit(habit.id, !done) },
+                        label = { Text(habit.name) },
+                    )
+                }
+            }
+        }
+
+        Text(
+            stringResource(R.string.home_more_chronicle),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            ElevatedAssistChip(onClick = onOpenCheckIn, label = { Text("Evening check-in") })
-            AssistChip(onClick = onOpenWeekly, label = { Text("Weekly review") })
+            AssistChip(onClick = onOpenCheckIn, label = { Text(stringResource(R.string.home_evening_checkin)) })
+            AssistChip(onClick = onOpenWeekly, label = { Text(stringResource(R.string.home_weekly_review)) })
         }
-
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextButton(onClick = onOpenCharacter) { Text("Character sheet") }
-            TextButton(onClick = onOpenHabits) { Text("Habits") }
-            TextButton(onClick = onOpenSettings) { Text("Settings") }
+            TextButton(onClick = onOpenCharacter) {
+                Text(stringResource(R.string.home_character_sheet))
+            }
+            TextButton(onClick = onOpenHabits) { Text(stringResource(R.string.home_habits)) }
+            TextButton(onClick = onOpenSettings) { Text(stringResource(R.string.settings_title)) }
         }
 
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Level ${ui.progress.level} · $archLine", fontWeight = FontWeight.SemiBold)
+                Text(
+                    stringResource(R.string.home_level_archetype, ui.progress.level, archLine),
+                    fontWeight = FontWeight.SemiBold,
+                )
                 Text(ui.progress.archetype.tagline, style = MaterialTheme.typography.bodySmall)
+                val xpTarget = if (ui.progress.xpToNext <= 0) {
+                    1f
+                } else {
+                    ui.progress.xpInLevel.toFloat() /
+                        (ui.progress.xpInLevel + ui.progress.xpToNext).coerceAtLeast(1)
+                }
+                val animatedXp by animateFloatAsState(
+                    targetValue = xpTarget,
+                    animationSpec = tween(300),
+                    label = "home_xp",
+                )
                 LinearProgressIndicator(
-                    progress = {
-                        if (ui.progress.xpToNext <= 0) 1f
-                        else ui.progress.xpInLevel.toFloat() / (ui.progress.xpInLevel + ui.progress.xpToNext).coerceAtLeast(1)
-                    },
+                    progress = { animatedXp },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Row(
@@ -241,26 +323,64 @@ fun HomeScreen(
                 ) {
                     Icon(Icons.Outlined.Shield, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Text(
-                        "XP ${ui.progress.xpInLevel} / ${ui.progress.xpInLevel + ui.progress.xpToNext} · Streak armor ${ui.progress.streakArmor}",
+                        stringResource(
+                            R.string.home_xp_streak,
+                            ui.progress.xpInLevel,
+                            ui.progress.xpInLevel + ui.progress.xpToNext,
+                            ui.progress.streakArmor,
+                        ),
                         style = MaterialTheme.typography.labelMedium,
                     )
                 }
             }
         }
 
-        Text("Today's stats", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Text(
-            "Long-press a stat for lore.",
+            stringResource(R.string.home_todays_stats),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            stringResource(R.string.home_stats_lore_hint),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        StatRow("Recovery", Icons.Outlined.NightsStay, ui.stats.recovery, CoreStat.RECOVERY) { loreStat = it }
-        StatRow("Stamina", Icons.Outlined.FitnessCenter, ui.stats.stamina, CoreStat.STAMINA) { loreStat = it }
-        StatRow("Stability", Icons.Outlined.Payments, ui.stats.stability, CoreStat.STABILITY) { loreStat = it }
-        StatRow("Discipline", Icons.Outlined.TaskAlt, ui.stats.discipline, CoreStat.DISCIPLINE) { loreStat = it }
-        StatRow("Vitality", Icons.Outlined.Spa, ui.stats.vitality, CoreStat.VITALITY) { loreStat = it }
+        StatRow(
+            stringResource(R.string.stat_recovery),
+            Icons.Outlined.NightsStay,
+            ui.stats.recovery,
+            CoreStat.RECOVERY,
+        ) { loreStat = it }
+        StatRow(
+            stringResource(R.string.stat_stamina),
+            Icons.Outlined.FitnessCenter,
+            ui.stats.stamina,
+            CoreStat.STAMINA,
+        ) { loreStat = it }
+        StatRow(
+            stringResource(R.string.stat_stability),
+            Icons.Outlined.Payments,
+            ui.stats.stability,
+            CoreStat.STABILITY,
+        ) { loreStat = it }
+        StatRow(
+            stringResource(R.string.stat_discipline),
+            Icons.Outlined.TaskAlt,
+            ui.stats.discipline,
+            CoreStat.DISCIPLINE,
+        ) { loreStat = it }
+        StatRow(
+            stringResource(R.string.stat_vitality),
+            Icons.Outlined.Spa,
+            ui.stats.vitality,
+            CoreStat.VITALITY,
+        ) { loreStat = it }
 
-        Text("Daily quests", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Text(
+            stringResource(R.string.home_daily_quests),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+        )
         ui.quests.forEach { q ->
             QuestCard(quest = q, onComplete = { viewModel.completeQuest(q) })
         }
@@ -269,14 +389,31 @@ fun HomeScreen(
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(Icons.Outlined.AutoAwesome, contentDescription = null)
-                    Text("Weekly boss", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        stringResource(R.string.home_weekly_boss),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
                 }
                 Text(ui.boss.tell, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                 Text(ui.boss.name, fontWeight = FontWeight.Bold)
                 Text(ui.boss.flavor, style = MaterialTheme.typography.bodySmall)
-                Text("Weak link: ${ui.boss.targetStat.name}", style = MaterialTheme.typography.labelMedium)
+                Text(
+                    stringResource(R.string.home_weak_link, ui.boss.targetStat.name),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                if (ui.bossPrepSealsThisWeek > 0) {
+                    Text(
+                        stringResource(R.string.home_boss_prep_meter, ui.bossPrepSealsThisWeek),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.tertiary,
+                    )
+                }
                 ui.boss.suggestedActions.forEach { tip ->
-                    Text("• $tip", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        stringResource(R.string.home_boss_bullet, tip),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                 }
                 if (ui.bossSealedThisWeek) {
                     Text(
@@ -351,10 +488,20 @@ private fun QuestCard(quest: GameQuest, onComplete: () -> Unit) {
             Text(quest.title, fontWeight = FontWeight.SemiBold)
             Text(quest.description, style = MaterialTheme.typography.bodySmall)
             Text(
-                if (quest.completed) {
-                    "+${quest.xpReward} XP · +${QuestDisplayBonus.PER_SEALED_QUEST} ${quest.linkedStat.name} spotlight applied"
+                stringResource(
+                    R.string.home_quest_xp_stat,
+                    quest.xpReward,
+                    quest.linkedStat.name,
+                ) + if (quest.completed) {
+                    " · " + stringResource(
+                        R.string.home_quest_spotlight_applied,
+                        QuestDisplayBonus.PER_SEALED_QUEST,
+                    )
                 } else {
-                    "+${quest.xpReward} XP · +${QuestDisplayBonus.PER_SEALED_QUEST} ${quest.linkedStat.name} when sealed"
+                    " · " + stringResource(
+                        R.string.home_quest_spotlight_pending,
+                        QuestDisplayBonus.PER_SEALED_QUEST,
+                    )
                 },
                 style = MaterialTheme.typography.labelSmall,
             )
@@ -363,7 +510,13 @@ private fun QuestCard(quest: GameQuest, onComplete: () -> Unit) {
                 enabled = !quest.completed,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(if (quest.completed) "Sealed" else "Mark complete")
+                Text(
+                    if (quest.completed) {
+                        stringResource(R.string.home_quest_sealed)
+                    } else {
+                        stringResource(R.string.home_quest_complete)
+                    },
+                )
             }
         }
     }

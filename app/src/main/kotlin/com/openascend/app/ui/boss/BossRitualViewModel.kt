@@ -17,12 +17,14 @@ import com.openascend.domain.repository.MetricsRepository
 import com.openascend.app.feedback.FeedbackController
 import com.openascend.domain.service.BankHealthScorer
 import com.openascend.domain.service.BossGenerator
+import com.openascend.domain.service.BossPrepMeter
 import com.openascend.domain.service.StatComputationService
 import com.openascend.domain.service.XpEngine
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -90,6 +92,7 @@ class BossRitualViewModel @Inject constructor(
                         stats = rolling,
                         narrative = narrative,
                         bossDeferredForThisWeek = deferred,
+                        bossSealedThisWeek = sealed,
                     )
                     val todayMetric = metricsRepository.getDay(day)
                     val bankScore = todayMetric?.bankControlScore
@@ -128,7 +131,16 @@ class BossRitualViewModel @Inject constructor(
             if (!privacyPreferences.markBossRitualSealedIfNew(weekStart)) return@launch
             val ui = _ui.value
             val label = ui?.boss?.name ?: "Weekly boss"
-            xpEngine.award(BOSS_SEAL_XP, "Weekly boss sealed: $label")
+            val habits = habitRepository.observeHabits().first()
+            val completionMap = loadCompletionMap(habits, day)
+            val prepSeals = BossPrepMeter.countPrepSealsThisWeek(
+                habits = habits,
+                weekStartEpochDay = weekStart,
+                todayEpochDay = day,
+                isCompleted = { hid, epoch -> completionMap[Pair(hid, epoch)] == true },
+            )
+            val bonus = BossPrepMeter.bonusXpForPrepSeals(prepSeals)
+            xpEngine.award(BOSS_SEAL_XP + bonus, "Weekly boss sealed: $label")
             feedbackController.playQuestSeal(
                 ui?.soundEnabled ?: true,
                 ui?.hapticsEnabled ?: true,

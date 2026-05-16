@@ -30,6 +30,7 @@ class AssetNarrativeRepository(
                         listOf("{boss} stirs when {stat} runs thin.")
                     },
                     questTitleFlavorSuffixes = dto.questTitleFlavorSuffixes.ifEmpty { listOf("") },
+                    statBossTellTemplates = dto.statBossTellTemplates,
                 )
             }
         }.getOrElse { NarrativePack.fallback(id) }

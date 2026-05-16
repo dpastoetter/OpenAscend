@@ -22,17 +22,22 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.openascend.app.R
+import com.openascend.app.util.todayEpochDay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CompanionHubScreen(
     onBack: () -> Unit,
+    viewModel: CompanionHubViewModel = hiltViewModel(),
     onTreatToss: () -> Unit,
     onFlashSigils: () -> Unit,
     onEchoSigils: () -> Unit,
@@ -41,6 +46,7 @@ fun CompanionHubScreen(
     onThreadRun: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
+    val hubState by viewModel.uiState.collectAsState()
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -80,6 +86,31 @@ fun CompanionHubScreen(
                 stringResource(R.string.companion_hub_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = scheme.onSurfaceVariant,
+            )
+            val dailyTrial = CompanionDailyTrial.forEpochDay(todayEpochDay())
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = scheme.primaryContainer.copy(alpha = 0.55f)),
+            ) {
+                Text(
+                    stringResource(R.string.companion_hub_daily_trial, stringResource(dailyTrial.labelRes)),
+                    modifier = Modifier.padding(14.dp),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = scheme.onPrimaryContainer,
+                )
+            }
+            Text(
+                stringResource(
+                    if (hubState.dailyBoonAvailable) {
+                        R.string.companion_hub_daily_boon_available
+                    } else {
+                        R.string.companion_hub_daily_boon_claimed
+                    },
+                ),
+                style = MaterialTheme.typography.labelLarge,
+                color = if (hubState.dailyBoonAvailable) scheme.primary else scheme.onSurfaceVariant,
             )
             Card(
                 modifier = Modifier.fillMaxWidth(),

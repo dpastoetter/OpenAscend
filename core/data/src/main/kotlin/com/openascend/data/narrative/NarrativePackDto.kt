@@ -9,4 +9,5 @@ internal data class NarrativePackDto(
     val questActPrefix: String = "",
     val bossTellTemplates: List<String> = emptyList(),
     val questTitleFlavorSuffixes: List<String> = emptyList(),
+    val statBossTellTemplates: Map<String, List<String>> = emptyMap(),
 )

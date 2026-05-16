@@ -53,6 +53,26 @@ class StatComputationServiceTest {
     }
 
     @Test
+    fun computeToday_threePerWeekHabitOnly_dailyDisciplineNotZeroWhenIncomplete() {
+        val habits = listOf(
+            Habit(1, "light", 3, 2, CoreStat.DISCIPLINE),
+            Habit(2, "daily", 7, 2, CoreStat.DISCIPLINE),
+        )
+        val stats = svc.computeToday(null, habits, mapOf(2L to true))
+        assertEquals(true, stats.discipline in 40..75)
+    }
+
+    @Test
+    fun computeToday_restDayHabit_excludedFromDiscipline() {
+        val habits = listOf(
+            Habit(1, "rest", 7, 1, CoreStat.DISCIPLINE, isRestDay = true),
+            Habit(2, "work", 7, 2, CoreStat.DISCIPLINE),
+        )
+        val stats = svc.computeToday(null, habits, mapOf(2L to true))
+        assertEquals(100, stats.discipline)
+    }
+
+    @Test
     fun computeRollingSevenDay_emptyInputs_allNeutralFifty() {
         val stats = svc.computeRollingSevenDay(
             lastSevenDays = emptyList(),

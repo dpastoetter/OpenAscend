@@ -103,11 +103,18 @@ class StatComputationService {
         habits: List<Habit>,
         habitCompletions: Map<Long, Boolean>,
     ): Int {
-        if (habits.isEmpty()) return 50
-        var done = 0
-        for (h in habits) {
-            if (habitCompletions[h.id] == true) done++
+        val scored = habits.filter { !it.isRestDay }
+        if (scored.isEmpty()) return 50
+        var earned = 0.0
+        var possible = 0.0
+        for (h in scored) {
+            val weight = (h.frequencyPerWeek.coerceIn(1, 7) / 7.0).coerceAtLeast(1.0 / 7.0)
+            possible += weight
+            if (habitCompletions[h.id] == true) {
+                earned += weight
+            }
         }
-        return ((done.toDouble() / habits.size) * 100).roundToInt().coerceIn(0, 100)
+        if (possible <= 0.0) return 50
+        return ((earned / possible) * 100).roundToInt().coerceIn(0, 100)
     }
 }

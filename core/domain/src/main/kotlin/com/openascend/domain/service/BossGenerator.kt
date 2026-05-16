@@ -12,6 +12,7 @@ class BossGenerator {
         stats: StatBlock,
         narrative: NarrativeContext? = null,
         bossDeferredForThisWeek: Boolean = false,
+        bossSealedThisWeek: Boolean = false,
     ): WeeklyBoss {
         val pack = narrative?.pack ?: NarrativePack.fallback()
         val target = stats.weakestStat()
@@ -62,11 +63,15 @@ class BossGenerator {
         } else {
             flavor
         }
-        val tell = if (bossDeferredForThisWeek) {
-            "${name} lingers at the edge of the map; your oath was to rest this week."
-        } else {
-            formatTell(
-                templates = pack.bossTellTemplates,
+        val tell = when {
+            bossSealedThisWeek ->
+                "${name} retreats—for now. The breach is sealed; your chronicle stands."
+            bossDeferredForThisWeek ->
+                "${name} lingers at the edge of the map; your oath was to rest this week."
+            else -> formatTell(
+                templates = pack.statBossTellTemplates[target.name]
+                    ?.takeIf { it.isNotEmpty() }
+                    ?: pack.bossTellTemplates,
                 seed = weekStartEpochDay + target.ordinal * 31L,
                 bossName = name,
                 stat = target,

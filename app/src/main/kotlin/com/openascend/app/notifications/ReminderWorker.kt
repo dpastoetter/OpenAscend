@@ -16,7 +16,9 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.openascend.app.MainActivity
 import com.openascend.app.R
+import com.openascend.app.util.weekStartMondayEpochDay
 import dagger.hilt.android.EntryPointAccessors
+import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.concurrent.TimeUnit
@@ -28,10 +30,11 @@ class ReminderWorker(
 
     override suspend fun doWork(): Result {
         ReminderChannels.ensure(applicationContext)
-        val privacyPrefs = EntryPointAccessors.fromApplication(
+        val entryPoint = EntryPointAccessors.fromApplication(
             applicationContext,
             ReminderWorkerEntryPoint::class.java,
-        ).privacyPreferences()
+        )
+        val privacyPrefs = entryPoint.privacyPreferences()
         val privacy = privacyPrefs.getSettingsSnapshot()
         if (!privacy.remindersEnabled) return Result.success()
 
@@ -41,6 +44,32 @@ class ReminderWorker(
 
         val nm = NotificationManagerCompat.from(applicationContext)
         if (!nm.areNotificationsEnabled()) return Result.success()
+
+        val profile = entryPoint.profileRepository().getProfile()
+        val homeSnap = privacyPrefs.homeSnapshot.first()
+        val weekStart = weekStartMondayEpochDay()
+        val bossSealedThisWeek = homeSnap.bossRitualSealedWeekStart == weekStart
+
+        val weakestStatName = run {
+            val day = today
+            val habits = entryPoint.habitRepository().observeHabits().first()
+            val rollingMetrics = entryPoint.metricsRepository().metricsBetween(day - 6, day)
+            val completionMap = mutableMapOf<Pair<Long, Long>, Boolean>()
+            for (offset in 0L..6L) {
+                val d = day - offset
+                for (h in habits) {
+                    completionMap[h.id to d] =
+                        entryPoint.habitRepository().isCompleted(h.id, d)
+                }
+            }
+            val rolling = entryPoint.statComputation().computeRollingSevenDay(
+                lastSevenDays = rollingMetrics,
+                habits = habits,
+                isHabitCompleted = { hid, epoch -> completionMap[Pair(hid, epoch)] == true },
+                todayEpochDay = day,
+            )
+            rolling.weakestStat().name.replaceFirstChar { it.titlecase() }
+        }
 
         if (privacy.reminderMorningEnabled && hour == 8) {
             val key = "morning_$today"
@@ -54,24 +83,34 @@ class ReminderWorker(
             )
         }
         if (privacy.reminderEveningEnabled && hour == 20) {
+            if (profile?.lastLoggedEpochDay == today) return Result.success()
             val key = "evening_$today"
             if (prefs.getBoolean(key, false)) return Result.success()
             prefs.edit().putBoolean(key, true).apply()
+            val body = applicationContext.getString(
+                R.string.notify_evening_body_weak,
+                weakestStatName,
+            )
             showNotification(
                 ReminderChannels.EVENING,
                 applicationContext.getString(R.string.notify_evening_title),
-                applicationContext.getString(R.string.notify_evening_body),
+                body,
                 "openascend://check_in",
             )
         }
         if (privacy.reminderBossEnabled && hour == 10 && LocalDate.now().dayOfWeek.value == 1) {
+            if (bossSealedThisWeek) return Result.success()
             val key = "boss_week_${LocalDate.now().year}_${LocalDate.now().dayOfYear}"
             if (prefs.getBoolean(key, false)) return Result.success()
             prefs.edit().putBoolean(key, true).apply()
+            val body = applicationContext.getString(
+                R.string.notify_boss_body_weak,
+                weakestStatName,
+            )
             showNotification(
                 ReminderChannels.BOSS,
                 applicationContext.getString(R.string.notify_boss_title),
-                applicationContext.getString(R.string.notify_boss_body),
+                body,
                 "openascend://boss",
             )
         }

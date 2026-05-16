@@ -1,11 +1,14 @@
 package com.openascend.app.ui.home
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openascend.app.feedback.FeedbackController
+import com.openascend.app.ui.FeedbackLineFormatter
 import com.openascend.app.health.HealthConnectMetricsSync
 import com.openascend.app.util.todayEpochDay
 import com.openascend.app.util.weekStartMondayEpochDay
+import com.openascend.data.local.prefs.CompanionMemoryStore
 import com.openascend.data.local.prefs.PrivacyPreferences
 import com.openascend.data.local.prefs.WidgetSnapshotStore
 import com.openascend.domain.model.CharacterProgress
@@ -15,15 +18,16 @@ import com.openascend.domain.model.StatBlock
 import com.openascend.domain.model.UserProfile
 import com.openascend.domain.model.FamiliarSpecies
 import com.openascend.domain.model.WeeklyBoss
+import com.openascend.domain.companion.CompanionMemoryWhisper
 import com.openascend.domain.companion.CompanionResolver
 import com.openascend.domain.companion.CompanionSnapshot
+import com.openascend.domain.service.ChronicleCompassKind
 import com.openascend.domain.model.DailyMetric
 import com.openascend.domain.narrative.ArchetypeSuffixCatalog
 import com.openascend.domain.narrative.EveningMoodCopy
 import com.openascend.domain.narrative.LevelUpFlair
 import com.openascend.domain.narrative.NarrativeContext
 import com.openascend.domain.narrative.NarrativeRepository
-import com.openascend.domain.narrative.QuestSealFlair
 import com.openascend.domain.narrative.StarterPaths
 import com.openascend.domain.narrative.WidgetStoryLines
 import com.openascend.domain.repository.HabitRepository
@@ -32,11 +36,17 @@ import com.openascend.domain.repository.ProfileRepository
 import com.openascend.domain.repository.QuestCompletionRepository
 import com.openascend.domain.repository.XpRepository
 import com.openascend.domain.service.BossGenerator
+import com.openascend.domain.service.BossPrepMeter
+import com.openascend.domain.service.ChronicleCompassDirective
+import com.openascend.domain.service.ChronicleCompassResolver
+import com.openascend.domain.service.HabitRewards
 import com.openascend.domain.service.QuestChainDetector
 import com.openascend.domain.service.QuestGenerator
 import com.openascend.domain.service.StatComputationService
 import com.openascend.domain.service.XpEngine
+import java.time.LocalTime
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -67,6 +77,12 @@ data class HomeUiState(
     val quests: List<GameQuest>,
     val boss: WeeklyBoss,
     val bossSealedThisWeek: Boolean,
+    val compass: ChronicleCompassDirective,
+    val habits: List<Habit>,
+    val todayCompletions: Map<Long, Boolean>,
+    val dailyBoonAvailable: Boolean,
+    val bossPrepSealsThisWeek: Int,
+    val actTitle: String,
     val starterPathLabel: String?,
     val levelUpSheet: LevelUpSheetData?,
     val suffixPicker: SuffixPickerData?,
@@ -75,11 +91,13 @@ data class HomeUiState(
     val familiarEnabled: Boolean,
     val familiarSpecies: FamiliarSpecies,
     val companion: CompanionSnapshot,
+    val companionMemoryWhisper: String?,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class HomeViewModel @Inject constructor(
+    @ApplicationContext appContext: Context,
     private val profileRepository: ProfileRepository,
     private val habitRepository: HabitRepository,
     private val metricsRepository: MetricsRepository,
@@ -96,6 +114,8 @@ class HomeViewModel @Inject constructor(
     private val healthConnectMetricsSync: HealthConnectMetricsSync,
 ) : ViewModel() {
 
+    private val companionMemoryStore = CompanionMemoryStore(appContext)
+
     private val dayFlow = MutableStateFlow(todayEpochDay())
 
     private val _ui = MutableStateFlow<HomeUiState?>(null)
@@ -103,6 +123,9 @@ class HomeViewModel @Inject constructor(
 
     private val _questSealFlair = MutableStateFlow<String?>(null)
     val questSealFlair = _questSealFlair.asStateFlow()
+
+    private val _habitSealFlair = MutableStateFlow<String?>(null)
+    val habitSealFlair = _habitSealFlair.asStateFlow()
 
     private val _pickedSuffixThisSession = MutableStateFlow(false)
 
@@ -154,6 +177,7 @@ class HomeViewModel @Inject constructor(
                         stats = rolling,
                         narrative = narrative,
                         bossDeferredForThisWeek = bossDeferred,
+                        bossSealedThisWeek = bossSealedThisWeek,
                     )
                     val questDoneByDay = (1L..3L).associate { off ->
                         val d = bundle.day - off
@@ -210,6 +234,25 @@ class HomeViewModel @Inject constructor(
                         bundle.inner.yesterdayComp[it.id] == true
                     }
                     val questsDoneYesterday = bundle.questYesterday.size
+                    val loggedToday = bundle.inner.profile.lastLoggedEpochDay == bundle.day
+                    val openQuest = quests.firstOrNull { !it.completed }
+                    val compass = ChronicleCompassResolver.resolve(
+                        todayEpochDay = bundle.day,
+                        hourOfDay = LocalTime.now().hour,
+                        loggedToday = loggedToday,
+                        openQuest = openQuest,
+                        bossSealedThisWeek = bossSealedThisWeek,
+                        bossName = boss.name,
+                        habits = bundle.inner.habits,
+                        todayCompletions = bundle.inner.todayComp,
+                    )
+                    val dailyBoonAvailable = bundle.homeSnap.companionTreatXpEpochDay != bundle.day
+                    val bossPrepSeals = BossPrepMeter.countPrepSealsThisWeek(
+                        habits = bundle.inner.habits,
+                        weekStartEpochDay = weekStart,
+                        todayEpochDay = bundle.day,
+                        isCompleted = { hid, epoch -> completionMap[Pair(hid, epoch)] == true },
+                    )
                     val companion = CompanionResolver.resolve(
                         todayEpochDay = bundle.day,
                         lastLoggedEpochDay = bundle.inner.profile.lastLoggedEpochDay,
@@ -223,6 +266,10 @@ class HomeViewModel @Inject constructor(
                         questsDoneYesterday = questsDoneYesterday,
                         yesterdayMoodHeadline = moodHeadline,
                     )
+                    companionMemoryStore.append(bundle.day, companion.mood)
+                    val companionMemoryWhisper =
+                        CompanionMemoryWhisper.line(companionMemoryStore.recentMoods())
+                    val pathLabel = StarterPaths.labelForStoredId(bundle.inner.profile.starterPath)
                     val firstQuestTitle = quests.firstOrNull()?.title ?: "—"
                     val widgetFlavor = WidgetStoryLines.pick(
                         bundle.day,
@@ -233,6 +280,8 @@ class HomeViewModel @Inject constructor(
                         questTitle = firstQuestTitle,
                         bossName = boss.name,
                         flavorLine = widgetFlavor,
+                        dailyBoonAvailable = dailyBoonAvailable,
+                        actionUri = widgetDeepLinkFor(compass),
                     )
                     _ui.value = HomeUiState(
                         profile = bundle.inner.profile,
@@ -242,6 +291,12 @@ class HomeViewModel @Inject constructor(
                         quests = quests,
                         boss = boss,
                         bossSealedThisWeek = bossSealedThisWeek,
+                        compass = compass,
+                        habits = bundle.inner.habits,
+                        todayCompletions = bundle.inner.todayComp,
+                        dailyBoonAvailable = dailyBoonAvailable,
+                        bossPrepSealsThisWeek = bossPrepSeals,
+                        actTitle = narrative.actTitle,
                         starterPathLabel = StarterPaths.labelForStoredId(bundle.inner.profile.starterPath),
                         levelUpSheet = levelUpSheet,
                         suffixPicker = suffixPicker,
@@ -250,6 +305,7 @@ class HomeViewModel @Inject constructor(
                         familiarEnabled = bundle.homeSnap.settings.familiarEnabled,
                         familiarSpecies = bundle.homeSnap.settings.familiarSpecies,
                         companion = companion,
+                        companionMemoryWhisper = companionMemoryWhisper,
                     )
                 }
             }
@@ -291,7 +347,12 @@ class HomeViewModel @Inject constructor(
             val ui = _ui.value
             if (ui != null) {
                 feedbackController.playQuestSeal(ui.soundEnabled, ui.hapticsEnabled)
-                _questSealFlair.value = QuestSealFlair.line(quest.linkedStat)
+                val path = _ui.value?.starterPathLabel
+                _questSealFlair.value = FeedbackLineFormatter.quest(
+                    quest.xpReward,
+                    quest.linkedStat,
+                    path,
+                )
             }
         }
     }
@@ -300,9 +361,39 @@ class HomeViewModel @Inject constructor(
         _questSealFlair.value = null
     }
 
+    fun toggleHabit(habitId: Long, completed: Boolean) {
+        viewModelScope.launch {
+            val day = dayFlow.value
+            val wasDone = habitRepository.isCompleted(habitId, day)
+            habitRepository.setCompleted(habitId, day, completed)
+            if (!completed || wasDone) return@launch
+            val habit = habitRepository.getHabit(habitId) ?: return@launch
+            val xp = HabitRewards.xpForDifficulty(habit.difficulty)
+            xpEngine.award(xp, "Habit: ${habit.name}")
+            val ui = _ui.value ?: return@launch
+            feedbackController.playHabitSeal(ui.soundEnabled, ui.hapticsEnabled)
+            _habitSealFlair.value = FeedbackLineFormatter.habit(
+                xp,
+                habit.linkedStat,
+                ui.starterPathLabel,
+            )
+        }
+    }
+
+    fun consumeHabitSealFlair() {
+        _habitSealFlair.value = null
+    }
+
     fun playLevelUpFeedback() {
         val ui = _ui.value ?: return
         feedbackController.playLevelUp(ui.soundEnabled, ui.hapticsEnabled)
+    }
+
+    private fun widgetDeepLinkFor(compass: ChronicleCompassDirective): String = when (compass.kind) {
+        ChronicleCompassKind.WeeklyReview -> "openascend://weekly"
+        ChronicleCompassKind.EveningCheckIn -> "openascend://check_in"
+        ChronicleCompassKind.BossEncounter -> "openascend://boss"
+        else -> "openascend://home"
     }
 
     private suspend fun loadCompletionMap(habits: List<Habit>, today: Long): Map<Pair<Long, Long>, Boolean> {

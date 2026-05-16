@@ -1,6 +1,6 @@
 # OpenAscend
 
-**Current version: v0.12** (`versionName` **0.12**, `versionCode` **12** in Gradle)
+**Current version: v0.13** (`versionName` **0.13**, `versionCode` **13** in Gradle)
 
 **Repository:** [github.com/dpastoetter/OpenAscend](https://github.com/dpastoetter/OpenAscend)
 
@@ -46,9 +46,9 @@ OpenAscend is an **open-source, Android-first “life RPG”**: habits and simpl
 
 ### Shipped vs roadmap
 
-**Shipped in recent builds (e.g. v0.05+):** bootstrap → onboarding (hero name, optional **starter path** / class fantasy, goals, **companion species**—enables the Home familiar when onboarding completes), home (welcome-first hero strip, familiar strip with **cute chibi pixel sprites** when expanded—mood-matched; **Play together** opens a **companion games hub**: **Treat toss** (timing), **Flash sigils** (quick memory), **Echo sigils** (Simon-style pattern), **Glide loop** (tap-to-flap with the pixel familiar), **Stack drop** (timed drops onto a shrinking pad), and **Thread-run** (drag along a ward lane); **shared daily chronicle XP**—first qualifying companion session each calendar day can grant **+10 XP**), **daily quests** grant XP and a small **spotlight** bump on the linked stat on Home; quest seal flair + snackbar), character sheet (**streak armor lore**), habits (**boss-prep** tag), check-in (differentiated **haptics/sound**; optional **Seal the sigil** micro-ritual after first evening seal), weekly review + **bitmap** recap share, **boss ritual** with **weekly seal** (persisted, **+40 XP once per week**, haptics), settings (theme, narrative packs, familiar, **companion game difficulty** Easy / Normal / Hard for all hub mini-games, reminders), **local reminders**, **home widget**, dark/light/system theme. **Daily plain-text “sigil” share** from Home was removed in favor of weekly share.
+**Shipped in recent builds (e.g. v0.05+):** bootstrap → onboarding (hero name, optional **starter path** / class fantasy, goals, **companion species**—enables the Home familiar when onboarding completes), home (**Chronicle Compass** card—one primary CTA for evening check-in, weekly review, boss, or top quest; **habit quick-seal** with tiered discipline XP; welcome-first hero strip, familiar strip with **cute chibi pixel sprites** when expanded—mood-matched, optional **memory whisper** from recent moods; **Play together** opens a **companion games hub** with a **daily trial** highlight), companion hub games: **Treat toss**, **Flash sigils**, **Echo sigils**, **Glide loop** (in-world pause, 3-2-1 count-in, flap pulse), **Stack drop**, **Thread-run**; **shared daily chronicle XP** (+10 once per day, first qualifying session), **daily boon** label when unclaimed), **daily quests** (XP, spotlight bump, **quest seal** feedback line: `+XP · stat · path`), **animated XP bar** on Home, character sheet (**streak armor lore**), habits (**boss-prep** tag + seal feedback), check-in (string resources, **Health Connect** badges when synced, invite card when HC off; evening seal feedback; optional **Seal the sigil** micro-ritual), weekly review (**XP ledger** breakdown + **bitmap** recap share with XP story), **boss ritual** (week-state copy—deferred / wounded / sealed; **boss-prep meter** on Home; **+40 XP** once per week when sealed), settings (theme, narrative packs, familiar, companion difficulty, **Health Connect** sync toggle, reminders), **local reminders** (skip evening if already logged; boss nudge only if unsealed; weakest-stat flavor), **home widget** (tap opens Compass-aligned deep link; daily boon line), dark/light/system theme. **Daily plain-text “sigil” share** from Home was removed in favor of weekly share.
 
-**Roadmap (prioritize as needed):** Health Connect for steps/sleep; optional split screens for sleep / finance / longevity; splash polish; cloud accounts only if the product leaves strict offline-first; billing only with a monetization story, `INTERNET`, Play Billing, and policy work.
+**Roadmap (prioritize as needed):** deeper Health Connect onboarding; in-world pause on Stack drop / Thread-run; chronicle replay timeline; stat micro-chains; optional split screens for sleep / finance / longevity; splash polish; cloud accounts only if the product leaves strict offline-first; billing only with a monetization story, `INTERNET`, Play Billing, and policy work.
 
 ### Screen map (intent)
 
@@ -87,9 +87,9 @@ Design priorities for the RPG fantasy—apply these **in order** when shaping co
 
 ### 2. Feedback = “the game noticed you”
 
-- After check-in or habit completion: **short, specific** payoff—e.g. *+12 Discipline · Warden path*, not only a generic toast.
-- **Level / XP bar motion** on real changes (even 200–300 ms) sells “progress” more than static numbers.
-- **Micro-celebration** on rare beats (level-up, boss week rollover): banner, optional haptic, one line of flavor.
+- **Shipped:** After **quest seal**, **habit seal**, and **evening check-in seal**, snackbars show **`+XP · stat · path`** (see `FeedbackLineFormatter`). Home **XP bar** tweens ~300 ms on progress changes.
+- **Shipped:** Quest seal uses `FeedbackController` (sound/haptics); habit and check-in seals have differentiated patterns.
+- **Next:** Micro-celebration banners on level-up and boss week rollover beyond snackbars/haptics.
 
 ### 3. Structure the day like a quest log
 
@@ -116,20 +116,23 @@ Design priorities for the RPG fantasy—apply these **in order** when shaping co
 
 - **Shipped:** distinct light patterns for **quest seal**, **habit seal**, **evening check-in seal**, and **level-up** (same base SFX, varied volume/rate + vibration waveforms)—see `FeedbackController`.
 
-**Suggested build order:** (1) copy on **home**, **check-in**, and **weekly**; (2) post-action feedback plus XP motion; (3) boss block on weekly as the dramatic set piece.
+**Suggested build order (remaining polish):** (1) copy pass on any screens still using hardcoded English; (2) micro-celebrations on level-up / boss rollover; (3) chronicle replay or stat micro-chains for long-term attachment.
 
 ## Features
 
-- **Onboarding** — Hero name, optional **path** (Warden / Skirmisher / Keeper, or “Surprise me”), quest goals, and **companion species** (Bear / Wolf / Dragon); enables the Home familiar in privacy settings when you finish onboarding.
-- **Daily flows** — Home centers on **welcome + familiar** (optional); **companion hub** from the strip: **Treat toss**, **Flash sigils**, **Echo sigils** (three rounds each on the memory-style games), **Glide loop** (flappy-style flight—clear the run target in one flight), **Stack drop** (reach stack goal in one run), **Thread-run** (complete one ward trace)—each can qualify for the same **+10 chronicle XP** eligibility rules as the originals. **+10 chronicle XP** once per day for the **first qualifying** companion session that day (**shared pool** across all companion games). **Wildcard** daily quests on Tue/Fri; **quest seal** one-liners (snackbar), XP toward level, and a **+5 spotlight** on the quest’s linked stat on Home for the day. After the first evening seal of the day, optional **Seal the sigil** micro-ritual (tap-in-order; flavor + haptics only, no extra XP).
-- **Character & progression** — Level, XP, archetype; **streak armor** explained on the character sheet (plain-language disclaimer-friendly copy).
-- **Habits** — Create/edit habits; optional **boss prep** tag (ties copy and feedback to the weekly boss arc).
+- **Onboarding** — Hero name, optional **path** (Warden / Skirmisher / Keeper, or “Surprise me”), quest goals, and **companion species** (Bear / Wolf / Dragon); enables the Home familiar in Chronicle settings when you finish onboarding.
+- **Home & daily loop** — **Chronicle Compass** surfaces the best next action (evening check-in, weekly review, boss, or seal top quest). **Welcome + familiar** strip with mood-matched pixel sprites; **companion memory** whispers when recent moods form a pattern. **Animated XP bar**; quest/habit seals show **`+XP · stat · path`**. **Boss-prep meter** when habits are tagged for the weekly arc.
+- **Companion hub** — Six mini-games; **today’s trial** banner rotates by calendar day (`epochDay % 6`). **Glide loop** adds in-world pause, 3-2-1 count-in, and flap pulse. **+10 chronicle XP** once per day for the **first qualifying** session (**shared pool** across games); Home and widget show when the **daily boon** is still available.
+- **Quests** — Daily quests with XP; **wildcard** on Tue/Fri; seal feedback + **+5 spotlight** on the linked stat for the day.
+- **Check-in** — Evening chronicle close: habits, mood tags, manual metrics; optional **Health Connect** sync (badges on auto-filled sleep/steps; invite card when off). Seal feedback uses path-aware copy; first seal of the day can offer **Seal the sigil** (flavor + haptics only).
+- **Character & progression** — Level, XP, archetype; **streak armor** lore on the character sheet.
+- **Habits** — Create/edit; optional **boss prep** tag; quick-seal from Home with tiered discipline XP and seal feedback.
+- **Weekly review** — 7-day roll-up, boss block, **XP ledger** (check-in / quests / boss / companion / habits), defer-boss option, **bitmap** share card with XP story in share text.
+- **Boss week** — Generated from weakest stat; copy reflects **deferred**, active, or **sealed** week state. Ritual seal awards **40 XP** once per ISO week (Monday boundary).
 - **Profile** — Optional profile image (camera/gallery) stored on device.
 - **Appearance** — Light/dark (or system) theme preference persisted locally.
-- **Share** — Weekly **bitmap** recap cards (user-initiated via the system share sheet).
-- **Boss week** — **Seal the boss** in the ritual screen records completion for the current ISO week (Monday boundary), awards **40 XP** once that week, and shows **sealed** state on Home / weekly review.
-- **Widget** — Glance widget: level, top quest, boss name, and a **rotating flavor line** synced from Home.
-- **Reminders** — Optional local notifications (chronicle-voice copy); respects notification permission on Android 13+.
+- **Widget** — Glance: level, quest, boss, flavor line; **tap** opens a Compass-aligned `openascend://` destination; **daily boon ready** line when applicable.
+- **Reminders** — Optional local notifications; evening skipped if already logged today; Monday boss nudge skipped if boss sealed; copy names your weakest stat. Respects notification permission on Android 13+.
 
 Data is stored on the device (Room, DataStore). **Room** is currently at **version 5** (`starterPath` on profile, `bossPrep` on habits)—see `DatabaseModule` migrations. There is no bundled cloud sync in this early release.
 
@@ -155,7 +158,7 @@ adb exec-out screencap -p > shot.png
 | `:core:domain` | Domain models and use-case style logic (pure Kotlin) |
 | `:core:data` | Persistence (Room), repositories, DataStore preferences |
 
-Versioning: **v0.12** — `versionName` `0.12`, `versionCode` `12` in `app/build.gradle.kts`. Package id: `com.openascend.app`. **minSdk 26**, **targetSdk / compileSdk 35**.
+Versioning: **v0.13** — `versionName` `0.13`, `versionCode` `13` in `app/build.gradle.kts`. Package id: `com.openascend.app`. **minSdk 26**, **targetSdk / compileSdk 35**.
 
 ## Tech stack
 
@@ -236,6 +239,8 @@ Every push to `main` also uploads a debug APK as a workflow artifact from [CI](.
 | `companion_stack` | Stack drop |
 | `companion_thread` | Thread-run |
 | `check_in` / `checkin`, `weekly`, `boss`, `settings`, `character`, `habits` | Respective screens |
+
+The home **widget** picks its tap target using the same priority as Chronicle Compass (evening check-in → weekly on Sunday → top quest host, etc.).
 
 Only URIs whose **scheme** is `openascend` (case-insensitive) are mapped; other schemes are ignored even if the host looks familiar.
 

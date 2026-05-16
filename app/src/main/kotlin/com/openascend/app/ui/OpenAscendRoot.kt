@@ -181,6 +181,7 @@ fun OpenAscendRoot(
                         popUpTo(Routes.CheckIn) { inclusive = true }
                     }
                 },
+                onOpenSettings = { navController.navigate(Routes.Settings) },
             )
         }
         composable(Routes.SealSigil) {

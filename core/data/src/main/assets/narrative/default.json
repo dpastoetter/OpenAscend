@@ -20,5 +20,11 @@
     "Whispers follow you: {boss} senses weak {stat}.",
     "The realm feels {boss}'s gaze—your {stat} line is the breach."
   ],
-  "questTitleFlavorSuffixes": ["", " — sworn quest", " · marked rite"]
+  "questTitleFlavorSuffixes": ["", " — sworn quest", " · marked rite"],
+  "statBossTellTemplates": {
+    "DISCIPLINE": [
+      "{boss} counts every skipped rite—your {stat} line frays.",
+      "The hydra grows a new head each time {stat} slips."
+    ]
+  }
 }

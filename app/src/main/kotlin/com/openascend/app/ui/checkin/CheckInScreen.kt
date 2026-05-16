@@ -10,6 +10,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -32,16 +34,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.openascend.app.R
 import kotlinx.coroutines.delay
 
-private val moodOptions = listOf(
-    "steady" to "Steady",
-    "scattered" to "Scattered",
-    "heavy" to "Heavy",
-    "bright" to "Bright",
-)
+private val moodOptionIds = listOf("steady", "scattered", "heavy", "bright")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,6 +48,7 @@ fun CheckInScreen(
     onBack: () -> Unit,
     onSaved: () -> Unit,
     onNavigateToSigil: () -> Unit,
+    onOpenSettings: () -> Unit = {},
     viewModel: CheckInViewModel = hiltViewModel(),
 ) {
     val ui by viewModel.uiState.collectAsState()
@@ -90,10 +90,10 @@ fun CheckInScreen(
         snackbarHost = { SnackbarHost(snack) },
         topBar = {
             TopAppBar(
-                title = { Text("Evening check-in") },
+                title = { Text(stringResource(R.string.checkin_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = null)
                     }
                 },
             )
@@ -108,17 +108,74 @@ fun CheckInScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                "Manual inputs only in this MVP. Numbers are a vibe check, not advice.",
+                stringResource(R.string.checkin_blurb),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            OutlinedTextField(sleep, { sleep = it }, label = { Text("Sleep (hours)") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(steps, { steps = it }, label = { Text("Steps") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(bank, { bank = it }, label = { Text("Money calm (1-10)") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(note, { note = it }, label = { Text("One-line money note") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(vitality, { vitality = it }, label = { Text("Vitality check (1-10, optional)") }, modifier = Modifier.fillMaxWidth())
+            if (!ui.healthConnectEnabled) {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    ),
+                ) {
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            stringResource(R.string.checkin_hc_invite_title),
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        Text(
+                            stringResource(R.string.checkin_hc_invite_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        TextButton(onClick = onOpenSettings) {
+                            Text(stringResource(R.string.checkin_hc_open_settings))
+                        }
+                    }
+                }
+            }
+            OutlinedTextField(
+                sleep,
+                { sleep = it },
+                label = { Text(stringResource(R.string.checkin_sleep)) },
+                supportingText = if (ui.sleepFromHealthConnect) {
+                    { Text(stringResource(R.string.checkin_hc_badge)) }
+                } else {
+                    null
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                steps,
+                { steps = it },
+                label = { Text(stringResource(R.string.checkin_steps)) },
+                supportingText = if (ui.stepsFromHealthConnect) {
+                    { Text(stringResource(R.string.checkin_hc_badge)) }
+                } else {
+                    null
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                bank,
+                { bank = it },
+                label = { Text(stringResource(R.string.checkin_bank)) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                note,
+                { note = it },
+                label = { Text(stringResource(R.string.checkin_money_note)) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                vitality,
+                { vitality = it },
+                label = { Text(stringResource(R.string.checkin_vitality)) },
+                modifier = Modifier.fillMaxWidth(),
+            )
 
-            Text("Habits today", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.checkin_habits_today), style = MaterialTheme.typography.titleMedium)
             ui.habits.forEach { h ->
                 val checked = ui.completions[h.id] == true
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -130,7 +187,7 @@ fun CheckInScreen(
                         Text(h.name)
                         if (h.isRestDay) {
                             Text(
-                                "Sacred rest — the tale stays kind if you skip.",
+                                stringResource(R.string.checkin_rest_day_hint),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -139,14 +196,20 @@ fun CheckInScreen(
                 }
             }
 
-            Text("How did the day feel?", style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.checkin_mood_title), style = MaterialTheme.typography.titleSmall)
             Text(
-                "Optional tags — tomorrow's home screen may echo one line.",
+                stringResource(R.string.checkin_mood_blurb),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                moodOptions.forEach { (id, label) ->
+                moodOptionIds.forEach { id ->
+                    val label = when (id) {
+                        "steady" -> stringResource(R.string.mood_steady)
+                        "scattered" -> stringResource(R.string.mood_scattered)
+                        "heavy" -> stringResource(R.string.mood_heavy)
+                        else -> stringResource(R.string.mood_bright)
+                    }
                     FilterChip(
                         selected = selectedMoods.contains(id),
                         onClick = {
@@ -167,7 +230,7 @@ fun CheckInScreen(
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Seal today's run")
+                Text(stringResource(R.string.checkin_seal))
             }
         }
     }
