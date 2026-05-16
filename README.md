@@ -1,6 +1,6 @@
 # OpenAscend
 
-**Current version: v0.14** (`versionName` **0.14**, `versionCode` **14** in Gradle)
+**Current version: v0.14.1** (`versionName` **0.14.1**, `versionCode` **15** in Gradle)
 
 **Repository:** [github.com/dpastoetter/OpenAscend](https://github.com/dpastoetter/OpenAscend)
 
@@ -179,7 +179,7 @@ adb exec-out screencap -p > shot.png
 | `:core:domain` | Domain models and use-case style logic (pure Kotlin) |
 | `:core:data` | Persistence (Room), repositories, DataStore preferences, share/duel export helpers |
 
-Versioning: **v0.14** — `versionName` `0.14`, `versionCode` `14` in `app/build.gradle.kts`. Package id: `com.openascend.app`. **minSdk 26**, **targetSdk / compileSdk 35**.
+Versioning: **v0.14.1** — `versionName` `0.14.1`, `versionCode` `15` in `app/build.gradle.kts`. Package id: `com.openascend.app`. **minSdk 26**, **targetSdk / compileSdk 35**.
 
 ## Tech stack
 
