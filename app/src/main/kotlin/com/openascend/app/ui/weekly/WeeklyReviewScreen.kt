@@ -1,7 +1,5 @@
 package com.openascend.app.ui.weekly
 
-import android.content.Intent
-import android.graphics.Bitmap.CompressFormat
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -32,25 +30,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.core.content.FileProvider
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ShareCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.openascend.app.R
+import com.openascend.app.share.ShareCardCopy
+import com.openascend.app.share.ShareLauncher
 import com.openascend.app.share.WeeklyShareCardUi
 import com.openascend.app.share.captureWeeklyShareCardBitmap
-import kotlinx.coroutines.Dispatchers
+import com.openascend.app.ui.companion.FamiliarPixelDrawable
+import com.openascend.domain.companion.CompanionMood
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileOutputStream
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WeeklyReviewScreen(
     onBack: () -> Unit,
     onOpenBossRitual: () -> Unit = {},
+    onOpenChronicleDuel: () -> Unit = {},
     viewModel: WeeklyReviewViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -176,10 +174,26 @@ fun WeeklyReviewScreen(
                     Text(ui.shareSummary, style = MaterialTheme.typography.bodySmall)
                 }
             }
+            TextButton(onClick = onOpenChronicleDuel, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.chronicle_duel_title))
+            }
             Button(
                 onClick = {
+                    val xpLines = buildList {
+                        if (ui.xpLedger.checkInXp > 0) {
+                            add(context.getString(R.string.weekly_xp_line_checkin, ui.xpLedger.checkInXp))
+                        }
+                        if (ui.xpLedger.questXp > 0) {
+                            add(context.getString(R.string.weekly_xp_line_quests, ui.xpLedger.questXp))
+                        }
+                        if (ui.xpLedger.bossXp > 0) {
+                            add(context.getString(R.string.weekly_xp_line_boss, ui.xpLedger.bossXp))
+                        }
+                    }
                     val payload = WeeklyShareCardUi(
                         heroName = ui.profile.displayName,
+                        level = ui.level,
+                        archetypeLine = ui.archetypeLine,
                         recovery = ui.rolling.recovery,
                         stamina = ui.rolling.stamina,
                         stability = ui.rolling.stability,
@@ -187,41 +201,43 @@ fun WeeklyReviewScreen(
                         vitality = ui.rolling.vitality,
                         bossName = ui.boss.name,
                         bossFlavor = ui.boss.flavor,
+                        xpHighlights = xpLines,
+                        killerStatLine = context.getString(
+                            R.string.weekly_killer_stat,
+                            ui.boss.targetStat.name,
+                            ui.rolling.asMap().getValue(ui.boss.targetStat),
+                        ),
+                        familiarResId = if (ui.familiarEnabled) {
+                            FamiliarPixelDrawable.resId(ui.familiarSpecies, CompanionMood.WATCHING)
+                        } else {
+                            null
+                        },
+                        tagline = ShareCardCopy.tagline(context),
+                        storeCta = ShareCardCopy.storeCta(context),
+                        disclaimer = ShareCardCopy.disclaimer(context),
                     )
                     scope.launch {
                         runCatching {
                             val bitmap = captureWeeklyShareCardBitmap(context, payload)
-                            val file = File(context.cacheDir, "openascend_weekly_${System.currentTimeMillis()}.png")
-                            try {
-                                withContext(Dispatchers.IO) {
-                                    FileOutputStream(file).use { out ->
-                                        bitmap.compress(CompressFormat.PNG, 100, out)
-                                    }
-                                }
-                                val uri = FileProvider.getUriForFile(
-                                    context,
-                                    "${context.packageName}.fileprovider",
-                                    file,
-                                )
-                                ShareCompat.IntentBuilder(context)
-                                    .setType("image/png")
-                                    .setStream(uri)
-                                    .setChooserTitle("Share your card")
-                                    .apply {
-                                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    }
-                                    .startChooser()
-                            } finally {
-                                bitmap.recycle()
-                            }
+                            ShareLauncher.shareBitmap(
+                                context = context,
+                                bitmap = bitmap,
+                                chooserTitle = context.getString(R.string.share_weekly_chooser),
+                                shareText = ui.shareSummary,
+                                filePrefix = "openascend_weekly",
+                            )
                         }.onFailure {
-                            Toast.makeText(context, "Could not build share image", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.share_image_error),
+                                Toast.LENGTH_SHORT,
+                            ).show()
                         }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Share card (image)")
+                Text(stringResource(R.string.weekly_share_image))
             }
             TextButton(
                 onClick = {

@@ -10,4 +10,11 @@ internal data class NarrativePackDto(
     val bossTellTemplates: List<String> = emptyList(),
     val questTitleFlavorSuffixes: List<String> = emptyList(),
     val statBossTellTemplates: Map<String, List<String>> = emptyMap(),
+    val statQuestChains: Map<String, StatChainFlavorDto> = emptyMap(),
+)
+
+@Serializable
+internal data class StatChainFlavorDto(
+    val chainTitle: String,
+    val chainDescription: String,
 )

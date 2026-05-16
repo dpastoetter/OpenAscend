@@ -34,6 +34,8 @@ import com.openascend.app.ui.home.HomeScreen
 import com.openascend.app.ui.onboarding.OnboardingScreen
 import com.openascend.app.ui.settings.SettingsScreen
 import com.openascend.app.ui.sigil.SealSigilScreen
+import com.openascend.app.ui.replay.ChronicleReplayScreen
+import com.openascend.app.ui.duel.ChronicleDuelScreen
 import com.openascend.app.ui.weekly.WeeklyReviewScreen
 
 private val deepLinkBase = "openascend://"
@@ -86,7 +88,14 @@ fun OpenAscendRoot(
                 onOpenSettings = { navController.navigate(Routes.Settings) },
                 onOpenBossRitual = { navController.navigate(Routes.BossRitual) },
                 onOpenCompanionPlay = { navController.navigate(Routes.CompanionHub) },
+                onOpenChronicleReplay = { navController.navigate(Routes.ChronicleReplay) },
             )
+        }
+        composable(Routes.ChronicleReplay) {
+            ChronicleReplayScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.ChronicleDuel) {
+            ChronicleDuelScreen(onBack = { navController.popBackStack() })
         }
         composable(
             Routes.CompanionHub,
@@ -196,6 +205,7 @@ fun OpenAscendRoot(
             deepLinks = listOf(navDeepLink { uriPattern = "${deepLinkBase}weekly" }),
         ) {
             WeeklyReviewScreen(
+                onOpenChronicleDuel = { navController.navigate(Routes.ChronicleDuel) },
                 onBack = { navController.popBackStack() },
                 onOpenBossRitual = { navController.navigate(Routes.BossRitual) },
             )

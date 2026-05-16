@@ -9,6 +9,7 @@ import com.openascend.app.health.HealthConnectMetricsSync
 import com.openascend.app.util.todayEpochDay
 import com.openascend.app.util.weekStartMondayEpochDay
 import com.openascend.data.local.prefs.CompanionMemoryStore
+import com.openascend.data.local.prefs.CompanionPlayDayStore
 import com.openascend.data.local.prefs.PrivacyPreferences
 import com.openascend.data.local.prefs.WidgetSnapshotStore
 import com.openascend.domain.model.CharacterProgress
@@ -41,6 +42,7 @@ import com.openascend.domain.service.ChronicleCompassDirective
 import com.openascend.domain.service.ChronicleCompassResolver
 import com.openascend.domain.service.HabitRewards
 import com.openascend.domain.service.QuestChainDetector
+import com.openascend.domain.service.StreakMilestone
 import com.openascend.domain.service.QuestGenerator
 import com.openascend.domain.service.StatComputationService
 import com.openascend.domain.service.XpEngine
@@ -92,6 +94,8 @@ data class HomeUiState(
     val familiarSpecies: FamiliarSpecies,
     val companion: CompanionSnapshot,
     val companionMemoryWhisper: String?,
+    val streakMilestoneDays: Int?,
+    val companionPlayStreakDays: Int,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -115,6 +119,7 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val companionMemoryStore = CompanionMemoryStore(appContext)
+    private val companionPlayDayStore = CompanionPlayDayStore(appContext)
 
     private val dayFlow = MutableStateFlow(todayEpochDay())
 
@@ -183,7 +188,7 @@ class HomeViewModel @Inject constructor(
                         val d = bundle.day - off
                         d to questCompletionRepository.completedIds(d)
                     }
-                    val chain = QuestChainDetector.recoveryChainActive(bundle.day) { d ->
+                    val activeChains = QuestChainDetector.activeChains(bundle.day) { d ->
                         questDoneByDay[d].orEmpty()
                     }
                     val quests = questGenerator.dailyQuests(
@@ -192,7 +197,7 @@ class HomeViewModel @Inject constructor(
                         todayEpochDay = bundle.day,
                         completions = bundle.questToday,
                         narrative = narrative,
-                        recoveryChainActive = chain,
+                        activeStatChains = activeChains,
                     )
                     val displayStats = todayStats.withSealedQuestSpotlight(quests)
                     val progress = xpEngine.progressForStats(todayStats, bundle.inner.profile.streakDays)
@@ -282,7 +287,10 @@ class HomeViewModel @Inject constructor(
                         flavorLine = widgetFlavor,
                         dailyBoonAvailable = dailyBoonAvailable,
                         actionUri = widgetDeepLinkFor(compass),
+                        streakDays = bundle.inner.profile.streakDays,
+                        bossSealedThisWeek = bossSealedThisWeek,
                     )
+                    val streakMilestone = StreakMilestone.milestoneDays(bundle.inner.profile.streakDays)
                     _ui.value = HomeUiState(
                         profile = bundle.inner.profile,
                         stats = displayStats,
@@ -306,6 +314,8 @@ class HomeViewModel @Inject constructor(
                         familiarSpecies = bundle.homeSnap.settings.familiarSpecies,
                         companion = companion,
                         companionMemoryWhisper = companionMemoryWhisper,
+                        streakMilestoneDays = streakMilestone,
+                        companionPlayStreakDays = companionPlayDayStore.consecutivePlayDaysEnding(bundle.day),
                     )
                 }
             }

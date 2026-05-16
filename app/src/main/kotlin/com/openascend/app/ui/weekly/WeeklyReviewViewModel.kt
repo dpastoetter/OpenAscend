@@ -17,6 +17,7 @@ import com.openascend.domain.repository.ProfileRepository
 import com.openascend.domain.service.BankHealthScorer
 import com.openascend.domain.service.BossGenerator
 import com.openascend.domain.service.StatComputationService
+import com.openascend.domain.service.XpEngine
 import com.openascend.domain.service.XpLedgerAggregator
 import com.openascend.domain.service.XpLedgerSummary
 import com.openascend.domain.repository.XpRepository
@@ -41,6 +42,10 @@ data class WeeklyUiState(
     val bossDeferredThisWeek: Boolean,
     val bossSealedThisWeek: Boolean,
     val xpLedger: XpLedgerSummary,
+    val level: Int,
+    val archetypeLine: String,
+    val familiarEnabled: Boolean,
+    val familiarSpecies: com.openascend.domain.model.FamiliarSpecies,
 )
 
 @HiltViewModel
@@ -53,6 +58,7 @@ class WeeklyReviewViewModel @Inject constructor(
     private val narrativeRepository: NarrativeRepository,
     private val privacyPreferences: PrivacyPreferences,
     private val xpRepository: XpRepository,
+    private val xpEngine: XpEngine,
 ) : ViewModel() {
 
     private val day = todayEpochDay()
@@ -99,6 +105,9 @@ class WeeklyReviewViewModel @Inject constructor(
                     val todayMetric = metricsRepository.getDay(day)
                     val bankScore = todayMetric?.bankControlScore
                     val summary = buildShareSummary(profile, rolling, boss, xpLedger)
+                    val progress = xpEngine.progressForStats(rolling, profile.streakDays)
+                    val archetypeLine = progress.archetype.displayName +
+                        profile.archetypeSuffix?.let { " · $it" }.orEmpty()
                     _ui.value = WeeklyUiState(
                         profile = profile,
                         rolling = rolling,
@@ -109,6 +118,10 @@ class WeeklyReviewViewModel @Inject constructor(
                         bossDeferredThisWeek = deferred,
                         bossSealedThisWeek = sealed,
                         xpLedger = xpLedger,
+                        level = progress.level,
+                        archetypeLine = archetypeLine,
+                        familiarEnabled = homeSnap.settings.familiarEnabled,
+                        familiarSpecies = homeSnap.settings.familiarSpecies,
                     )
                 }
             }

@@ -48,6 +48,7 @@ fun FamiliarStrip(
     modifier: Modifier = Modifier,
     dailyBoonAvailable: Boolean? = null,
     memoryWhisper: String? = null,
+    companionPlayStreakDays: Int = 0,
     onPlayTogether: (() -> Unit)? = null,
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
@@ -114,6 +115,13 @@ fun FamiliarStrip(
                         whisper,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                if (companionPlayStreakDays >= 3) {
+                    Text(
+                        stringResource(R.string.companion_play_streak_emote),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.tertiary,
                     )
                 }
                 dailyBoonAvailable?.let { available ->

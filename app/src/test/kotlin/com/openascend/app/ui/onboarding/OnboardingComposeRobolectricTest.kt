@@ -52,7 +52,7 @@ class OnboardingComposeRobolectricTest {
 
         composeRule.onNodeWithText("Forge your legend").assertIsDisplayed()
         composeRule.onNodeWithText("OpenAscend turns habits", substring = true).assertIsDisplayed()
-        composeRule.onNodeWithText("Enter the realm").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("Continue").performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -75,7 +75,9 @@ class OnboardingComposeRobolectricTest {
         }
 
         composeRule.onAllNodes(hasSetTextAction())[0].performScrollTo().performTextInput("River")
-        composeRule.onAllNodes(hasSetTextAction())[1].performScrollTo().performTextInput("Walk daily")
+        composeRule.onNodeWithText("Continue").performScrollTo().performClick()
+        composeRule.onAllNodes(hasSetTextAction())[0].performScrollTo().performTextInput("Walk daily")
+        composeRule.onNodeWithText("Continue").performScrollTo().performClick()
         composeRule.onNodeWithText("Enter the realm").performScrollTo().performClick()
         composeRule.waitForIdle()
 
@@ -93,8 +95,11 @@ class OnboardingComposeRobolectricTest {
         }
 
         composeRule.onNodeWithText("Hero name").assertExists()
-        composeRule.onNodeWithText("Quest goal #1").assertExists()
-        composeRule.onNodeWithText("Quest goal #2 (optional)").assertExists()
         composeRule.onNodeWithText("Your companion").assertExists()
+        composeRule.onAllNodes(hasSetTextAction())[0].performScrollTo().performTextInput("A")
+        composeRule.onNodeWithText("Continue").performScrollTo().performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Quest goal #1").performScrollTo().assertExists()
+        composeRule.onNodeWithText("Quest goal #2 (optional)").performScrollTo().assertExists()
     }
 }

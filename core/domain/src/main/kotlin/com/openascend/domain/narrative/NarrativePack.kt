@@ -12,6 +12,7 @@ data class NarrativePack(
     val questTitleFlavorSuffixes: List<String>,
     /** Optional per-stat boss tell lines (keys: RECOVERY, STAMINA, …). */
     val statBossTellTemplates: Map<String, List<String>> = emptyMap(),
+    val statQuestChains: Map<String, StatChainFlavor> = emptyMap(),
 ) {
     companion object {
         fun fallback(id: String = "default") = NarrativePack(
@@ -21,6 +22,7 @@ data class NarrativePack(
             bossTellTemplates = listOf("{boss} stirs when {stat} runs thin."),
             questTitleFlavorSuffixes = listOf(""),
             statBossTellTemplates = emptyMap(),
+            statQuestChains = emptyMap(),
         )
     }
 }

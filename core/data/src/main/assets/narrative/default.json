@@ -26,5 +26,27 @@
       "{boss} counts every skipped rite—your {stat} line frays.",
       "The hydra grows a new head each time {stat} slips."
     ]
+  },
+  "statQuestChains": {
+    "RECOVERY": {
+      "chainTitle": "Rite of three dawns",
+      "chainDescription": "Third dawn in your recovery chain—wind down 30 minutes earlier tonight."
+    },
+    "STAMINA": {
+      "chainTitle": "Three marches",
+      "chainDescription": "Third march in your stamina chain—add one honest movement block today."
+    },
+    "STABILITY": {
+      "chainTitle": "Triple ledger",
+      "chainDescription": "Third calm money note this week—one honest line in the chronicle."
+    },
+    "DISCIPLINE": {
+      "chainTitle": "Oath trilogy",
+      "chainDescription": "Third discipline beat—seal the habit you keep dodging."
+    },
+    "VITALITY": {
+      "chainTitle": "Vitality triad",
+      "chainDescription": "Third vitality rite—water, stretch, and one kind check-in."
+    }
   }
 }

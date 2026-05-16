@@ -15,10 +15,14 @@ class QuestGenerator {
         todayEpochDay: Long,
         completions: Set<String>,
         narrative: NarrativeContext? = null,
+        activeStatChains: Set<CoreStat> = emptySet(),
         recoveryChainActive: Boolean = false,
     ): List<GameQuest> {
         val localDate = LocalDate.ofEpochDay(todayEpochDay)
         val pack = narrative?.pack ?: NarrativePack.fallback()
+        val chains = activeStatChains.toMutableSet().apply {
+            if (recoveryChainActive) add(CoreStat.RECOVERY)
+        }
         val weak = stats.asMap().entries.sortedBy { it.value }.take(2).map { it.key }
         val fromWeak = weak.mapIndexed { idx, stat ->
             templateFor(
@@ -27,7 +31,7 @@ class QuestGenerator {
                 todayEpochDay = todayEpochDay,
                 completions = completions,
                 pack = pack,
-                recoveryChainActive = recoveryChainActive && stat == CoreStat.RECOVERY,
+                chainActive = stat in chains,
             )
         }
         val goalQuest = goals.take(1).mapIndexed { idx, g ->
@@ -102,37 +106,34 @@ class QuestGenerator {
         todayEpochDay: Long,
         completions: Set<String>,
         pack: NarrativePack,
-        recoveryChainActive: Boolean,
+        chainActive: Boolean,
     ): GameQuest {
         val id = "dq_${todayEpochDay}_${stat.name}_$idx"
+        val chainFlavor = if (chainActive) pack.statQuestChains[stat.name] else null
         val (baseTitle, baseDesc, xp) = when (stat) {
             CoreStat.RECOVERY -> Triple(
-                if (recoveryChainActive) "Rite of three dawns" else "Sanctuary Hour",
-                if (recoveryChainActive) {
-                    "Third dawn in your recovery chain—the same kind rite: wind down 30 minutes earlier tonight."
-                } else {
-                    "Wind down 30 minutes earlier than usual tonight."
-                },
+                chainFlavor?.chainTitle ?: "Sanctuary Hour",
+                chainFlavor?.chainDescription ?: "Wind down 30 minutes earlier than usual tonight.",
                 20,
             )
             CoreStat.STAMINA -> Triple(
-                "Trailblazer Steps",
-                "Add one short walk or 1k extra steps today.",
+                chainFlavor?.chainTitle ?: "Trailblazer Steps",
+                chainFlavor?.chainDescription ?: "Add one short walk or 1k extra steps today.",
                 20,
             )
             CoreStat.STABILITY -> Triple(
-                "Ledger Check",
-                "Log how you felt about spending today (1 line).",
+                chainFlavor?.chainTitle ?: "Ledger Check",
+                chainFlavor?.chainDescription ?: "Log how you felt about spending today (1 line).",
                 20,
             )
             CoreStat.DISCIPLINE -> Triple(
-                "Oath of the Day",
-                "Complete one habit you have been dodging.",
+                chainFlavor?.chainTitle ?: "Oath of the Day",
+                chainFlavor?.chainDescription ?: "Complete one habit you have been dodging.",
                 25,
             )
             CoreStat.VITALITY -> Triple(
-                "Vitality Rite",
-                "Hydrate + one stretch block; optional vitality check-in.",
+                chainFlavor?.chainTitle ?: "Vitality Rite",
+                chainFlavor?.chainDescription ?: "Hydrate + one stretch block; optional vitality check-in.",
                 20,
             )
         }

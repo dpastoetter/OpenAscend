@@ -17,6 +17,8 @@ class WidgetSnapshotStore(
         flavorLine: String,
         dailyBoonAvailable: Boolean = false,
         actionUri: String = "openascend://home",
+        streakDays: Int = 0,
+        bossSealedThisWeek: Boolean = false,
     ) {
         p.edit()
             .putInt("level", level)
@@ -25,6 +27,8 @@ class WidgetSnapshotStore(
             .putString("flavor", flavorLine.take(200))
             .putBoolean("daily_boon", dailyBoonAvailable)
             .putString("action_uri", actionUri)
+            .putInt("streak_days", streakDays)
+            .putBoolean("boss_sealed", bossSealedThisWeek)
             .apply()
     }
 
@@ -34,4 +38,6 @@ class WidgetSnapshotStore(
     fun readFlavorLine(): String = p.getString("flavor", "—") ?: "—"
     fun readDailyBoonAvailable(): Boolean = p.getBoolean("daily_boon", false)
     fun readActionUri(): String = p.getString("action_uri", "openascend://home") ?: "openascend://home"
+    fun readStreakDays(): Int = p.getInt("streak_days", 0)
+    fun readBossSealedThisWeek(): Boolean = p.getBoolean("boss_sealed", false)
 }

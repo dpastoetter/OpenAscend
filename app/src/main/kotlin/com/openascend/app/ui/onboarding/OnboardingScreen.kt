@@ -17,16 +17,25 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.openascend.app.R
+import com.openascend.app.share.DayZeroShareCardUi
+import com.openascend.app.share.ShareCardCopy
+import com.openascend.app.share.shareDayZeroCard
+import com.openascend.app.ui.companion.FamiliarPixelDrawable
+import com.openascend.domain.companion.CompanionMood
 import com.openascend.domain.model.FamiliarSpecies
 import com.openascend.domain.narrative.StarterPaths
 
@@ -38,11 +47,14 @@ fun OnboardingContent(
     onComplete: (displayName: String, goals: List<String>, starterPathId: String?, familiarSpecies: FamiliarSpecies) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var step by remember { mutableIntStateOf(0) }
     var name by remember { mutableStateOf("") }
     var goalA by remember { mutableStateOf("") }
     var goalB by remember { mutableStateOf("") }
     var starterPathId by remember { mutableStateOf<String?>(null) }
     var familiarSpecies by remember { mutableStateOf(FamiliarSpecies.WOLF) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier
@@ -58,88 +70,115 @@ fun OnboardingContent(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(Modifier.height(8.dp))
-        OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
-            label = { Text(stringResource(R.string.onboarding_hero_name)) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Text(
-            stringResource(R.string.onboarding_class_fantasy_title),
-            style = MaterialTheme.typography.titleSmall,
-        )
-        Text(
-            stringResource(R.string.onboarding_class_fantasy_subtitle),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            FilterChip(
-                selected = starterPathId == null,
-                onClick = { starterPathId = null },
-                label = { Text(stringResource(R.string.onboarding_class_surprise)) },
-            )
-            StarterPaths.options.forEach { opt ->
-                FilterChip(
-                    selected = starterPathId == opt.id,
-                    onClick = { starterPathId = opt.id },
-                    label = { Text(opt.title) },
+        when (step) {
+            0 -> {
+                Text(stringResource(R.string.onboarding_step_path), style = MaterialTheme.typography.labelLarge)
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.onboarding_hero_name)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
                 )
+                Text(stringResource(R.string.onboarding_class_fantasy_title), style = MaterialTheme.typography.titleSmall)
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    FilterChip(
+                        selected = starterPathId == null,
+                        onClick = { starterPathId = null },
+                        label = { Text(stringResource(R.string.onboarding_class_surprise)) },
+                    )
+                    StarterPaths.options.forEach { opt ->
+                        FilterChip(
+                            selected = starterPathId == opt.id,
+                            onClick = { starterPathId = opt.id },
+                            label = { Text(opt.title) },
+                        )
+                    }
+                }
+                Text(stringResource(R.string.onboarding_companion_title), style = MaterialTheme.typography.titleSmall)
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    FamiliarSpecies.entries.forEach { species ->
+                        FilterChip(
+                            selected = familiarSpecies == species,
+                            onClick = { familiarSpecies = species },
+                            label = { Text("${species.emoji} ${species.displayName}") },
+                        )
+                    }
+                }
+                Button(
+                    onClick = { step = 1 },
+                    enabled = name.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.action_continue))
+                }
             }
-        }
-        Text(
-            stringResource(R.string.onboarding_companion_title),
-            style = MaterialTheme.typography.titleSmall,
-        )
-        Text(
-            stringResource(R.string.onboarding_companion_blurb),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            FamiliarSpecies.entries.forEach { species ->
-                FilterChip(
-                    selected = familiarSpecies == species,
-                    onClick = { familiarSpecies = species },
-                    label = { Text("${species.emoji} ${species.displayName}") },
+            1 -> {
+                Text(stringResource(R.string.onboarding_step_goals), style = MaterialTheme.typography.labelLarge)
+                OutlinedTextField(
+                    value = goalA,
+                    onValueChange = { goalA = it },
+                    label = { Text(stringResource(R.string.onboarding_goal_1)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
                 )
+                OutlinedTextField(
+                    value = goalB,
+                    onValueChange = { goalB = it },
+                    label = { Text(stringResource(R.string.onboarding_goal_2)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Button(onClick = { step = 2 }, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.action_continue))
+                }
             }
-        }
-        OutlinedTextField(
-            value = goalA,
-            onValueChange = { goalA = it },
-            label = { Text(stringResource(R.string.onboarding_goal_1)) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        OutlinedTextField(
-            value = goalB,
-            onValueChange = { goalB = it },
-            label = { Text(stringResource(R.string.onboarding_goal_2)) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(Modifier.height(24.dp))
-        Button(
-            onClick = {
-                val path = starterPathId
-                onComplete(name, listOf(goalA, goalB), path, familiarSpecies)
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(R.string.onboarding_enter_realm))
+            else -> {
+                Text(stringResource(R.string.onboarding_preview_title), style = MaterialTheme.typography.titleLarge)
+                Text(
+                    stringResource(R.string.onboarding_preview_subtitle),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    name,
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(StarterPaths.labelForStoredId(starterPathId).orEmpty())
+                Text("${familiarSpecies.emoji} ${familiarSpecies.displayName}")
+                TextButton(
+                    onClick = {
+                        val pathLine = StarterPaths.labelForStoredId(starterPathId) ?: "Surprise path"
+                        scope.shareDayZeroCard(
+                            context,
+                            DayZeroShareCardUi(
+                                heroName = name.ifBlank { "Hero" },
+                                pathLine = pathLine,
+                                speciesLine = "${familiarSpecies.emoji} ${familiarSpecies.displayName}",
+                                familiarResId = FamiliarPixelDrawable.resId(familiarSpecies, CompanionMood.CURIOUS),
+                                tagline = ShareCardCopy.tagline(context),
+                                storeCta = ShareCardCopy.storeCta(context),
+                            ),
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.onboarding_preview_share))
+                }
+                Button(
+                    onClick = { onComplete(name, listOf(goalA, goalB), starterPathId, familiarSpecies) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.onboarding_preview_enter))
+                }
+            }
         }
     }
 }

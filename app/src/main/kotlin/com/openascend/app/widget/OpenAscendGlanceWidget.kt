@@ -81,6 +81,20 @@ private fun WidgetBody() {
                 maxLines = 1,
             )
         }
+        val bossLabel = if (store.readBossSealedThisWeek()) {
+            context.getString(com.openascend.app.R.string.widget_boss_sealed)
+        } else {
+            context.getString(com.openascend.app.R.string.widget_boss_unsealed)
+        }
+        Text(
+            text = context.getString(
+                com.openascend.app.R.string.widget_streak_line,
+                store.readStreakDays(),
+                bossLabel,
+            ),
+            style = TextStyle(color = muted),
+            maxLines = 1,
+        )
         Text(
             text = store.readFlavorLine(),
             style = TextStyle(color = muted),

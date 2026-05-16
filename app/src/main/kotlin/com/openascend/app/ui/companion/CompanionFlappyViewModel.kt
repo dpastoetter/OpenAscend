@@ -23,7 +23,11 @@ import com.openascend.domain.service.QuestChainDetector
 import com.openascend.domain.service.QuestGenerator
 import com.openascend.domain.service.StatComputationService
 import com.openascend.domain.service.XpEngine
+import com.openascend.data.local.prefs.CompanionBestScoreStore
+import com.openascend.data.local.prefs.CompanionPlayDayStore
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import android.content.Context
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -69,12 +73,14 @@ sealed class FlappyPhase {
         val victory: Boolean,
         val xpGranted: Boolean,
         val xpAlreadyClaimedToday: Boolean,
+        val isPersonalBest: Boolean = false,
     ) : FlappyPhase()
 }
 
 data class CompanionFlappyUiState(
     val companion: CompanionSnapshot,
     val species: FamiliarSpecies,
+    val heroDisplayName: String,
     val soundEnabled: Boolean,
     val hapticsEnabled: Boolean,
     val gameDifficulty: CompanionGameDifficulty,
@@ -83,6 +89,7 @@ data class CompanionFlappyUiState(
 
 @HiltViewModel
 class CompanionFlappyViewModel @Inject constructor(
+    @ApplicationContext context: Context,
     private val profileRepository: ProfileRepository,
     private val habitRepository: HabitRepository,
     private val metricsRepository: MetricsRepository,
@@ -94,6 +101,9 @@ class CompanionFlappyViewModel @Inject constructor(
     private val xpEngine: XpEngine,
     private val feedbackController: FeedbackController,
 ) : ViewModel() {
+
+    private val bestScoreStore = CompanionBestScoreStore(context)
+    private val companionPlayDayStore = CompanionPlayDayStore(context)
 
     companion object {
         const val FRAME_MS = 16L
@@ -238,6 +248,7 @@ class CompanionFlappyViewModel @Inject constructor(
                     _ui.value = CompanionFlappyUiState(
                         companion = companion,
                         species = species,
+                        heroDisplayName = inner.profile.displayName,
                         soundEnabled = homeSnap.settings.soundEnabled,
                         hapticsEnabled = homeSnap.settings.hapticsEnabled,
                         gameDifficulty = difficulty,
@@ -524,13 +535,16 @@ class CompanionFlappyViewModel @Inject constructor(
                 xpEngine.award(CompanionGameXp.SHARED_DAILY_XP, "Companion glide")
                 feedbackController.playQuestSeal(state.soundEnabled, state.hapticsEnabled)
             }
+            companionPlayDayStore.recordPlayDay(day)
         }
+        val isPb = bestScoreStore.recordScore("glide", finalScore)
         _ui.value = state.copy(
             phase = FlappyPhase.Summary(
                 score = finalScore,
                 victory = victory,
                 xpGranted = xpGranted,
                 xpAlreadyClaimedToday = victory && !xpGranted && hadPriorToday,
+                isPersonalBest = isPb,
             ),
         )
     }

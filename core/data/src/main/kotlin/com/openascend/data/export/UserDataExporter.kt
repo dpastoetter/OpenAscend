@@ -3,6 +3,7 @@ package com.openascend.data.export
 import com.openascend.data.local.db.OpenAscendDatabase
 import com.openascend.data.local.mapper.toDomain
 import com.openascend.data.local.prefs.PrivacyPreferences
+import com.openascend.domain.model.StatBlock
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.time.LocalDate
@@ -89,5 +90,26 @@ class UserDataExporter @Inject constructor(
                 )
             }
         }
+    }
+
+    suspend fun buildDuelSummaryJson(
+        rolling: StatBlock,
+        bossName: String,
+        level: Int,
+        weekLabel: String,
+    ): String {
+        val profile = database.profileDao().getProfile()?.toDomain()
+        val summary = ChronicleDuelSummary(
+            displayName = profile?.displayName ?: "Hero",
+            level = level,
+            recovery = rolling.recovery,
+            stamina = rolling.stamina,
+            stability = rolling.stability,
+            discipline = rolling.discipline,
+            vitality = rolling.vitality,
+            bossName = bossName,
+            weekLabel = weekLabel,
+        )
+        return json.encodeToString(ChronicleDuelSummary.serializer(), summary)
     }
 }

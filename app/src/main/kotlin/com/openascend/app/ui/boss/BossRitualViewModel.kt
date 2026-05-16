@@ -31,6 +31,14 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
 
+data class BossSealCelebration(
+    val heroName: String,
+    val bossName: String,
+    val targetStat: String,
+    val xpAwarded: Int,
+    val flavor: String,
+)
+
 data class BossRitualUiState(
     val profile: UserProfile,
     val rolling: StatBlock,
@@ -42,6 +50,7 @@ data class BossRitualUiState(
     val soundEnabled: Boolean,
     val hapticsEnabled: Boolean,
 )
+
 
 @HiltViewModel
 class BossRitualViewModel @Inject constructor(
@@ -65,6 +74,9 @@ class BossRitualViewModel @Inject constructor(
 
     private val _ui = MutableStateFlow<BossRitualUiState?>(null)
     val uiState = _ui.asStateFlow()
+
+    private val _celebration = MutableStateFlow<BossSealCelebration?>(null)
+    val celebration = _celebration.asStateFlow()
 
     init {
         combine(
@@ -140,12 +152,26 @@ class BossRitualViewModel @Inject constructor(
                 isCompleted = { hid, epoch -> completionMap[Pair(hid, epoch)] == true },
             )
             val bonus = BossPrepMeter.bonusXpForPrepSeals(prepSeals)
-            xpEngine.award(BOSS_SEAL_XP + bonus, "Weekly boss sealed: $label")
+            val totalXp = BOSS_SEAL_XP + bonus
+            xpEngine.award(totalXp, "Weekly boss sealed: $label")
             feedbackController.playQuestSeal(
                 ui?.soundEnabled ?: true,
                 ui?.hapticsEnabled ?: true,
             )
+            if (ui != null) {
+                _celebration.value = BossSealCelebration(
+                    heroName = ui.profile.displayName,
+                    bossName = ui.boss.name,
+                    targetStat = ui.boss.targetStat.name,
+                    xpAwarded = totalXp,
+                    flavor = ui.boss.flavor,
+                )
+            }
         }
+    }
+
+    fun dismissCelebration() {
+        _celebration.value = null
     }
 
     private suspend fun loadCompletionMap(habits: List<Habit>, today: Long): Map<Pair<Long, Long>, Boolean> {

@@ -32,6 +32,9 @@ fun PreviewWeeklyShareCard() {
                     vitality = 55,
                     bossName = "The Sleepless Warden",
                     bossFlavor = "A phantom of skipped rest — it feeds on late screens and early alarms.",
+                    tagline = "OpenAscend · Your life, scored like a game.",
+                    storeCta = "Search OpenAscend on Google Play",
+                    disclaimer = "Not medical or financial advice.",
                 ),
             )
         }
@@ -59,6 +62,9 @@ fun PreviewWeeklyShareCardLight() {
                     vitality = 50,
                     bossName = "The Stillness Colossus",
                     bossFlavor = "Gravity itself seems heavier when movement fades.",
+                    tagline = "OpenAscend · Your life, scored like a game.",
+                    storeCta = "Search OpenAscend on Google Play",
+                    disclaimer = "Not medical or financial advice.",
                 ),
             )
         }

@@ -27,6 +27,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -36,6 +38,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.openascend.app.R
+import com.openascend.app.share.BossSealedShareCardUi
+import com.openascend.app.share.ShareCardCopy
+import com.openascend.app.share.shareBossSealedCard
+import com.openascend.app.ui.share.PeakCelebrationDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,6 +51,39 @@ fun BossRitualScreen(
     viewModel: BossRitualViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
+    val celebration by viewModel.celebration.collectAsState()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    celebration?.let { cel ->
+        PeakCelebrationDialog(
+            title = stringResource(R.string.boss_seal_celebration_title),
+            onDismiss = { viewModel.dismissCelebration() },
+            onShare = {
+                scope.shareBossSealedCard(
+                    context,
+                    BossSealedShareCardUi(
+                        heroName = cel.heroName,
+                        bossName = cel.bossName,
+                        targetStat = cel.targetStat,
+                        xpAwarded = cel.xpAwarded,
+                        flavor = cel.flavor,
+                        tagline = ShareCardCopy.tagline(context),
+                        storeCta = ShareCardCopy.storeCta(context),
+                    ),
+                )
+            },
+        ) {
+            Text(cel.bossName, fontWeight = FontWeight.Bold)
+            Text(
+                stringResource(R.string.boss_ritual_weak_link, cel.targetStat),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Text(
+                stringResource(R.string.boss_ritual_xp_once, cel.xpAwarded),
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+    }
     Scaffold(
         topBar = {
             TopAppBar(

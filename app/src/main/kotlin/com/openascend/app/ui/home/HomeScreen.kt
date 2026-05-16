@@ -44,7 +44,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -54,7 +57,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.openascend.app.R
+import com.openascend.app.share.LevelUpShareCardUi
+import com.openascend.app.share.ShareCardCopy
+import com.openascend.app.share.shareLevelUpCard
+import com.openascend.app.ui.companion.FamiliarPixelDrawable
 import com.openascend.app.ui.companion.FamiliarStrip
+import com.openascend.app.ui.share.PeakCelebrationDialog
+import com.openascend.domain.companion.CompanionMood
 import com.openascend.app.ui.components.ProfileAvatar
 import com.openascend.domain.model.CoreStat
 import com.openascend.domain.model.GameQuest
@@ -71,8 +80,11 @@ fun HomeScreen(
     onOpenSettings: () -> Unit,
     onOpenBossRitual: () -> Unit,
     onOpenCompanionPlay: () -> Unit = {},
+    onOpenChronicleReplay: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val state by viewModel.uiState.collectAsState()
 
     if (state == null) {
@@ -113,23 +125,61 @@ fun HomeScreen(
 
     val levelUp = ui.levelUpSheet
     val suffixPick = ui.suffixPicker
+    var dismissedStreakMilestone by rememberSaveable { mutableStateOf<Int?>(null) }
+    val streakMilestone = ui.streakMilestoneDays?.takeIf { it != dismissedStreakMilestone }
     when {
         levelUp != null -> {
-            AlertDialog(
-                onDismissRequest = { viewModel.dismissLevelUp() },
-                confirmButton = {
-                    TextButton(onClick = { viewModel.dismissLevelUp() }) {
-                        Text(stringResource(R.string.action_continue))
-                    }
+            PeakCelebrationDialog(
+                title = stringResource(R.string.home_level_up_title, levelUp.newLevel),
+                onDismiss = { viewModel.dismissLevelUp() },
+                onShare = {
+                    val payload = LevelUpShareCardUi(
+                        heroName = ui.profile.displayName,
+                        level = levelUp.newLevel,
+                        archetypeLine = levelUp.archetypeDisplay,
+                        compliment = levelUp.compliment,
+                        familiarResId = if (ui.familiarEnabled) {
+                            FamiliarPixelDrawable.resId(ui.familiarSpecies, ui.companion.mood)
+                        } else {
+                            null
+                        },
+                        tagline = ShareCardCopy.tagline(context),
+                        storeCta = ShareCardCopy.storeCta(context),
+                    )
+                    scope.shareLevelUpCard(context, payload)
                 },
-                title = { Text(stringResource(R.string.home_level_up_title, levelUp.newLevel)) },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(levelUp.archetypeDisplay, fontWeight = FontWeight.SemiBold)
-                        Text(levelUp.compliment, style = MaterialTheme.typography.bodyMedium)
-                    }
+            ) {
+                Text(levelUp.archetypeDisplay, fontWeight = FontWeight.SemiBold)
+                Text(levelUp.compliment, style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+        streakMilestone != null -> {
+            PeakCelebrationDialog(
+                title = stringResource(R.string.home_streak_milestone_title, streakMilestone),
+                onDismiss = { dismissedStreakMilestone = streakMilestone },
+                onShare = {
+                    val payload = LevelUpShareCardUi(
+                        heroName = ui.profile.displayName,
+                        level = ui.progress.level,
+                        archetypeLine = context.getString(
+                            R.string.share_streak_text,
+                            streakMilestone,
+                            ui.profile.displayName,
+                        ),
+                        compliment = context.getString(R.string.home_streak_milestone_body),
+                        familiarResId = if (ui.familiarEnabled) {
+                            FamiliarPixelDrawable.resId(ui.familiarSpecies, CompanionMood.SPARKLING)
+                        } else {
+                            null
+                        },
+                        tagline = ShareCardCopy.tagline(context),
+                        storeCta = ShareCardCopy.storeCta(context),
+                    )
+                    scope.shareLevelUpCard(context, payload)
                 },
-            )
+            ) {
+                Text(stringResource(R.string.home_streak_milestone_body))
+            }
         }
         suffixPick != null -> {
             AlertDialog(
@@ -241,12 +291,17 @@ fun HomeScreen(
             },
         )
 
+        TextButton(onClick = onOpenChronicleReplay, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.home_open_replay))
+        }
+
         if (ui.familiarEnabled) {
             FamiliarStrip(
                 companion = ui.companion,
                 species = ui.familiarSpecies,
                 dailyBoonAvailable = ui.dailyBoonAvailable,
                 memoryWhisper = ui.companionMemoryWhisper,
+                companionPlayStreakDays = ui.companionPlayStreakDays,
                 onPlayTogether = onOpenCompanionPlay,
             )
         }

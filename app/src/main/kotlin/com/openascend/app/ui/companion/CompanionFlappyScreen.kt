@@ -42,7 +42,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -56,6 +58,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.openascend.app.R
+import com.openascend.app.share.CompanionRunShareCardUi
+import com.openascend.app.share.ShareCardCopy
+import com.openascend.app.share.shareCompanionRunCard
+import kotlinx.coroutines.launch
 import com.openascend.domain.companion.CompanionMood
 import com.openascend.domain.model.CompanionGameDifficulty
 import com.openascend.domain.model.FamiliarSpecies
@@ -67,6 +73,8 @@ fun CompanionFlappyScreen(
     viewModel: CompanionFlappyViewModel = hiltViewModel(),
 ) {
     val ui by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val scheme = MaterialTheme.colorScheme
     val isPlaying = ui?.phase is FlappyPhase.Playing || ui?.phase is FlappyPhase.Paused
 
@@ -196,6 +204,27 @@ fun CompanionFlappyScreen(
                         GlideSummaryBody(
                             summary = phase,
                             gameDifficulty = state.gameDifficulty,
+                            onShareRun = if (phase.isPersonalBest) {
+                                {
+                                    scope.shareCompanionRunCard(
+                                        context,
+                                        CompanionRunShareCardUi(
+                                            heroName = state.heroDisplayName,
+                                            gameTitle = context.getString(R.string.companion_glide_title),
+                                            scoreLine = context.getString(
+                                                R.string.companion_glide_summary_score,
+                                                phase.score,
+                                                CompanionFlappyViewModel.victoryThreshold(state.gameDifficulty),
+                                            ),
+                                            speciesEmoji = state.species.emoji,
+                                            tagline = ShareCardCopy.tagline(context),
+                                            storeCta = ShareCardCopy.storeCta(context),
+                                        ),
+                                    )
+                                }
+                            } else {
+                                null
+                            },
                             onTryAgain = { viewModel.returnToIntro() },
                             onDone = onBack,
                         )
@@ -468,6 +497,7 @@ private fun GlidePlayfield(
 private fun GlideSummaryBody(
     summary: FlappyPhase.Summary,
     gameDifficulty: CompanionGameDifficulty,
+    onShareRun: (() -> Unit)?,
     onTryAgain: () -> Unit,
     onDone: () -> Unit,
 ) {
@@ -482,6 +512,18 @@ private fun GlideSummaryBody(
         stringResource(R.string.companion_glide_summary_score, summary.score, need),
         style = MaterialTheme.typography.bodyLarge,
     )
+    if (summary.isPersonalBest) {
+        Text(
+            stringResource(R.string.companion_pb_new),
+            style = MaterialTheme.typography.labelLarge,
+            color = scheme.primary,
+        )
+    }
+    onShareRun?.let { share ->
+        TextButton(onClick = share, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.companion_pb_share))
+        }
+    }
     when {
         summary.victory && summary.xpGranted -> Text(
             stringResource(R.string.companion_play_xp_granted, CompanionGameXp.SHARED_DAILY_XP),
