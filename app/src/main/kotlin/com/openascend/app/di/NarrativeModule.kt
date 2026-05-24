@@ -16,6 +16,10 @@ object NarrativeModule {
 
     @Provides
     @Singleton
-    fun narrativeRepository(@ApplicationContext context: Context): NarrativeRepository =
+    fun assetNarrativeRepository(@ApplicationContext context: Context): AssetNarrativeRepository =
         AssetNarrativeRepository(context)
+
+    @Provides
+    @Singleton
+    fun narrativeRepository(repo: AssetNarrativeRepository): NarrativeRepository = repo
 }

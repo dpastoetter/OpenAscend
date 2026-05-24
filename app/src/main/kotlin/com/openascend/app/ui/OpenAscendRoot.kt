@@ -36,6 +36,8 @@ import com.openascend.app.ui.settings.SettingsScreen
 import com.openascend.app.ui.sigil.SealSigilScreen
 import com.openascend.app.ui.replay.ChronicleReplayScreen
 import com.openascend.app.ui.duel.ChronicleDuelScreen
+import com.openascend.app.ui.raid.ChronicleRaidScreen
+import com.openascend.app.ui.treasury.TreasuryRitualScreen
 import com.openascend.app.ui.weekly.WeeklyReviewScreen
 
 private val deepLinkBase = "openascend://"
@@ -89,13 +91,34 @@ fun OpenAscendRoot(
                 onOpenBossRitual = { navController.navigate(Routes.BossRitual) },
                 onOpenCompanionPlay = { navController.navigate(Routes.CompanionHub) },
                 onOpenChronicleReplay = { navController.navigate(Routes.ChronicleReplay) },
+                onOpenChronicleDuel = { navController.navigate(Routes.ChronicleDuel) },
+                onOpenChronicleRaid = { navController.navigate(Routes.ChronicleRaid) },
+                onOpenTreasuryRitual = { navController.navigate(Routes.TreasuryRitual) },
             )
         }
-        composable(Routes.ChronicleReplay) {
+        composable(
+            Routes.ChronicleReplay,
+            deepLinks = listOf(navDeepLink { uriPattern = "${deepLinkBase}replay" }),
+        ) {
             ChronicleReplayScreen(onBack = { navController.popBackStack() })
         }
-        composable(Routes.ChronicleDuel) {
+        composable(
+            Routes.ChronicleDuel,
+            deepLinks = listOf(navDeepLink { uriPattern = "${deepLinkBase}duel" }),
+        ) {
             ChronicleDuelScreen(onBack = { navController.popBackStack() })
+        }
+        composable(
+            Routes.TreasuryRitual,
+            deepLinks = listOf(navDeepLink { uriPattern = "${deepLinkBase}treasury" }),
+        ) {
+            TreasuryRitualScreen(onBack = { navController.popBackStack() })
+        }
+        composable(
+            Routes.ChronicleRaid,
+            deepLinks = listOf(navDeepLink { uriPattern = "${deepLinkBase}raid" }),
+        ) {
+            ChronicleRaidScreen(onBack = { navController.popBackStack() })
         }
         composable(
             Routes.CompanionHub,

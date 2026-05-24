@@ -15,6 +15,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Pause
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -30,6 +33,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -145,8 +149,14 @@ fun CompanionThreadScreen(
                             Text(stringResource(R.string.companion_thread_start))
                         }
                     }
-                    is ThreadUiPhase.Playing -> {
-                        val pct = (phase.progress * 100f).toInt().coerceIn(0, 100)
+                    is ThreadUiPhase.Playing, is ThreadUiPhase.Paused -> {
+                        val progress = when (phase) {
+                            is ThreadUiPhase.Playing -> phase.progress
+                            is ThreadUiPhase.Paused -> phase.progress
+                            else -> 0f
+                        }
+                        val paused = phase is ThreadUiPhase.Paused
+                        val pct = (progress * 100f).toInt().coerceIn(0, 100)
                         Text(
                             stringResource(R.string.companion_thread_progress, pct),
                             style = MaterialTheme.typography.bodyMedium,
@@ -156,6 +166,18 @@ fun CompanionThreadScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = scheme.onSurfaceVariant,
                         )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            if (!paused) {
+                                OutlinedButton(onClick = { viewModel.pause() }) {
+                                    Icon(Icons.Outlined.Pause, contentDescription = stringResource(R.string.cd_pause))
+                                    Text(stringResource(R.string.companion_glide_paused_title))
+                                }
+                            } else {
+                                Button(onClick = { viewModel.resume() }) {
+                                    Text(stringResource(R.string.companion_glide_resume))
+                                }
+                            }
+                        }
                         val lanePx = when (state.gameDifficulty) {
                             CompanionGameDifficulty.EASY -> 28f
                             CompanionGameDifficulty.NORMAL -> 18f
@@ -165,7 +187,8 @@ fun CompanionThreadScreen(
                             Modifier
                                 .fillMaxWidth()
                                 .height(240.dp)
-                                .pointerInput(Unit) {
+                                .pointerInput(paused) {
+                                    if (paused) return@pointerInput
                                     detectDragGestures(
                                         onDragStart = { offset ->
                                             val w = size.width.toFloat().coerceAtLeast(1f)
@@ -202,6 +225,20 @@ fun CompanionThreadScreen(
                                     color = scheme.primary.copy(alpha = 0.85f),
                                     style = Stroke(width = lanePx, cap = StrokeCap.Round),
                                 )
+                            }
+                            if (paused) {
+                                Box(
+                                    Modifier
+                                        .fillMaxSize()
+                                        .background(scheme.scrim.copy(alpha = 0.55f)),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        stringResource(R.string.companion_glide_paused_title),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = scheme.onPrimary,
+                                    )
+                                }
                             }
                         }
                     }

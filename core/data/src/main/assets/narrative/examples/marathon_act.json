@@ -1,0 +1,25 @@
+{
+  "id": "marathon_act",
+  "actTitles": [
+    "Warm-up", "Pace Set", "Hill Week", "Recovery Lane",
+    "Tempo", "Long Run", "Taper", "Race Eve",
+    "Finish Line", "Cool Down", "Medal Month", "Next Starting Line"
+  ],
+  "questActPrefix": "Marathon act · ",
+  "bossTellTemplates": [
+    "{boss} sprints when {stat} lags behind the pack."
+  ],
+  "seasons": [
+    {
+      "id": "training_block",
+      "title": "The Training Block",
+      "weekThemes": [
+        "Base miles on Stamina",
+        "Discipline at dawn",
+        "Recovery as strategy",
+        "Race week nerves"
+      ],
+      "finaleBossName": "The Wall Spirit"
+    }
+  ]
+}

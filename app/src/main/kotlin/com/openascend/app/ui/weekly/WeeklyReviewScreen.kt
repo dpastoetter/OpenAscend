@@ -93,6 +93,13 @@ fun WeeklyReviewScreen(
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            ui.seasonChapterLine?.let { line ->
+                Text(
+                    line,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
             Text(
                 "Bank vibe this check-in: ${ui.bankLabel}",
                 style = MaterialTheme.typography.bodyMedium,

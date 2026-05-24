@@ -1,0 +1,33 @@
+{
+  "id": "winter_court",
+  "actTitles": [
+    "Frost Oath", "Ice Vigil", "Snow Compact", "Thaw Watch",
+    "Midwinter", "Pale Sun", "Last Ember", "Quiet Hearth",
+    "Rime Gate", "Starfrost", "Deep Chill", "Spring Promise"
+  ],
+  "questActPrefix": "Winter court · ",
+  "bossTellTemplates": [
+    "{boss} exhales frost when {stat} wavers.",
+    "The court whispers: {boss} hunts thin {stat}."
+  ],
+  "questTitleFlavorSuffixes": ["", " — frost rite"],
+  "seasons": [
+    {
+      "id": "winter_campaign",
+      "title": "The Winter Court",
+      "weekThemes": [
+        "Swear against the cold",
+        "Feed the hearth stat",
+        "March with your party",
+        "Face the frost throne"
+      ],
+      "finaleBossName": "The Frost Regent"
+    }
+  ],
+  "treasuryPrompts": {
+    "intro": "The court scribe opens the ledger—mirror only, not counsel.",
+    "winLabel": "A coin saved",
+    "leakLabel": "A draft you felt",
+    "intentionLabel": "Tomorrow's purse vow"
+  }
+}

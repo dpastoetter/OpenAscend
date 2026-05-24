@@ -11,6 +11,7 @@ import com.openascend.domain.model.UserProfile
 import com.openascend.domain.model.WeeklyBoss
 import com.openascend.domain.narrative.NarrativeContext
 import com.openascend.domain.narrative.NarrativeRepository
+import com.openascend.domain.narrative.SeasonProgressResolver
 import com.openascend.domain.repository.HabitRepository
 import com.openascend.domain.repository.MetricsRepository
 import com.openascend.domain.repository.ProfileRepository
@@ -39,6 +40,7 @@ data class WeeklyUiState(
     val bankLabel: String,
     val shareSummary: String,
     val actTitle: String,
+    val seasonChapterLine: String?,
     val bossDeferredThisWeek: Boolean,
     val bossSealedThisWeek: Boolean,
     val xpLedger: XpLedgerSummary,
@@ -115,6 +117,7 @@ class WeeklyReviewViewModel @Inject constructor(
                         bankLabel = BankHealthScorer.label(bankScore),
                         shareSummary = summary,
                         actTitle = narrative.actTitle,
+                        seasonChapterLine = SeasonProgressResolver.resolve(day, pack)?.chapterLine,
                         bossDeferredThisWeek = deferred,
                         bossSealedThisWeek = sealed,
                         xpLedger = xpLedger,

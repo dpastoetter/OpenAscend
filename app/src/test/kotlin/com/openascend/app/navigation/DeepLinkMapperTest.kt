@@ -29,6 +29,10 @@ class DeepLinkMapperTest {
         assertEquals(Routes.CompanionGlide, DeepLinkMapper.routeFromHost("companion_glide"))
         assertEquals(Routes.CompanionStack, DeepLinkMapper.routeFromHost("companion_stack"))
         assertEquals(Routes.CompanionThread, DeepLinkMapper.routeFromHost("companion_thread"))
+        assertEquals(Routes.ChronicleReplay, DeepLinkMapper.routeFromHost("replay"))
+        assertEquals(Routes.ChronicleDuel, DeepLinkMapper.routeFromHost("duel"))
+        assertEquals(Routes.TreasuryRitual, DeepLinkMapper.routeFromHost("treasury"))
+        assertEquals(Routes.ChronicleRaid, DeepLinkMapper.routeFromHost("raid"))
         assertEquals(Routes.CompanionPlay, DeepLinkMapper.routeFromHost("companion_hide"))
         assertEquals(Routes.CompanionPlay, DeepLinkMapper.routeFromHost("companion_hide_peek"))
     }

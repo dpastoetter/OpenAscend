@@ -90,6 +90,8 @@ sealed class ThreadUiPhase {
         val progress: Float,
     ) : ThreadUiPhase()
 
+    data class Paused(val progress: Float) : ThreadUiPhase()
+
     data class Summary(
         val victory: Boolean,
         val xpGranted: Boolean,
@@ -254,6 +256,19 @@ class CompanionThreadViewModel @Inject constructor(
         val base = _ui.value ?: return
         strokeActive = false
         _ui.value = base.copy(phase = ThreadUiPhase.Playing(progress = 0f))
+    }
+
+    fun pause() {
+        val base = _ui.value ?: return
+        val play = base.phase as? ThreadUiPhase.Playing ?: return
+        strokeActive = false
+        _ui.value = base.copy(phase = ThreadUiPhase.Paused(play.progress))
+    }
+
+    fun resume() {
+        val base = _ui.value ?: return
+        val paused = base.phase as? ThreadUiPhase.Paused ?: return
+        _ui.value = base.copy(phase = ThreadUiPhase.Playing(paused.progress))
     }
 
     fun onStrokeStart(nx: Float, ny: Float) {

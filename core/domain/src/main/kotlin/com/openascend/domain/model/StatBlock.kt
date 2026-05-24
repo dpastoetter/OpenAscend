@@ -18,6 +18,21 @@ data class StatBlock(
     fun weakestStat(): CoreStat =
         asMap().minBy { it.value }.key
 
+    companion object {
+        fun average(blocks: List<StatBlock>): StatBlock {
+            if (blocks.isEmpty()) {
+                return StatBlock(0, 0, 0, 0, 0)
+            }
+            return StatBlock(
+                recovery = blocks.sumOf { it.recovery } / blocks.size,
+                stamina = blocks.sumOf { it.stamina } / blocks.size,
+                discipline = blocks.sumOf { it.discipline } / blocks.size,
+                stability = blocks.sumOf { it.stability } / blocks.size,
+                vitality = blocks.sumOf { it.vitality } / blocks.size,
+            )
+        }
+    }
+
     /** Adds [QuestDisplayBonus.PER_SEALED_QUEST] per sealed quest to its linked stat (cap 100). */
     fun withSealedQuestSpotlight(quests: List<GameQuest>): StatBlock {
         val extra = CoreStat.entries.associateWith { 0 }.toMutableMap()

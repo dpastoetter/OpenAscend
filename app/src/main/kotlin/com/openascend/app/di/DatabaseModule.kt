@@ -2,9 +2,9 @@ package com.openascend.app.di
 
 import android.content.Context
 import androidx.room.Room
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
+import com.openascend.app.BuildConfig
 import com.openascend.data.local.db.OpenAscendDatabase
+import com.openascend.data.local.db.OpenAscendMigrations
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,33 +16,16 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
 
-    private val migration2To3 = object : Migration(2, 3) {
-        override fun migrate(db: SupportSQLiteDatabase) {
-            db.execSQL("ALTER TABLE profile ADD COLUMN avatarRelativePath TEXT")
-        }
-    }
-
-    private val migration3To4 = object : Migration(3, 4) {
-        override fun migrate(db: SupportSQLiteDatabase) {
-            db.execSQL("ALTER TABLE profile ADD COLUMN archetypeSuffix TEXT")
-            db.execSQL("ALTER TABLE habits ADD COLUMN isRestDay INTEGER NOT NULL DEFAULT 0")
-        }
-    }
-
-    private val migration4To5 = object : Migration(4, 5) {
-        override fun migrate(db: SupportSQLiteDatabase) {
-            db.execSQL("ALTER TABLE profile ADD COLUMN starterPath TEXT")
-            db.execSQL("ALTER TABLE habits ADD COLUMN bossPrep INTEGER NOT NULL DEFAULT 0")
-        }
-    }
-
     @Provides
     @Singleton
-    fun database(@ApplicationContext context: Context): OpenAscendDatabase =
-        Room.databaseBuilder(context, OpenAscendDatabase::class.java, "openascend.db")
-            .addMigrations(migration2To3, migration3To4, migration4To5)
-            .fallbackToDestructiveMigration()
-            .build()
+    fun database(@ApplicationContext context: Context): OpenAscendDatabase {
+        val builder = Room.databaseBuilder(context, OpenAscendDatabase::class.java, "openascend.db")
+            .addMigrations(*OpenAscendMigrations.ALL)
+        if (BuildConfig.DEBUG) {
+            builder.fallbackToDestructiveMigration()
+        }
+        return builder.build()
+    }
 
     @Provides
     fun profileDao(db: OpenAscendDatabase) = db.profileDao()

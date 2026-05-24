@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -159,13 +160,45 @@ fun SettingsScreen(
                 modifier = Modifier.horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                listOf("default" to R.string.settings_flavor_default, "cozy" to R.string.settings_flavor_cozy).forEach { (id, labelRes) ->
+                ui.narrativePackIds.forEach { id ->
                     FilterChip(
                         selected = ui.privacy.flavorPackId == id,
                         onClick = { viewModel.setPrivacy(ui.privacy.copy(flavorPackId = id)) },
-                        label = { Text(stringResource(labelRes)) },
+                        label = { Text(id.replace('_', ' ')) },
                     )
                 }
+            }
+            val importPackLauncher = rememberLauncherForActivityResult(
+                ActivityResultContracts.OpenDocument(),
+            ) { uri ->
+                uri ?: return@rememberLauncherForActivityResult
+                scope.launch {
+                    val text = runCatching {
+                        context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }
+                    }.getOrNull()
+                    if (text == null) {
+                        Toast.makeText(context, R.string.settings_narrative_import_error, Toast.LENGTH_SHORT).show()
+                        return@launch
+                    }
+                    val result = viewModel.importNarrativePack(text)
+                    if (result.isSuccess) {
+                        val id = result.getOrThrow()
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.settings_narrative_import_success, id),
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                        viewModel.setPrivacy(ui.privacy.copy(flavorPackId = id))
+                    } else {
+                        Toast.makeText(context, R.string.settings_narrative_import_error, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            OutlinedButton(
+                onClick = { importPackLauncher.launch(arrayOf("application/json", "text/*")) },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.settings_narrative_import))
             }
 
             Text(stringResource(R.string.settings_companion), style = MaterialTheme.typography.titleMedium)

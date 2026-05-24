@@ -57,11 +57,11 @@ private fun WidgetBody() {
         horizontalAlignment = Alignment.Start,
     ) {
         Text(
-            "OPENASCEND",
+            context.getString(com.openascend.app.R.string.widget_brand),
             style = TextStyle(color = muted, fontWeight = FontWeight.Medium),
         )
         Text(
-            "Level ${store.readLevel()}",
+            context.getString(com.openascend.app.R.string.widget_level_line, store.readLevel()),
             style = TextStyle(color = main, fontWeight = FontWeight.Bold),
         )
         Text(
@@ -70,7 +70,10 @@ private fun WidgetBody() {
             maxLines = 2,
         )
         Text(
-            text = "Boss · ${store.readBossName()}",
+            text = context.getString(
+                com.openascend.app.R.string.widget_boss_line,
+                store.readBossName(),
+            ),
             style = TextStyle(color = muted),
             maxLines = 2,
         )
@@ -95,6 +98,14 @@ private fun WidgetBody() {
             style = TextStyle(color = muted),
             maxLines = 1,
         )
+        val seasonLine = store.readSeasonLine()
+        if (seasonLine.isNotBlank()) {
+            Text(
+                text = seasonLine,
+                style = TextStyle(color = accent, fontWeight = FontWeight.Medium),
+                maxLines = 2,
+            )
+        }
         Text(
             text = store.readFlavorLine(),
             style = TextStyle(color = muted),

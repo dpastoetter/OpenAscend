@@ -28,6 +28,7 @@ class ChronicleCompassResolverTest {
             openQuest = quest,
             bossSealedThisWeek = false,
             bossName = "Boss",
+            bossTargetStat = CoreStat.STAMINA,
             habits = emptyList(),
             todayCompletions = emptyMap(),
         )
@@ -43,6 +44,7 @@ class ChronicleCompassResolverTest {
             openQuest = quest,
             bossSealedThisWeek = true,
             bossName = "Boss",
+            bossTargetStat = CoreStat.STAMINA,
             habits = listOf(Habit(1, "a", 7, 2, CoreStat.DISCIPLINE)),
             todayCompletions = emptyMap(),
         )

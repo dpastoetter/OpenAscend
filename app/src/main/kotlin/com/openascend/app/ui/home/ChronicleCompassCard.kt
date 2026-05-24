@@ -22,6 +22,7 @@ import com.openascend.domain.service.ChronicleCompassKind
 fun ChronicleCompassCard(
     compass: ChronicleCompassDirective,
     actTitle: String,
+    seasonLine: String? = null,
     onPrimary: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -41,6 +42,13 @@ fun ChronicleCompassCard(
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
+            if (!seasonLine.isNullOrBlank()) {
+                Text(
+                    seasonLine,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f),
+                )
+            }
             Text(
                 title,
                 style = MaterialTheme.typography.titleMedium,
@@ -95,5 +103,10 @@ private fun compassCopy(
             stringResource(R.string.home_compass_steady_subtitle)
         },
         stringResource(R.string.home_compass_steady_cta),
+    )
+    ChronicleCompassKind.TreasuryRitual -> Triple(
+        stringResource(R.string.home_compass_treasury_title),
+        stringResource(R.string.home_compass_treasury_subtitle),
+        stringResource(R.string.home_compass_treasury_cta),
     )
 }

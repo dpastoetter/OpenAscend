@@ -33,10 +33,10 @@ jobs:
 
       - run: chmod +x gradlew
 
-      - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --stacktrace
+      - name: Build debug and release APKs
+        run: ./gradlew :app:assembleDebug :app:assembleRelease --stacktrace
 
-      - name: Prepare release asset
+      - name: Prepare release assets
         id: prep
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -45,13 +45,15 @@ jobs:
             TAG="${{ github.ref_name }}"
           fi
           cp app/build/outputs/apk/debug/app-debug.apk "OpenAscend-${TAG}-debug.apk"
+          cp app/build/outputs/apk/release/app-release-unsigned.apk "OpenAscend-${TAG}-release-unsigned.apk"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "asset=OpenAscend-${TAG}-debug.apk" >> "$GITHUB_OUTPUT"
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.prep.outputs.tag }}
           name: OpenAscend ${{ steps.prep.outputs.tag }}
-          files: ${{ steps.prep.outputs.asset }}
+          files: |
+            OpenAscend-${{ steps.prep.outputs.tag }}-debug.apk
+            OpenAscend-${{ steps.prep.outputs.tag }}-release-unsigned.apk
           generate_release_notes: true

@@ -38,8 +38,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.health.connect.client.PermissionController
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,11 +59,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.openascend.app.R
+import com.openascend.app.share.InsightShareCardUi
 import com.openascend.app.share.LevelUpShareCardUi
 import com.openascend.app.share.ShareCardCopy
+import com.openascend.app.share.shareInsightCard
 import com.openascend.app.share.shareLevelUpCard
 import com.openascend.app.ui.companion.FamiliarPixelDrawable
 import com.openascend.app.ui.companion.FamiliarStrip
+import com.openascend.app.ui.health.HealthConnectOnboardingSheet
 import com.openascend.app.ui.share.PeakCelebrationDialog
 import com.openascend.domain.companion.CompanionMood
 import com.openascend.app.ui.components.ProfileAvatar
@@ -81,11 +86,19 @@ fun HomeScreen(
     onOpenBossRitual: () -> Unit,
     onOpenCompanionPlay: () -> Unit = {},
     onOpenChronicleReplay: () -> Unit = {},
+    onOpenChronicleDuel: () -> Unit = {},
+    onOpenChronicleRaid: () -> Unit = {},
+    onOpenTreasuryRitual: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val state by viewModel.uiState.collectAsState()
+    val healthConnectPermissionLauncher = rememberLauncherForActivityResult(
+        PermissionController.createRequestPermissionResultContract(),
+    ) {
+        viewModel.refreshToday()
+    }
 
     if (state == null) {
         Column(
@@ -271,11 +284,13 @@ fun HomeScreen(
         ChronicleCompassCard(
             compass = ui.compass,
             actTitle = ui.actTitle,
+            seasonLine = ui.seasonProgress?.chapterLine,
             onPrimary = {
                 when (ui.compass.kind) {
                     ChronicleCompassKind.WeeklyReview -> onOpenWeekly()
                     ChronicleCompassKind.EveningCheckIn -> onOpenCheckIn()
                     ChronicleCompassKind.BossEncounter -> onOpenBossRitual()
+                    ChronicleCompassKind.TreasuryRitual -> onOpenTreasuryRitual()
                     ChronicleCompassKind.SealQuest -> {
                         ui.quests.firstOrNull { !it.completed }?.let { viewModel.completeQuest(it) }
                     }
@@ -291,8 +306,48 @@ fun HomeScreen(
             },
         )
 
-        TextButton(onClick = onOpenChronicleReplay, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.home_open_replay))
+        ui.weeklyInsight?.let { insight ->
+            InsightOracleCard(
+                insight = insight,
+                onShare = {
+                    scope.shareInsightCard(
+                        context,
+                        InsightShareCardUi(
+                            heroName = ui.profile.displayName,
+                            headline = insight.headline,
+                            body = insight.body,
+                            tagline = ShareCardCopy.tagline(context),
+                        ),
+                        insight.headline,
+                    )
+                },
+                onDismiss = { viewModel.dismissWeeklyInsight() },
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            TextButton(onClick = onOpenChronicleReplay, modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.home_open_replay))
+            }
+            TextButton(onClick = onOpenChronicleDuel, modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.home_open_duel))
+            }
+        }
+        TextButton(onClick = onOpenChronicleRaid, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.home_open_raid))
+        }
+
+        if (ui.showHealthConnectOnboarding) {
+            HealthConnectOnboardingSheet(
+                onDismiss = { viewModel.dismissHealthConnectOnboarding() },
+                onBindVitals = {
+                    viewModel.enableHealthConnectSync()
+                    healthConnectPermissionLauncher.launch(viewModel.healthConnectPermissionStrings())
+                },
+            )
         }
 
         if (ui.familiarEnabled) {
@@ -307,6 +362,11 @@ fun HomeScreen(
         }
 
         val activeHabits = ui.habits.filter { !it.isRestDay }
+        if (activeHabits.isEmpty()) {
+            OutlinedButton(onClick = onOpenHabits, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.home_no_habits_cta))
+            }
+        }
         if (activeHabits.isNotEmpty()) {
             Text(
                 stringResource(R.string.home_todays_rites),

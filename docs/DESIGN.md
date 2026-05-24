@@ -15,7 +15,8 @@
 ## Narrative flavor packs
 
 - JSON under merged assets: `narrative/{id}.json` (e.g. [`default.json`](../core/data/src/main/assets/narrative/default.json)).
-- **Contributors:** add a new file + optional Settings entry; keep keys stable (`actTitles`, `bossTellTemplates`, placeholders `{boss}`, `{stat}`).
+- **Contributors:** add a new file + optional Settings entry; keep keys stable (`actTitles`, `bossTellTemplates`, `seasons`, `treasuryPrompts`, placeholders `{boss}`, `{stat}`).
+- **Custom packs:** users can import JSON via Settings (stored under app files `narrative/custom/`). Example packs live in [`narrative/examples/`](../core/data/src/main/assets/narrative/examples/).
 
 ## Home, widget, and reminders (voice)
 

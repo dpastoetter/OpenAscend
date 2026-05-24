@@ -19,6 +19,7 @@ class WidgetSnapshotStore(
         actionUri: String = "openascend://home",
         streakDays: Int = 0,
         bossSealedThisWeek: Boolean = false,
+        seasonLine: String = "",
     ) {
         p.edit()
             .putInt("level", level)
@@ -29,6 +30,7 @@ class WidgetSnapshotStore(
             .putString("action_uri", actionUri)
             .putInt("streak_days", streakDays)
             .putBoolean("boss_sealed", bossSealedThisWeek)
+            .putString("season_line", seasonLine.take(120))
             .apply()
     }
 
@@ -40,4 +42,5 @@ class WidgetSnapshotStore(
     fun readActionUri(): String = p.getString("action_uri", "openascend://home") ?: "openascend://home"
     fun readStreakDays(): Int = p.getInt("streak_days", 0)
     fun readBossSealedThisWeek(): Boolean = p.getBoolean("boss_sealed", false)
+    fun readSeasonLine(): String = p.getString("season_line", "") ?: ""
 }

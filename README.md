@@ -50,7 +50,9 @@ OpenAscend is an **open-source, Android-first “life RPG”**: habits and simpl
 
 **v0.14 (offline viral layer):** **peak-moment share cards** (level-up, streak milestones 7/14/30, boss sealed, Day 0 onboarding preview, Glide personal best) as PNG + caption; **weekly share card v2** (level, archetype, XP ledger highlights, familiar art, Play Store CTA on image); **3-step onboarding** with realm preview + optional Day 0 card; **Chronicle replay** (14-day timeline from Home); **Chronicle duel** (export/import weekly stat summary JSON, compare offline—no accounts); **stat quest micro-chains** for all five stats via narrative JSON; widget **streak + boss sealed** line; **3-day companion play** familiar emote.
 
-**Roadmap (prioritize as needed):** deeper Health Connect onboarding; in-world pause on Stack / Thread-run (Glide already has it); replay timeline share card; optional split screens for sleep / finance / longevity; branded splash; cloud accounts only if the product leaves strict offline-first; billing only with a monetization story, `INTERNET`, Play Billing, and policy work.
+**v0.15 (chronicle moat layer):** **Insight Oracle** — one heuristic pattern insight per week on Home (+ dismiss, share card); **Treasury Ritual** — weekly Stability ritual (win/leak/intention) with Compass promotion; **Chronicle Seasons** — multi-week arcs in narrative JSON (Home, weekly, widget season line); **Party Raid** — import up to 3 ally weekly JSON files, team raid resolve + share card (`openascend://raid`); **custom narrative packs** — import JSON via Settings + contributor examples under `core/data/src/main/assets/narrative/examples/`.
+
+**Roadmap (prioritize as needed):** season finale share card + one-time XP ritual; optional split screens for sleep / finance / longevity; branded splash; cloud accounts only if the product leaves strict offline-first; billing only with a monetization story, `INTERNET`, Play Billing, and policy work.
 
 ### Screen map (intent)
 

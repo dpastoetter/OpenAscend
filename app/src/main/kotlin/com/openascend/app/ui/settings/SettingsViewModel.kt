@@ -7,6 +7,7 @@ import com.openascend.app.notifications.ReminderWorker
 import androidx.lifecycle.viewModelScope
 import com.openascend.data.export.UserDataExporter
 import com.openascend.data.export.UserDataImporter
+import com.openascend.data.narrative.AssetNarrativeRepository
 import com.openascend.domain.model.CompanionGameDifficulty
 import com.openascend.domain.model.FamiliarSpecies
 import com.openascend.domain.model.PrivacySettings
@@ -26,6 +27,7 @@ import javax.inject.Inject
 
 data class SettingsUiState(
     val privacy: PrivacySettings,
+    val narrativePackIds: List<String> = listOf("default"),
 )
 
 @HiltViewModel
@@ -35,10 +37,16 @@ class SettingsViewModel @Inject constructor(
     private val userDataImporter: UserDataImporter,
     private val healthConnectBridge: HealthConnectBridge,
     @ApplicationContext private val appContext: Context,
+    private val assetNarrativeRepository: AssetNarrativeRepository,
 ) : ViewModel() {
 
     val uiState: StateFlow<SettingsUiState> = profileRepository.observePrivacy()
-        .map { SettingsUiState(privacy = it) }
+        .map { privacy ->
+            SettingsUiState(
+                privacy = privacy,
+                narrativePackIds = assetNarrativeRepository.listAvailablePackIds(),
+            )
+        }
         .stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(5_000),
@@ -97,4 +105,7 @@ class SettingsViewModel @Inject constructor(
     fun openHealthConnectSettings(context: Context) {
         healthConnectBridge.openHealthConnectManagement(context)
     }
+
+    suspend fun importNarrativePack(jsonText: String): Result<String> =
+        assetNarrativeRepository.customPackStore().importPack("import.json", jsonText)
 }

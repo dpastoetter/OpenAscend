@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ShareCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.openascend.app.R
+import com.openascend.app.share.ShareLauncher
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,7 +79,10 @@ fun ChronicleDuelScreen(
                 title = { Text(stringResource(R.string.chronicle_duel_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = null)
+                        Icon(
+                            Icons.AutoMirrored.Outlined.ArrowBack,
+                            contentDescription = stringResource(R.string.cd_back),
+                        )
                     }
                 },
             )
@@ -99,6 +103,22 @@ fun ChronicleDuelScreen(
             )
             DuelColumn(stringResource(R.string.chronicle_duel_you), ui.you)
             ui.them?.let { DuelColumn(stringResource(R.string.chronicle_duel_them), it) }
+            Button(
+                onClick = {
+                    scope.launch {
+                        val json = viewModel.exportDuelJson()
+                        ShareLauncher.shareText(
+                            context,
+                            json,
+                            "application/json",
+                            context.getString(R.string.chronicle_duel_share_chooser),
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.chronicle_duel_share))
+            }
             Button(
                 onClick = { exportLauncher.launch("openascend_duel.json") },
                 modifier = Modifier.fillMaxWidth(),

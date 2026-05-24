@@ -61,6 +61,7 @@ class PrivacyPreferences(
         val companionDifficultyStack = stringPreferencesKey("companion_difficulty_stack")
         val companionDifficultyThread = stringPreferencesKey("companion_difficulty_thread")
         val healthConnectSync = booleanPreferencesKey("health_connect_sync_enabled")
+        val healthConnectOnboardingSeen = booleanPreferencesKey("health_connect_onboarding_seen")
         val remindersEnabled = booleanPreferencesKey("reminders_enabled")
         val reminderMorning = booleanPreferencesKey("reminder_morning_enabled")
         val reminderEvening = booleanPreferencesKey("reminder_evening_enabled")
@@ -68,6 +69,7 @@ class PrivacyPreferences(
         val lastSigilRitualEpochDay = longPreferencesKey("last_sigil_ritual_epoch_day")
         val bossRitualSealedWeek = longPreferencesKey("boss_ritual_sealed_week_start")
         val companionTreatXpEpochDay = longPreferencesKey("companion_treat_xp_epoch_day")
+        val treasuryRitualWeekStart = longPreferencesKey("treasury_ritual_week_start")
     }
 
     private fun readPrivacySettings(p: Preferences): PrivacySettings {
@@ -131,6 +133,9 @@ class PrivacyPreferences(
     }
 
     val settings: Flow<PrivacySettings> = store.data.map(::readPrivacySettings)
+
+    val healthConnectOnboardingSeen: Flow<Boolean> =
+        store.data.map { it[Keys.healthConnectOnboardingSeen] ?: false }
 
     suspend fun getSettingsSnapshot(): PrivacySettings = store.data.first().let(::readPrivacySettings)
 
@@ -205,6 +210,19 @@ class PrivacyPreferences(
             fresh = true
         }
         return fresh
+    }
+
+    suspend fun setHealthConnectOnboardingSeen() {
+        store.edit { it[Keys.healthConnectOnboardingSeen] = true }
+    }
+
+    suspend fun treasuryRitualDoneForWeek(weekStartEpochDay: Long): Boolean {
+        val prefs = store.data.first()
+        return prefs[Keys.treasuryRitualWeekStart] == weekStartEpochDay
+    }
+
+    suspend fun markTreasuryRitualWeek(weekStartEpochDay: Long) {
+        store.edit { it[Keys.treasuryRitualWeekStart] = weekStartEpochDay }
     }
 
     suspend fun save(settings: PrivacySettings) {

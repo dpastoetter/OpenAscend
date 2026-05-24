@@ -1,5 +1,6 @@
 package com.openascend.domain.service
 
+import com.openascend.domain.model.CoreStat
 import com.openascend.domain.model.GameQuest
 import com.openascend.domain.model.Habit
 import java.time.DayOfWeek
@@ -11,6 +12,7 @@ enum class ChronicleCompassKind {
     BossEncounter,
     SealQuest,
     Steady,
+    TreasuryRitual,
 }
 
 data class ChronicleCompassDirective(
@@ -32,8 +34,10 @@ object ChronicleCompassResolver {
         openQuest: GameQuest?,
         bossSealedThisWeek: Boolean,
         bossName: String,
+        bossTargetStat: CoreStat,
         habits: List<Habit>,
         todayCompletions: Map<Long, Boolean>,
+        treasuryRitualDoneThisWeek: Boolean = false,
     ): ChronicleCompassDirective {
         val dayOfWeek = LocalDate.ofEpochDay(todayEpochDay).dayOfWeek
         val activeHabits = habits.filter { !it.isRestDay }
@@ -46,6 +50,17 @@ object ChronicleCompassResolver {
             return ChronicleCompassDirective(
                 kind = ChronicleCompassKind.EveningCheckIn,
                 habitsOpenCount = habitsOpenCount,
+            )
+        }
+        if (
+            !bossSealedThisWeek &&
+            !treasuryRitualDoneThisWeek &&
+            bossTargetStat == CoreStat.STABILITY &&
+            (dayOfWeek == DayOfWeek.THURSDAY || dayOfWeek == DayOfWeek.FRIDAY)
+        ) {
+            return ChronicleCompassDirective(
+                kind = ChronicleCompassKind.TreasuryRitual,
+                bossName = bossName,
             )
         }
         if (!bossSealedThisWeek) {

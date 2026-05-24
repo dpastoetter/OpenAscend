@@ -54,6 +54,8 @@ sealed class StackUiPhase {
         val landHalfWidth: Float,
     ) : StackUiPhase()
 
+    data class Paused(val playing: Playing) : StackUiPhase()
+
     data class Summary(
         val stackHeight: Int,
         val victory: Boolean,
@@ -246,9 +248,33 @@ class CompanionStackViewModel @Inject constructor(
         }
     }
 
-    fun tryDrop() {
+    fun pause() {
         val state = _ui.value ?: return
         val play = state.phase as? StackUiPhase.Playing ?: return
+        gameJob?.cancel()
+        _ui.value = state.copy(phase = StackUiPhase.Paused(play))
+    }
+
+    fun resume() {
+        val state = _ui.value ?: return
+        val paused = state.phase as? StackUiPhase.Paused ?: return
+        _ui.value = state.copy(phase = paused.playing)
+        gameJob?.cancel()
+        gameJob = viewModelScope.launch {
+            while (isActive) {
+                delay(FRAME_MS)
+                tick()
+            }
+        }
+    }
+
+    fun tryDrop() {
+        val state = _ui.value ?: return
+        val play = when (val phase = state.phase) {
+            is StackUiPhase.Playing -> phase
+            is StackUiPhase.Paused -> return
+            else -> return
+        }
         val d = state.gameDifficulty
         val hit = abs(play.cursorX - STACK_CENTER) <= play.landHalfWidth
         if (!hit) {

@@ -3,8 +3,10 @@ package com.openascend.app.ui.companion
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -137,9 +140,15 @@ fun CompanionStackScreen(
                             Text(stringResource(R.string.companion_stack_start))
                         }
                     }
-                    is StackUiPhase.Playing -> {
+                    is StackUiPhase.Playing, is StackUiPhase.Paused -> {
+                        val play = when (phase) {
+                            is StackUiPhase.Playing -> phase
+                            is StackUiPhase.Paused -> phase.playing
+                            else -> error("unreachable")
+                        }
+                        val paused = phase is StackUiPhase.Paused
                         Text(
-                            stringResource(R.string.companion_stack_height, phase.stackHeight, goal),
+                            stringResource(R.string.companion_stack_height, play.stackHeight, goal),
                             style = MaterialTheme.typography.bodyMedium,
                         )
                         Text(
@@ -147,38 +156,66 @@ fun CompanionStackScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = scheme.onSurfaceVariant,
                         )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            if (!paused) {
+                                OutlinedButton(onClick = { viewModel.pause() }) {
+                                    Icon(Icons.Outlined.Pause, contentDescription = stringResource(R.string.cd_pause))
+                                    Text(stringResource(R.string.companion_glide_paused_title))
+                                }
+                            } else {
+                                Button(onClick = { viewModel.resume() }) {
+                                    Text(stringResource(R.string.companion_glide_resume))
+                                }
+                            }
+                        }
                         Box(
                             Modifier
                                 .fillMaxWidth()
                                 .height(220.dp)
-                                .pointerInput(Unit) {
-                                    detectTapGestures(onTap = { viewModel.tryDrop() })
+                                .pointerInput(paused) {
+                                    if (!paused) {
+                                        detectTapGestures(onTap = { viewModel.tryDrop() })
+                                    }
                                 },
                         ) {
                             Canvas(Modifier.fillMaxSize()) {
                                 val w = size.width
                                 val h = size.height
                                 val baseY = h * 0.82f
-                                val halfPx = phase.landHalfWidth * w
+                                val halfPx = play.landHalfWidth * w
                                 drawRoundRect(
                                     color = scheme.primary.copy(alpha = 0.35f),
                                     topLeft = Offset(size.width / 2f - halfPx, baseY - 10f),
                                     size = Size(halfPx * 2f, 18f),
                                     cornerRadius = CornerRadius(6f, 6f),
                                 )
-                                val stackW = (24f + phase.stackHeight * 6f).coerceAtMost(w * 0.35f)
+                                val stackW = (24f + play.stackHeight * 6f).coerceAtMost(w * 0.35f)
                                 drawRoundRect(
                                     color = scheme.secondary.copy(alpha = 0.5f),
-                                    topLeft = Offset(size.width / 2f - stackW / 2f, baseY - 28f - phase.stackHeight * 10f),
-                                    size = Size(stackW, 28f + phase.stackHeight * 10f),
+                                    topLeft = Offset(size.width / 2f - stackW / 2f, baseY - 28f - play.stackHeight * 10f),
+                                    size = Size(stackW, 28f + play.stackHeight * 10f),
                                     cornerRadius = CornerRadius(8f, 8f),
                                 )
-                                val cx = phase.cursorX * w
+                                val cx = play.cursorX * w
                                 drawCircle(
                                     color = scheme.tertiary,
                                     radius = 14f,
                                     center = Offset(cx, h * 0.28f),
                                 )
+                            }
+                            if (paused) {
+                                Box(
+                                    Modifier
+                                        .fillMaxSize()
+                                        .background(scheme.scrim.copy(alpha = 0.55f)),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        stringResource(R.string.companion_glide_paused_title),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = scheme.onPrimary,
+                                    )
+                                }
                             }
                         }
                     }

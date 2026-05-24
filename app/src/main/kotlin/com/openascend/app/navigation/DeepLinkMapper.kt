@@ -32,6 +32,10 @@ object DeepLinkMapper {
         "companion_glide" -> Routes.CompanionGlide
         "companion_stack" -> Routes.CompanionStack
         "companion_thread" -> Routes.CompanionThread
+        "replay", "chronicle_replay" -> Routes.ChronicleReplay
+        "duel", "chronicle_duel" -> Routes.ChronicleDuel
+        "treasury", "treasury_ritual" -> Routes.TreasuryRitual
+        "raid", "chronicle_raid" -> Routes.ChronicleRaid
         else -> null
     }
 }

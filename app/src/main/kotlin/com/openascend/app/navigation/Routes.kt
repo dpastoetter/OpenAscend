@@ -21,6 +21,8 @@ object Routes {
     const val CompanionThread = "companion_thread"
     const val ChronicleReplay = "chronicle_replay"
     const val ChronicleDuel = "chronicle_duel"
+    const val TreasuryRitual = "treasury_ritual"
+    const val ChronicleRaid = "chronicle_raid"
 
     fun habitEdit(habitId: Long): String = "habit_edit/$habitId"
 }

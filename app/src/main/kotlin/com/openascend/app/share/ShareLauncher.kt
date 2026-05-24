@@ -11,6 +11,19 @@ import java.io.File
 import java.io.FileOutputStream
 
 object ShareLauncher {
+
+    fun shareText(
+        context: Context,
+        text: String,
+        mimeType: String,
+        chooserTitle: String,
+    ) {
+        ShareCompat.IntentBuilder(context)
+            .setType(mimeType)
+            .setText(text)
+            .setChooserTitle(chooserTitle)
+            .startChooser()
+    }
     suspend fun shareBitmap(
         context: Context,
         bitmap: Bitmap,

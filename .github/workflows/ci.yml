@@ -31,14 +31,20 @@ jobs:
       - name: Gradle wrapper
         run: chmod +x gradlew
 
-      - name: Unit tests (domain + data + app/Compose UI) + debug APK
-        run: ./gradlew :core:domain:test :core:data:testDebugUnitTest :app:testDebugUnitTest :app:assembleDebug --stacktrace
+      - name: Unit tests (domain + data + app/Compose UI) + lint + APKs
+        run: ./gradlew :core:domain:test :core:data:testDebugUnitTest :app:testDebugUnitTest :app:check :app:assembleDebug :app:assembleRelease --stacktrace
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v7
         with:
           name: app-debug
           path: app/build/outputs/apk/debug/*.apk
+
+      - name: Upload release APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-release
+          path: app/build/outputs/apk/release/*.apk
 
   instrumented:
     runs-on: ubuntu-latest

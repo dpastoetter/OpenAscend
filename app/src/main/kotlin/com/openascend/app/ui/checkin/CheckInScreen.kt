@@ -38,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.openascend.app.R
+import com.openascend.app.health.HealthConnectSyncStatus
 import kotlinx.coroutines.delay
 
 private val moodOptionIds = listOf("steady", "scattered", "heavy", "bright")
@@ -93,7 +94,10 @@ fun CheckInScreen(
                 title = { Text(stringResource(R.string.checkin_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = null)
+                        Icon(
+                            Icons.AutoMirrored.Outlined.ArrowBack,
+                            contentDescription = stringResource(R.string.cd_back),
+                        )
                     }
                 },
             )
@@ -112,25 +116,64 @@ fun CheckInScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            if (!ui.healthConnectEnabled) {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    ),
-                ) {
-                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            stringResource(R.string.checkin_hc_invite_title),
-                            style = MaterialTheme.typography.titleSmall,
-                        )
-                        Text(
-                            stringResource(R.string.checkin_hc_invite_body),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        TextButton(onClick = onOpenSettings) {
-                            Text(stringResource(R.string.checkin_hc_open_settings))
+            when (ui.healthConnectStatus) {
+                HealthConnectSyncStatus.Disabled -> {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        ),
+                    ) {
+                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                stringResource(R.string.checkin_hc_invite_title),
+                                style = MaterialTheme.typography.titleSmall,
+                            )
+                            Text(
+                                stringResource(R.string.checkin_hc_invite_body),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            TextButton(onClick = onOpenSettings) {
+                                Text(stringResource(R.string.checkin_hc_open_settings))
+                            }
                         }
+                    }
+                }
+                HealthConnectSyncStatus.NeedsPermission -> {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                        ),
+                    ) {
+                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                stringResource(R.string.checkin_hc_needs_permission_title),
+                                style = MaterialTheme.typography.titleSmall,
+                            )
+                            Text(
+                                stringResource(R.string.checkin_hc_needs_permission_body),
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                            TextButton(onClick = onOpenSettings) {
+                                Text(stringResource(R.string.checkin_hc_open_settings))
+                            }
+                        }
+                    }
+                }
+                HealthConnectSyncStatus.Unavailable -> {
+                    Text(
+                        stringResource(R.string.checkin_hc_unavailable),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                HealthConnectSyncStatus.Ready -> {
+                    if (ui.healthConnectEnabled) {
+                        Text(
+                            stringResource(R.string.checkin_hc_sync_ready),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
                     }
                 }
             }

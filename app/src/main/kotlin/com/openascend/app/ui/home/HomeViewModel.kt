@@ -42,7 +42,12 @@ import com.openascend.domain.service.ChronicleCompassDirective
 import com.openascend.domain.service.ChronicleCompassResolver
 import com.openascend.domain.service.HabitRewards
 import com.openascend.domain.service.QuestChainDetector
+import com.openascend.domain.insight.ChronicleInsight
+import com.openascend.domain.insight.ChronicleInsightEngine
+import com.openascend.domain.narrative.SeasonProgress
+import com.openascend.domain.narrative.SeasonProgressResolver
 import com.openascend.domain.service.StreakMilestone
+import com.openascend.data.local.prefs.InsightOracleStore
 import com.openascend.domain.service.QuestGenerator
 import com.openascend.domain.service.StatComputationService
 import com.openascend.domain.service.XpEngine
@@ -53,6 +58,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -96,6 +102,9 @@ data class HomeUiState(
     val companionMemoryWhisper: String?,
     val streakMilestoneDays: Int?,
     val companionPlayStreakDays: Int,
+    val showHealthConnectOnboarding: Boolean,
+    val seasonProgress: SeasonProgress?,
+    val weeklyInsight: ChronicleInsight?,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -118,6 +127,7 @@ class HomeViewModel @Inject constructor(
     private val healthConnectMetricsSync: HealthConnectMetricsSync,
 ) : ViewModel() {
 
+    private val insightOracleStore = InsightOracleStore(appContext)
     private val companionMemoryStore = CompanionMemoryStore(appContext)
     private val companionPlayDayStore = CompanionPlayDayStore(appContext)
 
@@ -241,6 +251,7 @@ class HomeViewModel @Inject constructor(
                     val questsDoneYesterday = bundle.questYesterday.size
                     val loggedToday = bundle.inner.profile.lastLoggedEpochDay == bundle.day
                     val openQuest = quests.firstOrNull { !it.completed }
+                    val treasuryDone = privacyPreferences.treasuryRitualDoneForWeek(weekStart)
                     val compass = ChronicleCompassResolver.resolve(
                         todayEpochDay = bundle.day,
                         hourOfDay = LocalTime.now().hour,
@@ -248,9 +259,42 @@ class HomeViewModel @Inject constructor(
                         openQuest = openQuest,
                         bossSealedThisWeek = bossSealedThisWeek,
                         bossName = boss.name,
+                        bossTargetStat = boss.targetStat,
                         habits = bundle.inner.habits,
                         todayCompletions = bundle.inner.todayComp,
+                        treasuryRitualDoneThisWeek = treasuryDone,
                     )
+                    val seasonProgress = SeasonProgressResolver.resolve(bundle.day, pack)
+                    val metrics30 = metricsRepository.metricsBetween(bundle.day - 29, bundle.day)
+                    val metricsByDay = metrics30.associateBy { it.epochDay }
+                    val completion30 = loadCompletionMap(bundle.inner.habits, bundle.day, 29)
+                    val statsByDay = (bundle.day - 29..bundle.day).associateWith { d ->
+                        statComputation.computeToday(
+                            metricsByDay[d],
+                            bundle.inner.habits,
+                            completion30
+                                .filterKeys { (_, epoch) -> epoch == d }
+                                .mapKeys { it.key.first },
+                        )
+                    }
+                    val sealedDays = buildSet {
+                        for (d in bundle.day - 29..bundle.day) {
+                            if (bundle.inner.profile.lastLoggedEpochDay == d) add(d)
+                            if (questCompletionRepository.completedIds(d).isNotEmpty()) add(d)
+                        }
+                    }
+                    val rawInsight = ChronicleInsightEngine.pickWeeklyInsight(
+                        weekStartEpochDay = weekStart,
+                        metricsByDay = metricsByDay,
+                        statsByDay = statsByDay,
+                        sealedEpochDays = sealedDays,
+                    )
+                    val weeklyInsight =
+                        if (rawInsight != null && !insightOracleStore.isDismissedForWeek(weekStart)) {
+                            rawInsight
+                        } else {
+                            null
+                        }
                     val dailyBoonAvailable = bundle.homeSnap.companionTreatXpEpochDay != bundle.day
                     val bossPrepSeals = BossPrepMeter.countPrepSealsThisWeek(
                         habits = bundle.inner.habits,
@@ -289,6 +333,7 @@ class HomeViewModel @Inject constructor(
                         actionUri = widgetDeepLinkFor(compass),
                         streakDays = bundle.inner.profile.streakDays,
                         bossSealedThisWeek = bossSealedThisWeek,
+                        seasonLine = seasonProgress?.chapterLine.orEmpty(),
                     )
                     val streakMilestone = StreakMilestone.milestoneDays(bundle.inner.profile.streakDays)
                     _ui.value = HomeUiState(
@@ -316,10 +361,46 @@ class HomeViewModel @Inject constructor(
                         companionMemoryWhisper = companionMemoryWhisper,
                         streakMilestoneDays = streakMilestone,
                         companionPlayStreakDays = companionPlayDayStore.consecutivePlayDaysEnding(bundle.day),
+                        showHealthConnectOnboarding =
+                            bundle.inner.profile.onboardingComplete &&
+                            !privacyPreferences.healthConnectOnboardingSeen.first() &&
+                            !bundle.homeSnap.settings.healthConnectSyncEnabled,
+                        seasonProgress = seasonProgress,
+                        weeklyInsight = weeklyInsight,
                     )
                 }
             }
             .launchIn(viewModelScope)
+    }
+
+    fun dismissWeeklyInsight() {
+        viewModelScope.launch {
+            val weekStart = weekStartMondayEpochDay(LocalDate.ofEpochDay(dayFlow.value))
+            val insight = _ui.value?.weeklyInsight ?: return@launch
+            insightOracleStore.dismissForWeek(weekStart, insight.id)
+            _ui.value = _ui.value?.copy(weeklyInsight = null)
+        }
+    }
+
+    fun dismissHealthConnectOnboarding() {
+        viewModelScope.launch {
+            privacyPreferences.setHealthConnectOnboardingSeen()
+            _ui.value = _ui.value?.copy(showHealthConnectOnboarding = false)
+        }
+    }
+
+    fun healthConnectPermissionStrings(): Set<String> =
+        healthConnectMetricsSync.readPermissions
+
+    fun enableHealthConnectSync() {
+        viewModelScope.launch {
+            val settings = privacyPreferences.getSettingsSnapshot()
+            privacyPreferences.save(settings.copy(healthConnectSyncEnabled = true))
+            privacyPreferences.setHealthConnectOnboardingSeen()
+            healthConnectMetricsSync.syncIfEnabled(settings.copy(healthConnectSyncEnabled = true))
+            _ui.value = _ui.value?.copy(showHealthConnectOnboarding = false)
+            refreshToday()
+        }
     }
 
     fun refreshToday() {
@@ -403,12 +484,17 @@ class HomeViewModel @Inject constructor(
         ChronicleCompassKind.WeeklyReview -> "openascend://weekly"
         ChronicleCompassKind.EveningCheckIn -> "openascend://check_in"
         ChronicleCompassKind.BossEncounter -> "openascend://boss"
+        ChronicleCompassKind.TreasuryRitual -> "openascend://treasury"
         else -> "openascend://home"
     }
 
-    private suspend fun loadCompletionMap(habits: List<Habit>, today: Long): Map<Pair<Long, Long>, Boolean> {
+    private suspend fun loadCompletionMap(
+        habits: List<Habit>,
+        today: Long,
+        daysBack: Long = 6,
+    ): Map<Pair<Long, Long>, Boolean> {
         val map = mutableMapOf<Pair<Long, Long>, Boolean>()
-        for (offset in 0L..6L) {
+        for (offset in 0L..daysBack) {
             val d = today - offset
             for (h in habits) {
                 map[h.id to d] = habitRepository.isCompleted(h.id, d)

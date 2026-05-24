@@ -24,10 +24,25 @@ class HealthConnectMetricsSync @Inject constructor(
     private val metricsRepository: MetricsRepository,
 ) {
 
-    private val readPermissions = setOf(
+    val readPermissions = setOf(
         HealthPermission.getReadPermission(StepsRecord::class),
         HealthPermission.getReadPermission(SleepSessionRecord::class),
     )
+
+    suspend fun probeStatus(privacy: PrivacySettings): HealthConnectSyncStatus {
+        if (!privacy.healthConnectSyncEnabled) return HealthConnectSyncStatus.Disabled
+        if (HealthConnectClient.getSdkStatus(context) != HealthConnectClient.SDK_AVAILABLE) {
+            return HealthConnectSyncStatus.Unavailable
+        }
+        val client = runCatching { HealthConnectClient.getOrCreate(context) }.getOrNull()
+            ?: return HealthConnectSyncStatus.Unavailable
+        val granted = client.permissionController.getGrantedPermissions()
+        return if (granted.containsAll(readPermissions)) {
+            HealthConnectSyncStatus.Ready
+        } else {
+            HealthConnectSyncStatus.NeedsPermission
+        }
+    }
 
     suspend fun syncIfEnabled(privacy: PrivacySettings) {
         if (!privacy.healthConnectSyncEnabled) return

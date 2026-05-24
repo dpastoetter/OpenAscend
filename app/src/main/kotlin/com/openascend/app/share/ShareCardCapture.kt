@@ -63,3 +63,18 @@ suspend fun captureDayZeroShareCardBitmap(
     context: Context,
     payload: DayZeroShareCardUi,
 ): Bitmap = captureShareCardBitmap(context, content = { DayZeroShareCard(payload) })
+
+suspend fun captureReplayShareCardBitmap(
+    context: Context,
+    payload: ChronicleReplayShareCardUi,
+): Bitmap = captureShareCardBitmap(context, content = { ChronicleReplayShareCard(payload) })
+
+suspend fun captureInsightShareCardBitmap(
+    context: Context,
+    payload: InsightShareCardUi,
+): Bitmap = captureShareCardBitmap(context, content = { InsightShareCard(payload) })
+
+suspend fun captureRaidShareCardBitmap(
+    context: Context,
+    payload: RaidShareCardUi,
+): Bitmap = captureShareCardBitmap(context, content = { RaidShareCard(payload) })

@@ -6,6 +6,28 @@ import com.openascend.app.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+fun CoroutineScope.shareInsightCard(
+    context: Context,
+    payload: InsightShareCardUi,
+    headline: String,
+    onError: () -> Unit = {
+        Toast.makeText(context, context.getString(R.string.share_image_error), Toast.LENGTH_SHORT).show()
+    },
+) {
+    launch {
+        runCatching {
+            val bitmap = captureInsightShareCardBitmap(context, payload)
+            ShareLauncher.shareBitmap(
+                context = context,
+                bitmap = bitmap,
+                chooserTitle = context.getString(R.string.insight_oracle_share_chooser),
+                shareText = context.getString(R.string.insight_oracle_share_text, headline),
+                filePrefix = "openascend_insight",
+            )
+        }.onFailure { onError() }
+    }
+}
+
 fun CoroutineScope.shareLevelUpCard(
     context: Context,
     payload: LevelUpShareCardUi,

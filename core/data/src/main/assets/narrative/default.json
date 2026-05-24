@@ -48,5 +48,24 @@
       "chainTitle": "Vitality triad",
       "chainDescription": "Third vitality rite—water, stretch, and one kind check-in."
     }
+  },
+  "seasons": [
+    {
+      "id": "hollow_lent",
+      "title": "The Hollow Lent",
+      "weekThemes": [
+        "Map the breach in your weakest stat",
+        "Shore the line with one daily rite",
+        "Gather party strength for the finale",
+        "Finale approach—no new excuses"
+      ],
+      "finaleBossName": "The Lent Warden"
+    }
+  ],
+  "treasuryPrompts": {
+    "intro": "Close the treasury ledger—playful mirror only, not financial advice.",
+    "winLabel": "Inscribe a win",
+    "leakLabel": "Name a leak",
+    "intentionLabel": "Set tomorrow's intention"
   }
 }

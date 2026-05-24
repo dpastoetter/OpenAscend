@@ -38,6 +38,7 @@ dependencies {
 
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
+    implementation(libs.androidx.sqlite.framework)
     ksp(libs.room.compiler)
 
     testImplementation(libs.junit)

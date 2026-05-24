@@ -3,6 +3,8 @@ package com.openascend.app.ui.checkin
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openascend.app.feedback.FeedbackController
+import com.openascend.app.health.HealthConnectMetricsSync
+import com.openascend.app.health.HealthConnectSyncStatus
 import com.openascend.app.util.todayEpochDay
 import com.openascend.app.util.withStreakAfterLog
 import com.openascend.data.local.prefs.PrivacyPreferences
@@ -16,14 +18,25 @@ import com.openascend.domain.service.HabitRewards
 import com.openascend.domain.service.XpEngine
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+private data class CheckInCore(
+    val metric: com.openascend.domain.model.DailyMetric?,
+    val habits: List<com.openascend.domain.model.Habit>,
+    val completions: Map<Long, Boolean>,
+    val settings: com.openascend.domain.model.PrivacySettings,
+    val profile: com.openascend.domain.model.UserProfile,
+)
 
 data class CheckInSaveEffect(
     val snackbarMessage: String,
@@ -44,6 +57,7 @@ data class CheckInUiState(
     val sleepFromHealthConnect: Boolean,
     val stepsFromHealthConnect: Boolean,
     val starterPathLabel: String?,
+    val healthConnectStatus: HealthConnectSyncStatus,
 )
 
 @HiltViewModel
@@ -54,9 +68,13 @@ class CheckInViewModel @Inject constructor(
     private val xpEngine: XpEngine,
     private val privacyPreferences: PrivacyPreferences,
     private val feedbackController: FeedbackController,
+    private val healthConnectMetricsSync: HealthConnectMetricsSync,
 ) : ViewModel() {
 
     private val day = todayEpochDay()
+
+    private val healthConnectStatusFlow =
+        MutableStateFlow(HealthConnectSyncStatus.Disabled)
 
     private val _saveEffects = MutableSharedFlow<CheckInSaveEffect>(extraBufferCapacity = 1)
     val saveEffects = _saveEffects.asSharedFlow()
@@ -64,33 +82,52 @@ class CheckInViewModel @Inject constructor(
     private val _bossPrepLore = MutableSharedFlow<String?>(extraBufferCapacity = 1)
     val bossPrepLore = _bossPrepLore.asSharedFlow()
 
+    init {
+        privacyPreferences.settings
+            .onEach { settings ->
+                viewModelScope.launch {
+                    healthConnectStatusFlow.value = healthConnectMetricsSync.probeStatus(settings)
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+
     val uiState: StateFlow<CheckInUiState> = combine(
-        metricsRepository.observeDay(day),
-        habitRepository.observeHabits(),
-        habitRepository.observeCompletionsForDay(day),
-        privacyPreferences.settings,
-        profileRepository.observeProfile(),
-    ) { metric, habits, completions, settings, profile ->
+        combine(
+            metricsRepository.observeDay(day),
+            habitRepository.observeHabits(),
+            habitRepository.observeCompletionsForDay(day),
+            privacyPreferences.settings,
+            profileRepository.observeProfile(),
+        ) { metric, habits, completions, settings, profile ->
+            CheckInCore(metric, habits, completions, settings, profile)
+        },
+        healthConnectStatusFlow,
+    ) { core, hcStatus ->
         CheckInUiState(
             epochDay = day,
-            sleepHours = metric?.sleepHours?.toString().orEmpty(),
-            steps = metric?.steps?.toString().orEmpty(),
-            bankControl = metric?.bankControlScore?.toString().orEmpty(),
-            moneyNote = metric?.moneyNote.orEmpty(),
-            vitality = metric?.vitalityScore?.toString().orEmpty(),
-            habits = habits,
-            completions = completions,
-            healthConnectEnabled = settings.healthConnectSyncEnabled,
-            sleepFromHealthConnect = settings.healthConnectSyncEnabled &&
-                metric?.sleepHours != null,
-            stepsFromHealthConnect = settings.healthConnectSyncEnabled &&
-                metric?.steps != null,
-            starterPathLabel = profile.starterPath,
+            sleepHours = core.metric?.sleepHours?.toString().orEmpty(),
+            steps = core.metric?.steps?.toString().orEmpty(),
+            bankControl = core.metric?.bankControlScore?.toString().orEmpty(),
+            moneyNote = core.metric?.moneyNote.orEmpty(),
+            vitality = core.metric?.vitalityScore?.toString().orEmpty(),
+            habits = core.habits,
+            completions = core.completions,
+            healthConnectEnabled = core.settings.healthConnectSyncEnabled,
+            sleepFromHealthConnect = core.settings.healthConnectSyncEnabled &&
+                core.metric?.sleepHours != null,
+            stepsFromHealthConnect = core.settings.healthConnectSyncEnabled &&
+                core.metric?.steps != null,
+            starterPathLabel = core.profile.starterPath,
+            healthConnectStatus = hcStatus,
         )
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),
-        CheckInUiState(day, "", "", "", "", "", emptyList(), emptyMap(), false, false, false, null),
+        CheckInUiState(
+            day, "", "", "", "", "", emptyList(), emptyMap(),
+            false, false, false, null, HealthConnectSyncStatus.Disabled,
+        ),
     )
 
     fun toggleHabit(habitId: Long, done: Boolean) {
