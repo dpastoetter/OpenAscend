@@ -20,7 +20,7 @@ workManager = "2.9.1"
 profileInstaller = "1.4.1"
 junit = "4.13.2"
 androidxTestExtJunit = "1.2.1"
-androidxTestRunner = "1.6.2"
+androidxTestRunner = "1.7.0"
 androidxTestCore = "1.6.1"
 robolectric = "4.14.1"
 
