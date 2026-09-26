@@ -21,12 +21,14 @@ class CustomNarrativePackStore(
 
     fun listCustomPackIds(): List<String> =
         customDir.listFiles()?.mapNotNull { file ->
-            if (file.extension == "json") file.nameWithoutExtension else null
+            if (file.extension != "json") return@mapNotNull null
+            sanitizePackIdOrNull(file.nameWithoutExtension)
         }.orEmpty().sorted()
 
     fun loadPack(packId: String): NarrativePack? {
-        val file = File(customDir, "$packId.json")
-        if (!file.exists()) return null
+        val safeId = sanitizePackIdOrNull(packId) ?: return null
+        val file = File(customDir, "$safeId.json")
+        if (!isInsideCustomDir(file) || !file.exists()) return null
         return runCatching {
             val dto = json.decodeFromString<NarrativePackDto>(file.readText())
             NarrativePackMapper.fromDto(dto)
@@ -34,11 +36,33 @@ class CustomNarrativePackStore(
     }
 
     fun importPack(fileName: String, jsonText: String): Result<String> = runCatching {
+        require(jsonText.length <= MAX_PACK_JSON_CHARS) { "Pack file too large" }
         val dto = json.decodeFromString<NarrativePackDto>(jsonText)
-        require(dto.id.isNotBlank()) { "Pack id required" }
+        val safeId = sanitizePackId(dto.id)
         require(dto.actTitles.isNotEmpty()) { "actTitles required" }
-        val dest = File(customDir, "${dto.id}.json")
+        val dest = File(customDir, "$safeId.json")
+        check(isInsideCustomDir(dest)) { "Invalid pack destination" }
         dest.writeText(jsonText)
-        dto.id
+        safeId
+    }
+
+    private fun isInsideCustomDir(file: File): Boolean {
+        val base = customDir.canonicalFile
+        val candidate = file.canonicalFile
+        return candidate.parentFile == base
+    }
+
+    companion object {
+        private const val MAX_PACK_JSON_CHARS = 1_048_576
+
+        private val PACK_ID_PATTERN = Regex("^[a-zA-Z0-9_-]{1,64}$")
+
+        fun sanitizePackId(id: String): String {
+            require(id.matches(PACK_ID_PATTERN)) { "Invalid pack id" }
+            return id
+        }
+
+        fun sanitizePackIdOrNull(id: String): String? =
+            id.takeIf { it.matches(PACK_ID_PATTERN) }
     }
 }

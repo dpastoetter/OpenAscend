@@ -117,7 +117,9 @@ fun CharacterScreen(
             pendingCameraUri = null
         }
 
-        val captureFile = remember(context) { File(context.cacheDir, "camera_avatar_capture.jpg") }
+        val captureFile = remember(context) {
+            File(File(context.cacheDir, "camera").also { it.mkdirs() }, "camera_avatar_capture.jpg")
+        }
 
         val requestCameraPermission = rememberLauncherForActivityResult(
             ActivityResultContracts.RequestPermission(),
@@ -258,6 +260,7 @@ fun CharacterScreen(
 
 private fun prepareCameraCaptureFile(file: File): Boolean =
     try {
+        file.parentFile?.mkdirs()
         file.delete()
         file.createNewFile()
     } catch (_: Exception) {

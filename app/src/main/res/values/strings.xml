@@ -64,6 +64,9 @@
     <string name="settings_export_backup">Save full backup (JSON file)</string>
     <string name="settings_import_backup">Restore from backup file</string>
     <string name="settings_backup_warning">Backup files are not encrypted. Store them safely. Restoring replaces current app data.</string>
+    <string name="backup_restore_confirm_title">Replace all data?</string>
+    <string name="backup_restore_confirm_body">Restoring this backup will erase your current chronicle data on this device. This cannot be undone.</string>
+    <string name="backup_restore_confirm_action">Restore backup</string>
     <string name="settings_health_connect">Health Connect</string>
     <string name="settings_health_connect_blurb">Sync sleep and steps from Health Connect when you allow access. Manual check-in still wins if you entered sleep or steps for that day.</string>
     <string name="settings_health_connect_toggle">Sync sleep and steps</string>

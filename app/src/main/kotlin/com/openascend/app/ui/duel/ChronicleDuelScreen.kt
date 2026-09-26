@@ -32,6 +32,7 @@ import androidx.core.app.ShareCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.openascend.app.R
 import com.openascend.app.share.ShareLauncher
+import com.openascend.app.util.BoundedStreams
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,7 +49,9 @@ fun ChronicleDuelScreen(
         uri ?: return@rememberLauncherForActivityResult
         scope.launch {
             val text = runCatching {
-                context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }
+                context.contentResolver.openInputStream(uri)?.use {
+                    BoundedStreams.readTextLimited(it, BoundedStreams.MAX_CHRONICLE_SHARE_BYTES)
+                }
             }.getOrNull()
             val ok = text != null && viewModel.importDuelJson(text)
             Toast.makeText(

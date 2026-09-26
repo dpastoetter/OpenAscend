@@ -20,14 +20,15 @@ class AssetNarrativeRepository(
     override suspend fun loadPack(packId: String): NarrativePack {
         val id = packId.ifBlank { "default" }
         customStore.loadPack(id)?.let { return it }
-        val path = "narrative/$id.json"
+        val safeAssetId = CustomNarrativePackStore.sanitizePackIdOrNull(id) ?: "default"
+        val path = "narrative/$safeAssetId.json"
         return runCatching {
             context.assets.open(path).use { stream ->
                 val text = stream.readBytes().toString(Charset.defaultCharset())
                 val dto = json.decodeFromString<NarrativePackDto>(text)
                 NarrativePackMapper.fromDto(dto)
             }
-        }.getOrElse { NarrativePack.fallback(id) }
+        }.getOrElse { NarrativePack.fallback(safeAssetId) }
     }
 
     fun listAvailablePackIds(): List<String> {

@@ -35,6 +35,7 @@ import com.openascend.app.share.RaidShareCardUi
 import com.openascend.app.share.ShareCardCopy
 import com.openascend.app.share.ShareLauncher
 import com.openascend.app.share.captureRaidShareCardBitmap
+import com.openascend.app.util.BoundedStreams
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,7 +52,9 @@ fun ChronicleRaidScreen(
         uri ?: return@rememberLauncherForActivityResult
         scope.launch {
             val text = runCatching {
-                context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }
+                context.contentResolver.openInputStream(uri)?.use {
+                    BoundedStreams.readTextLimited(it, BoundedStreams.MAX_CHRONICLE_SHARE_BYTES)
+                }
             }.getOrNull()
             if (text != null) {
                 viewModel.importMemberJson(text)

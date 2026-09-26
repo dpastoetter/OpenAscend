@@ -14,6 +14,7 @@ import com.openascend.domain.model.PrivacySettings
 import com.openascend.domain.model.ThemePreference
 import com.openascend.domain.repository.ProfileRepository
 import com.openascend.app.health.HealthConnectBridge
+import com.openascend.app.util.BoundedStreams
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -96,7 +97,7 @@ class SettingsViewModel @Inject constructor(
     suspend fun restoreBackupFromUri(context: Context, uri: Uri): Boolean = withContext(Dispatchers.IO) {
         runCatching {
             val text = context.contentResolver.openInputStream(uri)?.use { stream ->
-                stream.readBytes().toString(Charsets.UTF_8)
+                BoundedStreams.readTextLimited(stream, BoundedStreams.MAX_BACKUP_BYTES)
             } ?: return@withContext false
             userDataImporter.importFromJsonString(text).isSuccess
         }.getOrDefault(false)

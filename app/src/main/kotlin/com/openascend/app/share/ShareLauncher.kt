@@ -32,7 +32,8 @@ object ShareLauncher {
         filePrefix: String = "openascend_share",
     ) {
         withContext(Dispatchers.IO) {
-            val file = File(context.cacheDir, "${filePrefix}_${System.currentTimeMillis()}.png")
+            val shareDir = File(context.cacheDir, "share").also { it.mkdirs() }
+            val file = File(shareDir, "${filePrefix}_${System.currentTimeMillis()}.png")
             try {
                 FileOutputStream(file).use { out ->
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
